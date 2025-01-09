@@ -25,6 +25,7 @@
 * pysamstats==1.1.2   
 * numpy==1.24.4 
 * pandas==2.0.3
+* tqdm==4.66.4
 
 
 #### SVClassifier
@@ -39,25 +40,26 @@ Executable versions of annotation software:
 #### SVChecker
 
 * Aligned, sorted bam containing long read alignments from **minimap2**  
-* VCF (vcf.gz) containing called SVs from **Sniffles2, cuteSV, SVIM** (i.e. expected to contain INFO flags for RNAMES)  
-  * SVIM must be run with `--read_names`
+* VCF (vcf.gz) containing called SVs from **Sniffles2, cuteSV, SVIM** (must contain INFO flag `'RNAMES'`)  
+  * SVIM must be run with `--read_names` (`svim reads --help`)
 
 #### SVClassifier
 
-* .vcf.gz containing called SVs (must contain info flag ‘SVTYPE’)  
-  * Does not assess symbolic insertions, translocations
+* VCF (.vcf.gz) containing called SVs (must contain INFO flag `'SVTYPE'`)  
+  * ***NOTE***: Does not assess symbolic insertions, translocations
 
 ### Main Output files 
 
 #### SVChecker
 
-* File containing summary of SVs and their supporting reads for inversions and duplications `(_checked.tab)`.  
-* File containing discordant reads between caller and checker for inversions and duplications `(..._discordant.tab)`
-* File containing details of reads `(..._supporting_read_details.tab)`
+* **SV Summary** - TXT file containing summary of SVs and their supporting reads for inversions and duplications `(_checked.tab)`
+* **Discordant Reads** - TXT file containing discordant reads between caller and checker for inversions and duplications `(..._discordant.tab)`
+* **Read Details** - TXT file containing details of reads `(..._supporting_read_details.tab)`
 
 #### SVClassifier
 
 * VCF annotated with TRF and RepeatMasker info  
+* TSV containing TRF and RepeatMasker repeats with extended detail
 * TXT file containing diagrams of SV and repeats 
 
 ## How to Run 

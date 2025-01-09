@@ -1,9 +1,7 @@
 import pysam
 import pysamstats
 import sys
-import pandas as pd
 import argparse
-import pprint as pp
 import csv
 from tqdm import tqdm
 

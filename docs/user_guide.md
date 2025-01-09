@@ -1,45 +1,35 @@
 # User Guide (Algorithms)
 
 ## SVChecker
-
 To identify supporting reads for inversions and duplications, we locate alignments overlapping the left and right breakpoints of the SV and assess whether each read supported the SV. The two-letter code indicates whether the start or end of the read’s alignment overlaps a breakpoint
-
 * LE (Left breakpoint, End of read alignment)  
 * LS (Left breakpoint, Start of read alignment)  
 * RE (Right breakpoint, End of read alignment)  
 * RS (Right breakpoint, Start of read alignment)
 
 ### Inversions
-
-A read is valid when the start and end of the alignments have opposite orientations at the left and right SV breakpoints. 
-
-* BOTH: Alignments that span the entire inversion must intersect both the left and right breakpoints with the start and end of the alignment to be valid.   
-* LEFT/RIGHT: The end or start of alignments support the breakpoints in the reference
-
+A read is **valid** when the start and end of the alignments have opposite orientations at the left and right SV breakpoints. 
+* BOTH: Alignments that span the entire inversion must intersect both the left and right breakpoints with the start and end of an alignment to be valid.   
+* LEFT/RIGHT: Reads that span one SV breakpoint in the sample must have the start or end of alignments support the left and right SV breakpoints in the reference.
 ![](/images/inversion_passed.svg) 
-Additional FLAGS are implemented for edge cases 
 
+Additional FLAGS are implemented for edge cases 
 * MULTI: multiple alignments intersect an SV breakpoints  
 * EXTENSION: an alignment extended to or beyond the left or right breakpoint 
-
-![](images/inversion_flags.svg) 
-
+![](/images/inversion_flags.svg) 
 A read is rejected when it does not pass quality checks and/or one or both of the breakpoints are not supported.
 ![](/images/inversion_rejected.svg) 
 
 ### Duplications
-
-A read is valid when the intersection between the start of an alignment with the left breakpoint (LS) and the end of another alignment with the right breakpoint (RE) can be paired. A valid pairing requires consecutive LS and RE alignments in the same orientation.  
+A read is **valid** when the intersection between the start of an alignment with the left breakpoint (LS) and the end of another alignment with the right breakpoint (RE) can be paired. A valid pairing requires consecutive LS and RE alignments in the same orientation.  
 ![](/images/duplication_pair.svg) 
 The read order and number of alignments is assessed to classify alignments as tandem (consecutive) or interspersed (gaps) and duplication or repeat. 
-
 * TANDEM\_DUPLICATION  
 * TANDEM\_REPEAT  
 * INTERSPERSED\_DUPLICATION  
 * INTERSPERSED\_REPEAT
 
 If any alignment intersects are unpaired, these flags are appended with the maximal number of pairs that should exist. 
-
 ![](/images/duplication_passed.svg) 
 
 ### Extended Details
@@ -81,8 +71,6 @@ For **RepeatMasker**, entries are determined by prioritising those with maximal 
 ![](/images/RM_workflow.svg) 
 
 The ‘Repetitive’ classification is given to SVs where the intersecting repeat elements cover a threshold (e.g. 0.5). For SVs containing both tandem repeats and mobile elements, the final classification is determined by the type with the highest total coverage. 
-
-### 
 
 ### Annotations
 

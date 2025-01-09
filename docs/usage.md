@@ -19,7 +19,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-`cd svtoolkit`
+`cd SVtoolkit`
 
 ## SVChecker
 
@@ -96,7 +96,7 @@ This file includes the depth of coverage at the breakpoints (inversions) or an a
 
 
 **Discordant Reads (_discordant.tab)**  
-This file lists the number of supporting reads by the caller and checker with the ids of discordant reads
+This file lists the number of supporting reads by the caller and checker with the ids of discordant reads.
 
 | svID | # Caller Support | # Checker Support | # Discordant  | Discordant RNAMES |
 | :---- | :---- | :---- | :---- | :---- |
@@ -104,7 +104,7 @@ This file lists the number of supporting reads by the caller and checker with th
 | INV.C8EBS1 | 8 | 8 | 0 | NA |
 
 **Supporting Reads Details (supporting_read_details.tab)**  
-This file includes the flag of every read for each SV 
+This file includes the flag of every read for each SV.
 
 | svID | readID | flag |
 | :---- | :---- | :---- |
