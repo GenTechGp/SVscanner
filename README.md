@@ -21,11 +21,10 @@
 
 #### Python Requirements 
 * Python 3.8+ required  
-* pysam==0.15.4
-* pysamstats==1.1.2   
-* numpy==1.24.4 
-* pandas==2.0.3
-* tqdm==4.66.4
+* pysam
+* numpy 
+* pandas
+* tqdm
 
 
 #### SVClassifier

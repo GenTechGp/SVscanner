@@ -8,9 +8,8 @@
 #$ -N TH126TU_checker
 #$ -V
 
-
-################################################################################
-
+################################# Requirements #################################
+#--------------------------------- BRENNER ------------------------------------#
 # Modules
 export PATH=/share/ClusterShare/software/contrib/hirsam/Clair3:$PATH
 export PYTHONPATH=/share/ClusterShare/software/contrib/hirsam/miniconda3/bin:$PYTHONPATH
@@ -19,18 +18,42 @@ module load centos7.8/phuluu/bedtools/2.29.2
 # Path to virtual environment
 source /directflow/KCCGGenometechTemp/projects/jasyip/checkerEnv/bin/activate
 
-sample=sampleName
+#--------------------------------- NCI ---------------------------------------#
+# # Modules
+# # BEDTOOLS, 
+# module load bedtools/2.31.0 
+# module load bcftools/1.12 
+# # Path to virtual environment
+# source /g/data/kr68/jasmin/svtools
+
+################################################################################
+#--------------------------------- BRENNER ------------------------------------#
+sample=HG002
 caller=Sniffles # Caller options ['Sniffles', 'CuteSV', 'SVIM']
 buffer=20       # Buffer surrounding each SV breakpoint for intersection 
 
 # Directories 
-checkerDir=/directflow/KCCGGenometechTemp/projects/jasyip/SVchecker
+checkerDir=/directflow/KCCGGenometechTemp/projects/jasyip/SVtoolkit/SVchecker
 outputDir=/directflow/KCCGGenometechTemp/projects/jasyip/analysis
 
 # Input Files
 refFASTA=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/References/hg38/hg38noAlt.fa
 readsBAM=/directflow/KCCGGenometechTemp/projects/jasyip/HG002_prac/minimap/HG002.sorted.bam
 svVCF=/directflow/KCCGGenometechTemp/projects/jasyip/HG002_prac/sniffles/HG002noMin.sorted.vcf.gz
+
+# #------------------------------------ NCI -------------------------------------#
+# sample=ANSH56_RF
+# caller=Sniffles # Caller options ['Sniffles', 'CuteSV', 'SVIM']
+# buffer=20       # Buffer surrounding each SV breakpoint for intersection 
+
+# # Directories 
+# checkerDir=/g/data/kr68/jasmin/SVtoolkit/SVchecker 
+# outputDir=/g/data/kr68/jasmin/sampleResults
+
+# # Input Files
+# refFASTA=/g/data/kr68/jasmin/references/hg38noAlt.fa
+# readsBAM=/g/data/kr68/jasmin/samples/ANSH56_RF/ANSH56_RF.hg38.sorted.happlotagged.bam
+# svVCF=/g/data/kr68/jasmin/samples/ANSH56_RF/ANSH56_RF.hg38.SVs.phased.vcf.gz
 
 ################################################################################
 
@@ -184,7 +207,7 @@ else
     }' ${dupBED} > ${dupBuffer}
     
     ## 3. Get the Depth Info
-    python3 ${DUP_DEPTH} -bam $readsBAM -bed $dupBED -ref $refFASTA -o $dupDepth
+    python3 ${DUP_DEPTH} -bam $readsBAM -bed $dupBED -o $dupDepth
 
     ## INTERSECT STRUCTURAL VARIANT WITH READS (BED)
     bedtools intersect -wa -wb -a $dupBuffer -b $readsBED | \
@@ -226,7 +249,7 @@ else
     }' ${invBED} > ${invBuffer}
 
     ## 3. Get the Depth Info
-    python3 ${INV_DEPTH} -bam $readsBAM -bed $invBED -ref $refFASTA -o $invDepth
+    python3 ${INV_DEPTH} -bam $readsBAM -bed $invBED -o $invDepth
 
     bedtools intersect -wa -wb -a $invBuffer -b $readsBED | \
     awk 'OFS="\t" {print $1, $2, $3, $4, $6, $7, $8, $9, $10, $11, $12, $13, $14}' > $invOverlaps  
