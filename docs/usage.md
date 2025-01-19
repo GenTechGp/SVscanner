@@ -19,8 +19,32 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-`cd SVtoolkit`
-
+#### RepeatMasker 
+1. Download Sequence Search Engine (e.g. HMMER)
+```
+wget http://eddylab.org/software/hmmer/hmmer.tar.gz 
+tar -xvzf hmmer.tar.gz
+cd hmmer-<version>
+./configure
+make
+make check
+make install
+cd easel; make install
+```
+2. Download RepeatMasker
+```
+wget https://www.repeatmasker.org/RepeatMasker-<version>.tar.gz
+tar -xvzf RepeatMasker-<version>.tar.gz
+cd RepeatMasker
+./configure
+# Use path to TRF
+```
+3. Download DFAM 
+```
+https://www.dfam.org/releases/Dfam_3.8/families/FamDB/dfam38-1_full.0.h5.gz
+gunzip dfam38_full.0.h5.gz
+mv dfam38_full.0.h5.gz RepeatMasker/Libraries/famdb
+```
 ## SVChecker
 
 ### Usage
@@ -62,7 +86,7 @@ svVCF=.../HG002.sorted.vcf.gz
 
 **3. Run script**
 ```
-qsub checker.sh # Sungrid
+qsub checker.sh 
 ```
 
 ### Inputs & Outputs (Extended)
@@ -154,7 +178,7 @@ export PATH=.../hmmer-3.4/src:$PATH
 
 **3. Run script**  
 ```
-qsub checker.sh # Sungrid
+qsub checker.sh 
 ```
 
 ### Inputs & Outputs (Extended)

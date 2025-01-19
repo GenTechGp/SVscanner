@@ -2,3 +2,4 @@ pysam
 numpy
 pandas
 tqdm
+h5py

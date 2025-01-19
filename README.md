@@ -21,18 +21,21 @@
 
 #### Python Requirements 
 * Python 3.8+ required  
-* pysam
-* numpy 
-* pandas
-* tqdm
+* `pysam`
+* `numpy `
+* `pandas`
+* `tqdm`
+* `h5py` (for RepeatMasker)
 
+#### Other
+* `parallel` installed on system
 
 #### SVClassifier
 
-Executable versions of annotation software:
-
+Executable versions of annotation software: 
 * Tandem Repeat Finder (https://github.com/Benson-Genomics-Lab/TRF/releases/tag/v4.09.1)  
-* RepeatMasker (https://www.repeatmasker.org/RepeatMasker/)
+* RepeatMasker (https://www.repeatmasker.org/RepeatMasker/) or see [Usage.md](https://github.com/KCCGGenomeTechLab/SVtoolkit/blob/main/docs/usage.md#RepeatMasker)
+
 
 ### Main Input files 
 
