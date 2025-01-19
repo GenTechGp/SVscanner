@@ -8,17 +8,51 @@
 #$ -N classifierHG002
 #$ -V
 
-################################################################################
+##################################### BRENNER ##################################
 
-# Modules 
-export PATH=/share/ClusterShare/software/contrib/hirsam/Clair3:$PATH
-export PYTHONPATH=/share/ClusterShare/software/contrib/hirsam/miniconda3/bin:$PYTHONPATH
-export PATH=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/software:$PATH
-module load centos7.8/phuluu/bedtools/2.29.2
-# Path to virtual environemnt 
-source /directflow/KCCGGenometechTemp/projects/jasyip/checkerEnv/bin/activate
+# # Modules 
+# export PATH=/share/ClusterShare/software/contrib/hirsam/Clair3:$PATH
+# export PYTHONPATH=/share/ClusterShare/software/contrib/hirsam/miniconda3/bin:$PYTHONPATH
+# export PATH=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/software:$PATH
+# module load centos7.8/phuluu/bedtools/2.29.2
+# # Path to virtual environemnt 
+# source /directflow/KCCGGenometechTemp/projects/jasyip/checkerEnv/bin/activate
 
-sample=sampleName
+# # #----------------------------------------------------------------------------#
+# sample=sampleName
+# numSplit=100        # Number of sequences per file 
+# minIntersect=0.05
+# minCoverage=0.5
+# interval=0.05
+# diagramLength=100
+
+# # Directories
+# classifierDir=/directflow/KCCGGenometechTemp/projects/jasyip/SVclassifier
+# outputDir=/directflow/KCCGGenometechTemp/projects/jasyip/performance
+# outputSampleDir=${outputDir}/${sample}
+# splitDir=${outputSampleDir}/${sample}_${numSplit}
+
+# # Input Files
+# refFASTA=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/References/hg38/hg38noAlt.fa
+# svVCF=/directflow/KCCGGenometechTemp/projects/jasyip/analysis/ANSH56_RF/KISKUM_ataxia.ANSH56_RF.hg38.SVs.phased.vcf.gz
+
+# # Repeat Masker and TRF programs
+# TRF_BINARY=/directflow/KCCGGenometechTemp/projects/iradev/tandem_repeats/scripts/trf409.linux64
+# repeatMasker=/directflow/KCCGGenometechTemp/projects/jasyip/software/RepeatMasker/RepeatMasker
+# export PATH=/directflow/KCCGGenometechTemp/projects/jasyip/software/hmmer-3.4/src:$PATH
+
+##################################### NCI ######################################
+
+# Modules
+module load bcftools/1.12 
+module load parallel 
+module load RepeatMasker/4.1.7-p1
+# Path to virtual environment
+source /g/data/kr68/jasmin/svtools/bin/activate
+
+#------------------------------------------------------------------------------#
+
+sample=ANSH56_RF
 numSplit=100        # Number of sequences per file 
 minIntersect=0.05
 minCoverage=0.5
@@ -26,19 +60,18 @@ interval=0.05
 diagramLength=100
 
 # Directories
-classifierDir=/directflow/KCCGGenometechTemp/projects/jasyip/SVclassifier
-outputDir=/directflow/KCCGGenometechTemp/projects/jasyip/performance
+classifierDir=/g/data/kr68/jasmin/SVtoolkit/SVclassifier
+outputDir=/g/data/kr68/jasmin/sampleResults
 outputSampleDir=${outputDir}/${sample}
 splitDir=${outputSampleDir}/${sample}_${numSplit}
 
 # Input Files
-refFASTA=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/References/hg38/hg38noAlt.fa
-svVCF=/directflow/KCCGGenometechTemp/projects/jasyip/analysis/ANSH56_RF/KISKUM_ataxia.ANSH56_RF.hg38.SVs.phased.vcf.gz
+refFASTA=/g/data/kr68/jasmin/references/hg38noAlt.fa
+svVCF=/g/data/kr68/jasmin/samples/ANSH56_RF/ANSH56_RF.hg38.SVs.phased.vcf.gz
 
 # Repeat Masker and TRF programs
-TRF_BINARY=/directflow/KCCGGenometechTemp/projects/iradev/tandem_repeats/scripts/trf409.linux64
-repeatMasker=/directflow/KCCGGenometechTemp/projects/jasyip/software/RepeatMasker/RepeatMasker
-export PATH=/directflow/KCCGGenometechTemp/projects/jasyip/software/hmmer-3.4/src:$PATH
+TRF_BINARY=/g/data/kr68/jasmin/software/trf409.linux64
+# export PATH=/g/data/kr68/jasmin/software/hmmer-3.4/src:$PATH
 
 ################################################################################
 
@@ -48,7 +81,8 @@ export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
 # Setup allocation for RepeatMasker parallelisation
-NTHREADS=$NSLOTS    # Total number of threads
+# NTHREADS=$NSLOTS   # Total number of threads
+NTHREADS=$(nproc --all)
 MAX_JOBS=8          # Max number of RepeatMasker process to run in parallel 
 THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
@@ -101,7 +135,8 @@ echo "3. Running Tandem Repeat Finder"
 find "$splitDir" -name "${sample}.*.fa" | parallel -j $NTHREADS --bar "${TRF_BINARY} {} 2 7 7 80 10 50 500 -h -ngs > {.}.dat"
 echo ..Done
 echo "3. Running RepeatMasker"
-find "$splitDir" -name "${sample}.*.fa" | parallel -j $MAX_JOBS "${repeatMasker} {} -pa $THREADS_PER_JOB -html -gff -dir ${splitDir}"
+find "$splitDir" -name "${sample}.*.fa" | parallel -j "$MAX_JOBS" "RepeatMasker {} -pa $THREADS_PER_JOB -html -gff -dir '$splitDir'"
+
 wait 
 echo "..Done"
 

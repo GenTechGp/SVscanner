@@ -6,7 +6,7 @@ import pysam
 import math
 import os
 from helpers.classifierHelpers import read_sv_info, read_trf, read_rm
-
+from fuc import pyvcf
 ################################################################################
 #                         ERROR CHECKS AND PREPROCESSING                       #
 ################################################################################
@@ -285,6 +285,48 @@ def create_vcf_header(sv_vcf):
     return header
 
 
+def get_final_classification(trf_class, rm_class, total_trf_coverage, total_rm_coverage, repeat_data, rm_data):
+    if (trf_class not in ['NA', 'NON_REPETITIVE']) and (rm_class not in ['NA', 'NON_REPETITIVE']):
+        # TRF has higher coverage
+        if total_trf_coverage > total_rm_coverage:
+            trf_classes = trf_class.split(',')
+            # Determine main classification if SV is made up of different repeat types
+            if len(trf_classes) > 1 and not all(x == trf_classes[0] for x in trf_classes):
+                coverages = repeat_data['TRF_SV_COVERAGE'].split(',')
+                classification, fraction = highest_fraction(trf_classes, coverages)
+            else:
+                classification = trf_classes[0]
+        # Mobile element from RepeatMasker has higher coverage
+        else:
+            rm_classes = rm_class.split(',')
+            if len(rm_classes) > 1 and not all(x == rm_classes[0] for x in rm_classes):
+                coverages = rm_data['RM_SV_COVERAGE'].split(',')
+                classification, fraction = highest_fraction(rm_classes, coverages)
+            else: 
+                classification = rm_classes[0]
+    # TRF (no repeatMasker)
+    elif (trf_class not in ['NA', 'NON_REPETITIVE']) and (rm_class in ['NA', 'NON_REPETITIVE']):
+        trf_classes = trf_class.split(',')
+        # Determine main classification if SV is made up of different repeat types
+        if len(trf_classes) > 1 and not all(x == trf_classes[0] for x in trf_classes):
+            coverages = repeat_data['TRF_SV_COVERAGE'].split(',')
+            classification, fraction = highest_fraction(trf_classes, coverages)
+        else:
+            classification = trf_classes[0]
+    # RM (no TRF intersect)
+    elif (trf_class in ['NA', 'NON_REPETITIVE']) and (rm_class not in ['NA', 'NON_REPETITIVE']):
+        rm_classes = rm_class.split(',')
+        if len(rm_classes) > 1 and not all(x == rm_classes[0] for x in rm_classes):
+            coverages = rm_data['RM_SV_COVERAGE'].split(',')
+            classification, fraction = highest_fraction(rm_classes, coverages)
+        else: 
+            classification = rm_classes[0]
+    # None
+    else: 
+        classification = 'NON_REPETITIVE'
+    
+    return classification
+
 def create_vcf_record(vcf_file, sv_vcf, sv_info, sv_id, min_repetitive):
     """
     Create and write a new VCF record, including annotations from RepeatMasker and TRF data.
@@ -344,44 +386,7 @@ def create_vcf_record(vcf_file, sv_vcf, sv_info, sv_id, min_repetitive):
     trf_class = repeat_data['TRF_CLASSIFICATION']
     rm_class = rm_data['RM_CLASSIFICATION']
 
-    if (trf_class not in ['NA', 'NON_REPETITIVE']) and (rm_class not in ['NA', 'NON_REPETITIVE']):
-        # TRF has higher coverage
-        if total_trf_coverage > total_rm_coverage:
-            trf_classes = trf_class.split(',')
-            # Determine main classification if SV is made up of different repeat types
-            if len(trf_classes) > 1 and not all(x == trf_classes[0] for x in trf_classes):
-                coverages = repeat_data['TRF_SV_COVERAGE'].split(',')
-                classification, fraction = highest_fraction(trf_classes, coverages)
-            else:
-                classification = trf_classes[0]
-        # Mobile element from RepeatMasker has higher coverage
-        else:
-            rm_classes = rm_class.split(',')
-            if len(rm_classes) > 1 and not all(x == rm_classes[0] for x in rm_classes):
-                coverages = rm_data['RM_SV_COVERAGE'].split(',')
-                classification, fraction = highest_fraction(rm_classes, coverages)
-            else: 
-                classification = rm_classes[0]
-    # TRF (no repeatMasker)
-    elif (trf_class not in ['NA', 'NON_REPETITIVE']) and (rm_class in ['NA', 'NON_REPETITIVE']):
-        trf_classes = trf_class.split(',')
-        # Determine main classification if SV is made up of different repeat types
-        if len(trf_classes) > 1 and not all(x == trf_classes[0] for x in trf_classes):
-            coverages = repeat_data['TRF_SV_COVERAGE'].split(',')
-            classification, fraction = highest_fraction(trf_classes, coverages)
-        else:
-            classification = trf_classes[0]
-    # RM (no TRF intersect)
-    elif (trf_class in ['NA', 'NON_REPETITIVE']) and (rm_class not in ['NA', 'NON_REPETITIVE']):
-        rm_classes = rm_class.split(',')
-        if len(rm_classes) > 1 and not all(x == rm_classes[0] for x in rm_classes):
-            coverages = rm_data['RM_SV_COVERAGE'].split(',')
-            classification, fraction = highest_fraction(rm_classes, coverages)
-        else: 
-            classification = rm_classes[0]
-    # None
-    else: 
-        classification = 'NON_REPETITIVE'
+    classification = get_final_classification(trf_class, rm_class, total_trf_coverage, total_rm_coverage, repeat_data, rm_data)
     
     info.update({'FINAL_CLASSIFICATION' : classification})
     
@@ -391,30 +396,15 @@ def create_vcf_record(vcf_file, sv_vcf, sv_info, sv_id, min_repetitive):
     for record in records:
         # Check SnifflesID matches
         if callerID == record.id:
-            allele_tuple = (record.ref, record.alts[0])
-
-            new_record = vcf_file.new_record(
-                contig=record.chrom,
-                start=record.pos,
-                stop=record.stop,
-                id=sv_id,
-                alleles=allele_tuple,
-                qual=record.qual,
-                filter=record.filter,
-                info=record.info,
-            )
+            record.id=sv_id
             # Update info fields with new annotations
             for annotation in info:
-                new_record.info[annotation] = info[annotation]
-            # Add sample data (e.g., genotypes) from original record
-            for sample in record.samples:
-                for sample_format in record.format:
-                    # Access the value for the current sample and format
-                    new_record.samples[sample][sample_format] = record.samples[sample][sample_format]
+                record.info[annotation] = info[annotation]
             # Write the updated record to the VCF file
-            vcf_file.write(new_record)
+            vcf_file.write(record)
 
     return info['FINAL_CLASSIFICATION'], info['RM_TRANSPOSITION'] 
+
 
 #------------------------------------ TSV -------------------------------------#
 def create_rm_tsv_record(sv_info, sv_id, tsv_out):
@@ -499,7 +489,8 @@ def output_annotations(sv_info, sv_vcf_file, vcf_output, tsv_rm_output, tsv_trf_
     sv_vcf = pysam.VariantFile(sv_vcf_file)
     header = create_vcf_header(sv_vcf)
     vcf_out =  pysam.VariantFile(vcf_output, 'w', header=header)
-    
+
+
     sv_count = 0
     repeat_count = {'HOMO' : 0, 'STR' : 0, 'TR' : 0, 'COMPLETE' : 0, 'FRAGMENT' : 0, 'NON_REPETITIVE' : 0}
     count_by_sv = {
