@@ -58,7 +58,6 @@ def filter_reads(group, base_split, max_split, mapq):
     Filters out any reads that exceed the max number of splits or reads with single low quality alignment less
     input
     '''
-    print(group)
     isSupport = True
     flag = ''
     max_read = int(group['readEnd'].max())
@@ -345,15 +344,15 @@ if __name__ == "__main__":
     
     # Caller default filtering parameters
     parser.add_argument("-mapq",
-        help="Alignments with mapping quality lower than this value will be ignored", default=25)
+        help="Alignments with mapping quality lower than this value will be ignored", default=25, type=float)
         # CuteSV: Ignores reads that only report alignments with not longer than bp. - 20
     parser.add_argument("-min-alignment-length",
-        help="Reads with alignments shorter than this length (in bp) will be ignored", default=1000)
+        help="Reads with alignments shorter than this length (in bp) will be ignored", default=1000, type=float)
         # CuteSV: Ignores reads that only report alignments with not longer than bp - 500
     parser.add_argument("-max-splits-kb",
-        help="Additional number of splits per kilobase read sequence allowed before reads are ignored", default=0.1)
+        help="Additional number of splits per kilobase read sequence allowed before reads are ignored", default=0.1, type=float)
     parser.add_argument("-max-splits-base",
-        help="Base number of splits allowed before reads ignored", default=3)
+        help="Base number of splits allowed before reads ignored", default=3, type=float)
 
     args = parser.parse_args()
     

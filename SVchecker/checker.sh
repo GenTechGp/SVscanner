@@ -1,59 +1,69 @@
 #!/bin/bash
-#$ -S /bin/bash
-#$ -terse
-#$ -cwd
-#$ -l mem_requested=8G 
-#$ -l tmp_requested=60G 
-#$ -pe smp 16
-#$ -N TH126TU_checker
-#$ -V
+#PBS -P kr68
+#PBS -l storage=gdata/kr68+gdata/if89
+#PBS -N checker_HG002
+#PBS -q normal
+#PBS -l ncpus=8
+#PBS -l mem=16gb
+#PBS -l walltime=1:00:00                      
+#PBS -j oe
 
-################################# Requirements #################################
-#--------------------------------- BRENNER ------------------------------------#
-# Modules
-export PATH=/share/ClusterShare/software/contrib/hirsam/Clair3:$PATH
-export PYTHONPATH=/share/ClusterShare/software/contrib/hirsam/miniconda3/bin:$PYTHONPATH
-export PATH=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/software:$PATH
-module load centos7.8/phuluu/bedtools/2.29.2
-# Path to virtual environment
-source /directflow/KCCGGenometechTemp/projects/jasyip/checkerEnv/bin/activate
+# #################################### BRENNER ###################################
 
-#--------------------------------- NCI ---------------------------------------#
+# $ -S /bin/bash
+# $ -terse
+# $ -cwd
+# $ -l mem_requested=8G 
+# $ -l tmp_requested=60G 
+# $ -pe smp 16
+# $ -N TH126TU_checker
+# $ -V
+
 # # Modules
-# # BEDTOOLS, 
-# module load bedtools/2.31.0 
-# module load bcftools/1.12 
+# export PATH=/share/ClusterShare/software/contrib/hirsam/Clair3:$PATH
+# export PYTHONPATH=/share/ClusterShare/software/contrib/hirsam/miniconda3/bin:$PYTHONPATH
+# export PATH=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/software:$PATH
+# module load centos7.8/phuluu/bedtools/2.29.2
 # # Path to virtual environment
-# source /g/data/kr68/jasmin/svtools
+# source /directflow/KCCGGenometechTemp/projects/jasyip/checkerEnv/bin/activate
 
-################################################################################
-#--------------------------------- BRENNER ------------------------------------#
+# #------------------------------------------------------------------------------#
+# sample=HG002
+# caller=Sniffles # Caller options ['Sniffles', 'CuteSV', 'SVIM']
+# buffer=20       # Buffer surrounding each SV breakpoint for intersection 
+
+# # Directories 
+# checkerDir=/directflow/KCCGGenometechTemp/projects/jasyip/SVtoolkit/SVchecker
+# outputDir=/directflow/KCCGGenometechTemp/projects/jasyip/analysis
+
+# # Input Files
+# refFASTA=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/References/hg38/hg38noAlt.fa
+# readsBAM=/directflow/KCCGGenometechTemp/projects/jasyip/HG002_prac/minimap/HG002.sorted.bam
+# svVCF=/directflow/KCCGGenometechTemp/projects/jasyip/HG002_prac/sniffles/HG002noMin.sorted.vcf.gz
+
+##################################### NCI ######################################
+cd $PBS_O_WORKDIR      
+
+# Modules
+# BEDTOOLS, 
+module load bedtools/2.31.0 
+module load bcftools/1.12 
+# Path to virtual environment
+source svtools/bin/activate
+
+# #----------------------------------------------------------------------------#
 sample=HG002
 caller=Sniffles # Caller options ['Sniffles', 'CuteSV', 'SVIM']
 buffer=20       # Buffer surrounding each SV breakpoint for intersection 
 
 # Directories 
-checkerDir=/directflow/KCCGGenometechTemp/projects/jasyip/SVtoolkit/SVchecker
-outputDir=/directflow/KCCGGenometechTemp/projects/jasyip/analysis
+checkerDir=/g/data/kr68/jasmin/SVtoolkit/SVchecker 
+outputDir=/g/data/kr68/jasmin/sampleResults
 
 # Input Files
-refFASTA=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/References/hg38/hg38noAlt.fa
-readsBAM=/directflow/KCCGGenometechTemp/projects/jasyip/HG002_prac/minimap/HG002.sorted.bam
-svVCF=/directflow/KCCGGenometechTemp/projects/jasyip/HG002_prac/sniffles/HG002noMin.sorted.vcf.gz
-
-# #------------------------------------ NCI -------------------------------------#
-# sample=ANSH56_RF
-# caller=Sniffles # Caller options ['Sniffles', 'CuteSV', 'SVIM']
-# buffer=20       # Buffer surrounding each SV breakpoint for intersection 
-
-# # Directories 
-# checkerDir=/g/data/kr68/jasmin/SVtoolkit/SVchecker 
-# outputDir=/g/data/kr68/jasmin/sampleResults
-
-# # Input Files
-# refFASTA=/g/data/kr68/jasmin/references/hg38noAlt.fa
-# readsBAM=/g/data/kr68/jasmin/samples/ANSH56_RF/ANSH56_RF.hg38.sorted.happlotagged.bam
-# svVCF=/g/data/kr68/jasmin/samples/ANSH56_RF/ANSH56_RF.hg38.SVs.phased.vcf.gz
+refFASTA=/g/data/kr68/jasmin/references/hg38noAlt.fa
+readsBAM=/g/data/kr68/jasmin/samples/HG002/HG002.sorted.bam
+svVCF=/g/data/kr68/jasmin/samples/HG002/HG002.sorted.vcf.gz
 
 ################################################################################
 
@@ -151,41 +161,41 @@ fi
 
 ########################## Alignment Preprocessing #############################
 # 1. Convert bam using external program with the FLAGS and alignment info
-python $BAM2BED -i $readsBAM > $readsBED
+# python $BAM2BED -i $readsBAM > $readsBED
 # chr   start   end    readID   MAPQ    flag    mismatch primary_tag    SA_tag
 
 ####################### Structural Variant Preprocessing #######################
 
-## 1. Get breakpoints of Sniffles (VCF) output for duplications in single bed format 
-# Extracts location, id, sv and supporting read information and outputs to files 
-process_svtype() {
-    local svType="$1"       # SVTYPE (e.g., DUP or INV)
-    local svBED="$2"        # Output BED file
-    local svSupport="$3"    # Output support file
+# ## 2. Get breakpoints of Sniffles (VCF) output for duplications in single bed format 
+# # Extracts location, id, sv and supporting read information and outputs to files 
+# process_svtype() {
+#     local svType="$1"       # SVTYPE (e.g., DUP or INV)
+#     local svBED="$2"        # Output BED file
+#     local svSupport="$3"    # Output support file
 
-    # Process the VCF with bcftools and awk
-    bcftools query -f "${svQuery}" "${svVCF}" | \
-    awk -v svtype="${svType}" -v svBED="${svBED}" -v svSupport="${svSupport}" 'OFS="\t" {
-        if ($1 ~ /^chr([1-9]$|1[0-9]$|2[0-2]$|X$|Y$)/ && $5 == svtype) {
-            # Count the number of RNAMES by splitting them on commas
-            # NOTE: Count instead of using INFO:SUPPROT/RE as the flag differs between callers 
-            numSupport = split($6, rnames, ",")  
+#     # Process the VCF with bcftools and awk
+#     bcftools query -f "${svQuery}" "${svVCF}" | \
+#     awk -v svtype="${svType}" -v svBED="${svBED}" -v svSupport="${svSupport}" 'OFS="\t" {
+#         if ($1 ~ /^chr([1-9]$|1[0-9]$|2[0-2]$|X$|Y$)/ && $5 == svtype) {
+#             # Count the number of RNAMES by splitting them on commas
+#             # NOTE: Count instead of using INFO:SUPPROT/RE as the flag differs between callers 
+#             numSupport = split($6, rnames, ",")  
 
-            # If $7 (FILTER-SVIM) is missing, output "NA" instead
-            filterField = ($7 == "" ? "NA" : $7)
+#             # If $7 (FILTER-SVIM) is missing, output "NA" instead
+#             filterField = ($7 == "" ? "NA" : $7)
 
-            # CHR,POS,END,ID - remove SVTYPE column ($5)
-            print $1, $2, $3, $4 > svBED
+#             # CHR,POS,END,ID - remove SVTYPE column ($5)
+#             print $1, $2, $3, $4 > svBED
 
-            # ID, SUPPORT (count of RNAMES), RNAMES, FILTER
-            print $4, numSupport, $6, $7 > svSupport
-        }
-    }'
-}
+#             # ID, SUPPORT (count of RNAMES), RNAMES, FILTER
+#             print $4, numSupport, $6, $7 > svSupport
+#         }
+#     }'
+# }
 
-# Process different SVTYPEs
-process_svtype "DUP" "$dupBED" "$dupSupport"
-process_svtype "INV" "$invBED" "$invSupport"
+# # Process different SVTYPEs
+# process_svtype "DUP" "$dupBED" "$dupSupport"
+# process_svtype "INV" "$invBED" "$invSupport"
 
 ################################# Duplications #################################
 if [[ ! -s ${dupBED} || ! -s ${dupSupport} ]]; then
@@ -207,7 +217,7 @@ else
     }' ${dupBED} > ${dupBuffer}
     
     ## 3. Get the Depth Info
-    python3 ${DUP_DEPTH} -bam $readsBAM -bed $dupBED -o $dupDepth
+    python3 ${DUP_DEPTH} -bam $readsBAM -bed $dupBED -ref $refFASTA -o $dupDepth 
 
     ## INTERSECT STRUCTURAL VARIANT WITH READS (BED)
     bedtools intersect -wa -wb -a $dupBuffer -b $readsBED | \
@@ -216,13 +226,9 @@ else
     # ORDER SUPPLEMENTARY ALIGNMENTS
     python3 $ORDER -i $dupOverlaps -o $dupOrdered
 
-    # RUN READ CHECKER based on caller default 
-    if [ "$caller" = "Sniffles" ]; then 
-        python3 $DUPLICATION -i $dupOrdered -d $dupDepth -o $dupSupportingReads -r $dupSupportingReadsDetails -mapq 25 -min-alignment-length 1000 -max-splits-kb 0.1 -max-splits-base 3 
-    elif [ "$caller" = "cuteSV" ]; then
-        python3 $DUPLICATION -i $dupOrdered -d $dupDepth -o $dupSupportingReads -r $dupSupportingReadsDetails -mapq 20 -min-alignment-length 500 -max-splits-kb 0 -max-splits-base 7 
-    else
-        python3 $DUPLICATION -i $dupOrdered -d $dupDepth -o $dupSupportingReads -r $dupSupportingReadsDetails
+    # RUN READ CHECKER 
+    python3 $DUPLICATION -i $dupOrdered -d $dupDepth -o $dupSupportingReads -r $dupSupportingReadsDetails -mapq $mapq -min-alignment-length $min_alignment_length -max-splits-kb $max_splits_kb -max-splits-base $max_splits_base 
+
 
     python3 ${DISCORDANT} -c $dupSupportingReads -i $dupSupport -o $dupDiscordant
 
@@ -263,7 +269,7 @@ else
 
     ### INVERSION COMBINE
     columns="ID\tchr\tstart\tend\t\
-    startDepth\tendDepth\t\CALLER_SUPPORT\t\
+    startDepth\tendDepth\tCALLER_SUPPORT\t\
     TOTAL_PASSED\tEXTENSION\tMULTI\t\
     TOTAL_REJECTED\tLEFT_BP\tRIGHT_BP\tBOTH\tORIENTATION\tFILTER" 
     echo -e "$columns" > $invChecked                                                                          

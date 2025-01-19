@@ -37,7 +37,7 @@ def calculate_read_depth(inversionDepth, bam_file, inversions):
     mybam = pysam.AlignmentFile(bam_file, "rb")
     
     for chrom, start, end, invID in tqdm(inversions, desc="Calculating read depth for inversions"):
-        # Update the inversionDepth dictionary
+        # Version 1 
         inversionDepth[invID]['startDepth'] = calculate_region_depth(mybam, chrom, start-1, start)
         inversionDepth[invID]['endDepth'] = calculate_region_depth(mybam, chrom, end-1, end)
 
@@ -47,10 +47,8 @@ def calculate_read_depth(inversionDepth, bam_file, inversions):
         # end_depth_array = mybam.count_coverage(chrom, end-1, end, quality_threshold = 0)
         # start_depth = sum(arr[0] for arr in start_depth_array)
         # end_depth = sum(arr[0] for arr in end_depth_array)
-
-        # print(f'{start_depth}\n{end_depth}')
-        inversionDepth[invID]['startDepth'] = start_depth
-        inversionDepth[invID]['endDepth'] =end_depth
+        # inversionDepth[invID]['startDepth'] = start_depth
+        # inversionDepth[invID]['endDepth'] = end_depth
 
     mybam.close()
     return inversionDepth
