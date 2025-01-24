@@ -3,7 +3,8 @@
 1. Download repo
 
 ```
-git clone git@github.com:KCCGGenomeTechLab/SVtoolkit.git
+# git clone git@github.com:KCCGGenomeTechLab/SVtoolkit.git
+git clone https://github.com/KCCGGenomeTechLab/SVtoolkit.git
 ```
 
 2. Set up Virtual Environment
