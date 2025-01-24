@@ -85,7 +85,12 @@ The ‘Repetitive’ classification is given to SVs where the intersecting repea
 | TRF\_CLASSIFICATION | Classification(s) of tandem repeat class covering the SV \[HOMO,STR,TR or NON-REPETITIVE\] |
 | TRF\_SV\_COVERAGE | Fraction of the SV covered by the tandem repeat |
 | TRF\_PERIOD\_SIZE | Period size of the repeat(s) |
-| TRF\_COPY\_NUMBER | Total copy number of the repeat(s) |
+| TRF\_COPY\_NUMBER | Copy number of the repeat(s) |
 | TRF\_TOTAL\_SV\_COVERAGE | Total coverage of SV covered by tandem repeats |
 | CONSENSUS\_REPEAT | Motif of repeat(s) found by Tandem Repeat Finder |
 | FINAL\_CLASSIFICATION | Classification of SV as repetitive element based on TRF and RepeatMasker results |
+| DISEASE_GENE* | STR disease associated with gene (annotated by STRchive) |
+| STRCHIVE_MOTIF* | Consensus Repeat is a version (rotation/complement) of pathogenic motif(s) annotated in STRchive |
+| PATHOGENIC_MIN* | Minimum pathogenic number annotated in STRchive |
+
+*Added as INFO attribute only when SV intersects with position of gene

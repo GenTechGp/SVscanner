@@ -1,6 +1,5 @@
 import csv
 
-
 def read_sv_info(sv_file):
     sv_info = {}
     with open(sv_file, 'r') as file:
@@ -72,6 +71,9 @@ def get_TRF_classification(period_size):
 
 
 def parse_TRF_lines(lines, sv, min_intersect):
+    """
+    Determines which tandem repeats entries intersect with the SV from calculating the intersection 
+    """
     tandem_repeats = []
 
     for trf_line in lines:
@@ -117,9 +119,16 @@ def read_trf(sv_info, trf_file, min_intersect):
     """
 
     trf_lines = None
+
+    # @INS.1
+    # 1040 1111 23 3.4 23 67 25 68 9 18 50 22 1.76 GAGGGCGTCTGGTCGTCCTGAGG GAGGGCGTCTGGTCGTCCTGAGGGAGGGCCGGTGTTGGTGAGGGCATCTGGTCGTCCTGAGGGAGGGGGTCT GGTGAGAGACGCTGCCGCAGAGCCGCCCGAGAGGGAGGGTCAGTGTTGGT TCTTCACATTCTCACCTCATTTCTTTTCACTCAGCAGGATTTTTTATTTT
+    # 1020 1106 39 2.2 39 93 0 147 11 14 51 21 1.74 GAGGGAGGGCCAGTGTTGGTGAGGGCATCTGGTCGTCCT GAGGGAGGGTCAGTGTTGGTGAGGGCGTCTGGTCGTCCTGAGGGAGGGCCGGTGTTGGTGAGGGCATCTGGTCGTCCTGAGGGAGGG CACAGAGGGAAACAAGGGGAGGTGAGAGACGCTGCCGCAGAGCCGCCCGA GGTCTTCTTCACATTCTCACCTCATTTCTTTTCACTCAGCAGGATTTTTT
+    # 1153 1200 5 9.8 5 95 4 89 18 0 0 81 0.70 TTTTA TTTTATTTTATTTTATTTTATTTTATTTTATTTTATTTTATTTATTTT AGGGGGTCTTCTTCACATTCTCACCTCATTTCTTTTCACTCAGCAGGATT GAAACGGAGTCTCACTCTTGCCTAGGCTGGAGTGCAATGGCGCAATCTCG
+    
     with open(trf_file, 'r') as file:
         trf_text = file.read()
 
+    # Split each SV into list
     entries = trf_text.strip().split('@')[1:]   
    
     for entry in entries:

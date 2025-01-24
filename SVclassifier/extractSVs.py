@@ -23,12 +23,30 @@ def getSequences(fasta, chrom, pos, end, startFlanking, endFlanking):
     return sequence, flankingSequence
 
 def get_flanking_regions(vcf_file, fasta_file, output_file, min_size, max_size, flanking_factor):
+    """
+    Extract flanking regions and sequences for structural variants (SVs) from a VCF file.
+
+    The function extracts flanking regions (scaled by the 'flanking factor') for each SV based on its type and writes to a file 
+    - Insertions: SV sequence is obtained from the ALT tag in the VCF and concatenated between the flanking regions to create the query
+    - Other: SV sequence is fetched from the reference based on the positions
+
+    Input: 
+        - vcf_file (str): Path to the input VCF file containing structural variants.
+        - fasta_file (str): Path to the FASTA file for the reference genome.
+        - output_file (str): Path to the output file where extracted data will be written.
+        - min_size (int): Minimum size of SVs to include in the output.
+        - max_size (int): Maximum size of SVs to include in the output.
+        - flanking_factor (float): Scaling factor to determine the size of flanking regions 
+                                 based on the SV length.
+    """
     vcf = pysam.VariantFile(vcf_file)
     fasta = pysam.FastaFile(fasta_file)
     total_sv = 0
     filtered_min = 0
     filtered_max = 0
     symbolic_ins = 0
+
+    # Count for print of filtering 
     sv_count = {'INS' : 0, 'DEL' : 0, 'INV' : 0, 'DUP' : 0, 'BND' : 0}
     min_count = {'INS' : 0, 'DEL' : 0, 'INV' : 0, 'DUP' : 0, 'BND' : 0}
     max_count = {'INS' : 0, 'DEL' : 0, 'INV' : 0, 'DUP' : 0, 'BND' : 0}

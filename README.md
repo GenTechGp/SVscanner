@@ -49,6 +49,8 @@ Executable versions of annotation software:
 
 * VCF (.vcf.gz) containing called SVs (must contain INFO flag `'SVTYPE'`)  
   * ***NOTE***: Does not assess symbolic insertions, translocations
+* *Optional*: STRchive dataset for genome (in extended BED format)
+  * [hg19](https://strchive.org/_astro/STRchive-disease-loci.hg19.DWACvaXd.bed) [hg38](https://strchive.org/_astro/STRchive-disease-loci.hg38.DR-UScgX.bed) [T2T-chm13](https://strchive.org/_astro/STRchive-disease-loci.T2T-chm13.Cm-HAugT.bed)
 
 ### Main Output files 
 
