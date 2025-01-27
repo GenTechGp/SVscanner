@@ -129,33 +129,37 @@ This file includes the flag of every read for each SV.
 ```
 wget https://github.com/Benson-Genomics-Lab/TRF/releases/download/v4.09.1/trf409.linux64
 chmod +x trf409.linux64
+TRF_PRG=$PWD/trf409.linux64
 ```
 
 #### RepeatMasker 
 1. Download Sequence Search Engine (e.g. HMMER)
 ```
-wget http://eddylab.org/software/hmmer/hmmer.tar.gz 
-tar -xvzf hmmer.tar.gz
-cd hmmer-<version>
-./configure
-make
-make check
-make install
-cd easel; make install
+wget http://eddylab.org/software/hmmer/hmmer-3.4.tar.gz
+tar -xvf hmmer-3.4.tar.gz
+./hmmer-3.4/configure
+make -C hmmer-3.4 -j 8
+make -C hmmer-3.4/easel -j 8
+HMMER_DIR=$PWD/hmmer-3.4/src
 ```
-2. Download RepeatMasker
+2. Download DFAM (8.9 GB)
+   
+   Skip if you have already downloaded a copy of the Dfam database.
+   
+   Then just set `DFAM_FILE` variable to the correct full path of the database file.
 ```
-wget https://www.repeatmasker.org/RepeatMasker-<version>.tar.gz
-tar -xvzf RepeatMasker-<version>.tar.gz
-cd RepeatMasker
-./configure
-# Use path to TRF
-```
-3. Download DFAM 
-```
-https://www.dfam.org/releases/Dfam_3.8/families/FamDB/dfam38-1_full.0.h5.gz
+wget https://www.dfam.org/releases/Dfam_3.8/families/FamDB/dfam38-1_full.0.h5.gz
 gunzip dfam38_full.0.h5.gz
-mv dfam38_full.0.h5.gz RepeatMasker/Libraries/famdb
+DFAM_FILE=$PWD/dfam38_full.0.h5
+```
+3. Download RepeatMasker
+```
+wget https://www.repeatmasker.org/RepeatMasker/RepeatMasker-4.1.6.tar.gz
+tar -xvzf RepeatMasker-4.1.6.tar.gz
+cd RepeatMasker
+mv $DFAM_FILE Libraries/famdb
+./configure -trf_prgm $TRF_PRG -hmmer_dir $HMMER_DIR
+cd ..
 ```
 
 ### Usage
