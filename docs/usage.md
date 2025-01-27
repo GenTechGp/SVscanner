@@ -14,7 +14,6 @@
 1. Download repo
 
 ```
-# git clone git@github.com:KCCGGenomeTechLab/SVtoolkit.git
 git clone https://github.com/KCCGGenomeTechLab/SVtoolkit.git
 ```
 
@@ -72,7 +71,8 @@ svVCF=.../HG002.sorted.vcf.gz
 
 **3. Run script**
 ```
-qsub checker.sh 
+chmod +x checker.sh
+./checker.sh 
 ```
 
 ### Inputs & Outputs (Extended)
@@ -199,7 +199,8 @@ export PATH=.../hmmer-3.4/src:$PATH
 
 **3. Run script**  
 ```
-qsub checker.sh 
+chmod +x classifier.sh
+./classifier.sh 
 ```
 
 ### Inputs & Outputs (Extended)
