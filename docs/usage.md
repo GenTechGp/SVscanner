@@ -1,3 +1,13 @@
+# Table of Contents
+1. [Basic Installation](#installation)
+2. [SVChecker](#svchecker)
+   - [Usage](#usage)
+   - [Inputs & Outputs (Extended)](#inputs-&-outputs-(extended))
+3. [SVClassifier](#svclassifier)
+   - [Basic Commands](#basic-commands)
+   - [Advanced Features](#advanced-features)
+
+
 ## Installation 
 
 1. Download repo
@@ -20,32 +30,6 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-#### RepeatMasker 
-1. Download Sequence Search Engine (e.g. HMMER)
-```
-wget http://eddylab.org/software/hmmer/hmmer.tar.gz 
-tar -xvzf hmmer.tar.gz
-cd hmmer-<version>
-./configure
-make
-make check
-make install
-cd easel; make install
-```
-2. Download RepeatMasker
-```
-wget https://www.repeatmasker.org/RepeatMasker-<version>.tar.gz
-tar -xvzf RepeatMasker-<version>.tar.gz
-cd RepeatMasker
-./configure
-# Use path to TRF
-```
-3. Download DFAM 
-```
-https://www.dfam.org/releases/Dfam_3.8/families/FamDB/dfam38-1_full.0.h5.gz
-gunzip dfam38_full.0.h5.gz
-mv dfam38_full.0.h5.gz RepeatMasker/Libraries/famdb
-```
 ## SVChecker
 
 ### Usage
@@ -137,6 +121,39 @@ This file includes the flag of every read for each SV.
 | INV.C922S0  | 940a1765 | MISSING_BOTH |
 
 ## SVClassifier
+
+#### Download TRF (Tandem Repeats Finder) 
+```
+wget https://github.com/Benson-Genomics-Lab/TRF/releases/download/v4.09.1/trf409.linux64
+chmod +x trf409.linux64
+```
+
+#### RepeatMasker 
+1. Download Sequence Search Engine (e.g. HMMER)
+```
+wget http://eddylab.org/software/hmmer/hmmer.tar.gz 
+tar -xvzf hmmer.tar.gz
+cd hmmer-<version>
+./configure
+make
+make check
+make install
+cd easel; make install
+```
+2. Download RepeatMasker
+```
+wget https://www.repeatmasker.org/RepeatMasker-<version>.tar.gz
+tar -xvzf RepeatMasker-<version>.tar.gz
+cd RepeatMasker
+./configure
+# Use path to TRF
+```
+3. Download DFAM 
+```
+https://www.dfam.org/releases/Dfam_3.8/families/FamDB/dfam38-1_full.0.h5.gz
+gunzip dfam38_full.0.h5.gz
+mv dfam38_full.0.h5.gz RepeatMasker/Libraries/famdb
+```
 
 ### Usage
 
