@@ -1,11 +1,12 @@
 # Table of Contents
-1. [Basic Installation](#installation)
+1. [Installation](#installation)
 2. [SVChecker](#svchecker)
    - [Usage](#usage)
-   - [Inputs & Outputs (Extended)](#inputs-&-outputs-(extended))
+   - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 3. [SVClassifier](#svclassifier)
-   - [Basic Commands](#basic-commands)
-   - [Advanced Features](#advanced-features)
+   - [Setting up TRF and RepeatMasker](#setting-up-trf-and-repeatmasker)
+   - [Usage](#usage)
+   - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 
 
 ## Installation 
@@ -122,7 +123,9 @@ This file includes the flag of every read for each SV.
 
 ## SVClassifier
 
-#### Download TRF (Tandem Repeats Finder) 
+### Setting up TRF and RepeatMasker
+
+#### TRF (Tandem Repeats Finder) 
 ```
 wget https://github.com/Benson-Genomics-Lab/TRF/releases/download/v4.09.1/trf409.linux64
 chmod +x trf409.linux64
