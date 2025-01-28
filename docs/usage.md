@@ -4,14 +4,14 @@
    - [Usage](#usage)
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 3. [SVClassifier](#svclassifier)
-   - [Setting up TRF and RepeatMasker](#setting-up-trf-and-repeatmasker)
+   - [Setting up TRF and RepeatMasker](#setting-up-trf--sequence-search-engine--te-database--repeatmasker)
    - [Usage](#usage)
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 
 
 ## Installation 
 
-1. Download repo
+1. Clone the repository
 
 ```
 git clone https://github.com/KCCGGenomeTechLab/SVtoolkit.git
