@@ -17,16 +17,13 @@
 git clone https://github.com/KCCGGenomeTechLab/SVtoolkit.git
 ```
 
-2. Set up Virtual Environment
+2. Set up Virtual Environment and install required packages
 
 ```
+cd SVtoolkit
 python3 -m venv svtools
 source svtools/bin/activate 
-pip install --upgrade pip  
-```
-
-3. Install requirements
-```
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
@@ -123,7 +120,7 @@ This file includes the flag of every read for each SV.
 
 ## SVClassifier
 
-### Setting up TRF and RepeatMasker
+### Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker
 
 #### TRF (Tandem Repeats Finder) 
 ```
@@ -132,27 +129,33 @@ chmod +x trf409.linux64
 TRF_PRG=$PWD/trf409.linux64
 ```
 
-#### RepeatMasker 
+#### Sequence Search Engine + TE Database + RepeatMasker 
 1. Download Sequence Search Engine (e.g. HMMER)
 ```
 wget http://eddylab.org/software/hmmer/hmmer-3.4.tar.gz
 tar -xvf hmmer-3.4.tar.gz
-./hmmer-3.4/configure
-make -C hmmer-3.4 -j 8
-make -C hmmer-3.4/easel -j 8
+cd hmmer-3.4 
+./configure
+make -j 8
+cd easel
+make -j 8
+cd ../..
 HMMER_DIR=$PWD/hmmer-3.4/src
+rm hmmer-3.4.tar.gz
 ```
-2. Download DFAM (8.9 GB)
+2. Download DFAM (8.9 GB - takes about 1 hour to download) and extract (67 GB - takes about 15 mins to extract)
    
-   Skip if you have already downloaded a copy of the Dfam database.
+   Skip if you already have downloaded a copy of the Dfam database.
    
    Then just set `DFAM_FILE` variable to the correct full path of the database file.
 ```
 wget https://www.dfam.org/releases/Dfam_3.8/families/FamDB/dfam38-1_full.0.h5.gz
-gunzip dfam38_full.0.h5.gz
-DFAM_FILE=$PWD/dfam38_full.0.h5
+gunzip dfam38-1_full.0.h5.gz
+DFAM_FILE=$PWD/dfam38-1_full.0.h5
 ```
 3. Download RepeatMasker
+   
+   Discard the error `Can't open DateRepeats: No such file or directory.` in the configuration step below.
 ```
 wget https://www.repeatmasker.org/RepeatMasker/RepeatMasker-4.1.6.tar.gz
 tar -xvzf RepeatMasker-4.1.6.tar.gz
@@ -160,6 +163,7 @@ cd RepeatMasker
 mv $DFAM_FILE Libraries/famdb
 ./configure -trf_prgm $TRF_PRG -hmmer_dir $HMMER_DIR
 cd ..
+rm RepeatMasker-4.1.6.tar.gz
 ```
 
 ### Usage
