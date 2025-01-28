@@ -40,20 +40,34 @@ def readDepth(depthFile):
 ################################################################################
 
 #------------------------------ Quality Checks---------------------------------#
-def filter_reads(group, base_split, max_split):
-    support = True
+def filter_reads(group, base_split, max_split, min_len):
+
+    isSupport = True
     flag = ''
+
+    # determine alignment lengths 
+    readStart = group['readStart'].astype(int)
+    readEnd = group['readEnd'].astype(int)
+    alignment_lengths = readEnd - readStart
+    
+    # calculate splits
     max_read = int(group['readEnd'].max())
     min_read = int(group['readStart'].min())
     total_length =  max_read - min_read
     additional_splits = int((total_length / 1000) * max_split)
     allowed_splits = base_split + additional_splits
     num_splits = group['readOrder'].nunique() - 1
-    if num_splits > allowed_splits:
-        support = False
+        
+    # All alignments below min --> reject
+    if (alignment_lengths < min_len).all():
+        isSupport = False
+        flag = 'ALIGNMENT_LENGTH'
+    # Alignments greater than max split --> reject
+    elif num_splits > allowed_splits:
+        isSupport = False
         flag = 'NUM_SPLIT'
-    
-    return support, flag
+
+    return isSupport, flag
     
 
 
@@ -353,6 +367,8 @@ def addReadReason(readFlagsCount, flag):
             readFlagsCount['ORIENTATION'] += 1
         elif flag.startswith("NUM_SPLIT"):
             readFlagsCount['NUM_SPLIT'] += 1
+        elif flag.startswith("ALIGNMENT_LENGTH"):
+            readFlagsCount['ALIGNMENT_LENGTH'] += 1
         else:
             readFlagsCount[flag] += 1
     return readFlagsCount
@@ -369,12 +385,12 @@ def countInversionFlags(details):
         'MULTI': 0,
         'ORIENTATION': 0,
         'NUM_SPLIT' : 0,
-        
+        'ALIGNMENT_LENGTH' : 0, 
     }
 
     # List of passed and rejected flags
     passedFlags = ['EXTENSION', 'MULTI']
-    rejectedFlags = ['MISSING_LEFT_BP', 'MISSING_RIGHT_BP', 'MISSING_BOTH', 'ORIENTATION', 'NUM_SPLIT']
+    rejectedFlags = ['MISSING_LEFT_BP', 'MISSING_RIGHT_BP', 'MISSING_BOTH', 'ORIENTATION', 'NUM_SPLIT', 'ALIGNMENT_LENGTH']
 
     # Count occurrences of passed flags
     for item in passedFeature:
@@ -465,16 +481,16 @@ if __name__ == "__main__":
     # Caller default filtering parameters
     parser.add_argument("-mapq",
         help="Alignments with mapping quality lower than this value will be ignored", default=25)
-        # CuteSV: Ignores reads that only report alignments with not longer than bp. - 20
+        # CuteSV: Minimum mapping quality value of alignment to be taken into account.	 - 20
     parser.add_argument("-min-alignment-length",
         help="Reads with alignments shorter than this length (in bp) will be ignored", default=1000)
         # CuteSV: Ignores reads that only report alignments with not longer than bp - 500
     parser.add_argument("-max-splits-kb",
         help="Additional number of splits per kilobase read sequence allowed before reads are ignored", default=0.1)
-        # CuteSV: Ignores reads that only report alignments with not longer than bp. - 20
+        # CuteSV: Maximum number of split segments a read may be aligned before it is ignored.
     parser.add_argument("-max-splits-base",
         help="Base number of splits allowed before reads ignored", default=3)
-        # CuteSV: Ignores reads that only report alignments with not longer than bp - 500
+        # CuteSV: Maximum number of split segments a read may be aligned before it is ignored. 7
     
 
     args = parser.parse_args()
@@ -503,7 +519,8 @@ if __name__ == "__main__":
             'MISSING' : 0,
             # 'EXTENSION' : 0, 
             'PRIMARY_CHR' :0, 
-            'NUM_SPLIT' : 0}
+            'NUM_SPLIT' : 0, 
+            'ALIGNMENT_LENGTH' : 0}
     
     keys = df['invID']
     inversions = {key: {'RNAMES' : [], 'SFLAG' : [], 'RFAILED' : [], 'FFLAG' : [], 'SUPPORT' : 0, 'NOTSUPPORT' : 0} for key in keys.unique()}
@@ -515,7 +532,7 @@ if __name__ == "__main__":
     for (invID, read), group in readGroups:
         numReads += 1
         # If the read supports an inversion
-        isSupport, flag = filter_reads(group, args.max_splits_base, args.max_splits_kb)
+        isSupport, flag = filter_reads(group, args.max_splits_base, args.max_splits_kb, args.min_alignment_length)
         if isSupport:
             isSupport, flag = isSupporting(group)
         if isSupport:
