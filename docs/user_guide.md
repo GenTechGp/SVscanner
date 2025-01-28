@@ -11,14 +11,17 @@ To identify supporting reads for inversions and duplications, we locate alignmen
 A read is **valid** when the start and end of the alignments have opposite orientations at the left and right SV breakpoints. 
 * BOTH: Alignments that span the entire inversion must intersect both the left and right breakpoints with the start and end of an alignment to be valid.   
 * LEFT/RIGHT: Reads that span one SV breakpoint in the sample must have the start or end of alignments support the left and right SV breakpoints in the reference.
-![](/images/inversion_passed.svg) 
+![GS](/images/inversion_passed_dark.svg#gh-dark-mode-only)
+![GS](/images/inversion_passed.svg#gh-light-mode-only)
+
 
 Additional FLAGS are implemented for edge cases 
 * MULTI: multiple alignments intersect an SV breakpoints  
 * EXTENSION: an alignment extended to or beyond the left or right breakpoint 
 ![](/images/inversion_flags.svg) 
 A read is rejected when it does not pass quality checks and/or one or both of the breakpoints are not supported.
-![](/images/inversion_rejected.svg) 
+![GS](/images/inversion_rejected_dark.svg#gh-dark-mode-only)
+![GS](/images/inversion_rejected.svg#gh-light-mode-only)
 
 ### Duplications
 A read is **valid** when the intersection between the start of an alignment with the left breakpoint (LS) and the end of another alignment with the right breakpoint (RE) can be paired. A valid pairing requires consecutive LS and RE alignments in the same orientation.  
@@ -30,7 +33,8 @@ The read order and number of alignments is assessed to classify alignments as ta
 * INTERSPERSED\_REPEAT
 
 If any alignment intersects are unpaired, these flags are appended with the maximal number of pairs that should exist. 
-![](/images/duplication_passed.svg) 
+![GS](/images/duplication_passed_dark.svg#gh-dark-mode-only)
+![GS](/images/duplication_passed.svg#gh-light-mode-only)
 
 ### Extended Details
 

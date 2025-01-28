@@ -11,7 +11,8 @@
 ## Workflow
 
 #### SVChecker  
-![](/images/checker_workflow.svg) 
+![GS](/images/checker_workflow_dark.svg#gh-dark-mode-only)
+![GS](/images/checker_workflow.svg#gh-light-mode-only)
 
 #### SVClassifier
 ![](/images/classifier_workflow.svg) 
