@@ -18,7 +18,8 @@ A read is **valid** when the start and end of the alignments have opposite orien
 Additional FLAGS are implemented for edge cases 
 * MULTI: multiple alignments intersect an SV breakpoints  
 * EXTENSION: an alignment extended to or beyond the left or right breakpoint 
-![](/images/inversion_flags.svg) 
+![GS](/images/inversion_flags_dark.svg#gh-dark-mode-only)
+![GS](/images/inversion_flags.svg#gh-light-mode-only)
 A read is rejected when it does not pass quality checks and/or one or both of the breakpoints are not supported.
 ![GS](/images/inversion_rejected_dark.svg#gh-dark-mode-only)
 ![GS](/images/inversion_rejected.svg#gh-light-mode-only)

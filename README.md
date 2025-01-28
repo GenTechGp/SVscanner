@@ -15,8 +15,8 @@
 ![GS](/images/checker_workflow.svg#gh-light-mode-only)
 
 #### SVClassifier
-![](/images/classifier_workflow.svg) 
-
+![GS](/images/classifier_workflow_dark.svg#gh-dark-mode-only)
+![GS](/images/classifier_workflow.svg#gh-light-mode-only)
 
 ### Main Requirements
 
