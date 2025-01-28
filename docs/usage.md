@@ -4,7 +4,7 @@
    - [Usage](#usage)
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 3. [SVClassifier](#svclassifier)
-   - [Setting up TRF and RepeatMasker](#setting-up-trf--sequence-search-engine--te-database--repeatmasker)
+   - [Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker](#setting-up-trf--sequence-search-engine--te-database--repeatmasker)
    - [Usage](#usage)
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 
