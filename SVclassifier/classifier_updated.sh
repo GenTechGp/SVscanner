@@ -1,39 +1,29 @@
 #!/bin/bash
 
-# steps
-# step1
-# step2
-
-# Change locale settings 
-export LANGUAGE=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
-export LANG=en_US.UTF-8
-
 # set -x
 RED='\033[0;31m' ; GREEN='\033[0;32m' ; NC='\033[0m' # No Color
 die() { echo -e "${RED}$1${NC}" >&2 ; echo ; exit 1 ; } # terminate script
 info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
 info "$(date)"
 
-RUN_NO="R0"
-[ "${RUN_NO}" ] || die "RUN_NO is empty"
 
+# Directories (change)
+OUTPUT_DIR="SVtoolkit_output_1"
+CLASSIFIER_DIR="SVclassifier"
+# Input Files (change)
+REF_FASTA="/genome/hg38noAlt.fa"
+SV_VCF="test/HG002_subset/HG002_subset.vcf.gz"
+STR_BED="test/STRchive-disease-loci.bed"
+# Repeat Masker and TRF programs (change if not correct)
+TRF_BINARY="/data/hiruna/SVtoolkit/trf409.linux64"
+REPEATMASKER="/data/hiruna/SVtoolkit/RepeatMasker/RepeatMasker"
 
-# Modules 
-# export PATH=/share/ClusterShare/software/contrib/hirsam/Clair3:$PATH
-# export PYTHONPATH=/share/ClusterShare/software/contrib/hirsam/miniconda3/bin:$PYTHONPATH
-# export PATH=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/software:$PATH
-# module load centos7.8/phuluu/bedtools/2.29.2
-# Path to virtual environemnt 
-# source /directflow/KCCGGenometechTemp/projects/jasyip/checkerEnv/bin/activate
-
-# Setup allocation for RepeatMasker parallelisation
 # NTHREADS=$NSLOTS   # Total number of threads
 NTHREADS=$(nproc --all)
-MAX_JOBS=1          # Max number of RepeatMasker process to run in parallel 
+MAX_JOBS=8          # Max number of RepeatMasker process to run in parallel 
 THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
-# # #----------------------------------------------------------------------------#
+# Parameters (keep as it is)
 SAMPLE=HG002_subset
 NUM_SPLIT=100        # Number of sequences per file 
 MIN_INTERSECT=0.05
@@ -41,44 +31,28 @@ MIN_COVERAGE=0.5
 INTERVAL=0.05
 DIAGRAM_LEN=100
 
-# Directories
-OUTPUT_DIR="SVtoolkit_output_${RUN_NO}"
-CLASSIFIER_DIR="SVclassifier"
-
-# Input Files
-REF_FASTA="/genome/hg38noAlt.fa"
-SV_VCF="/data/hiruna/SVtoolkit/test/HG002_subset/HG002_subset.vcf.gz"
-STR_BED="/data/hiruna/SVtoolkit/test/STRchive-disease-loci.bed"
-
-# Repeat Masker and TRF programs
-TRF_BINARY="/data/hiruna/SVtoolkit/trf409.linux64"
-REPEATMASKER="/data/hiruna/SVtoolkit/RepeatMasker/RepeatMasker"
-export PATH=/directflow/KCCGGenometechTemp/projects/jasyip/software/hmmer-3.4/src:$PATH
-
-# CUSTOM PROGRAMS
+# Python and bash scripts (keep as it is)
 VARIANT_FLANKING=${CLASSIFIER_DIR}/extractSVs.py
 TO_FASTA=${CLASSIFIER_DIR}/toFasta.sh
 ANNOTATE=${CLASSIFIER_DIR}/repeatAnnotation.py
 VISUALISE=${CLASSIFIER_DIR}/repeatDiagram.py
 
-# Internal directories
+# Internal directories (keep as it is)
 OUTPUT_SAMPLE_DIR=${OUTPUT_DIR}/${SAMPLE}
 SPLIT_DIR=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_${NUM_SPLIT}
 SPLIT_RM=${SPLIT_DIR}/RMtmp
 
-# File Intermediates
+# File Intermediates (keep as it is)
 SV_TAB=${OUTPUT_SAMPLE_DIR}/variant_flanking.tab
 ID_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_id.tab
 RM_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_rm.tab
 TRF_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_trf.tab
 
-# Final Outputs
+# Final Outputs (keep as it is)
 VIS_OUTPUT=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_diagrams.txt
 ANNOTATED_VCF=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotated.vcf
 RM_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedRM.tsv
 TRF_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedTRF.tsv
-
-####################### Structural Variant Preprocessing ##########################
 
 check_required() {
     [ -n "$VIRTUAL_ENV" ] && info "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
@@ -128,6 +102,8 @@ create_fasta_files() {
 }
 
 run_trf() {
+    set -x
+    
     # 3) Run Tandem Repeat Finder and RepeatMasker - wait for both to complete
     info "3. Running Tandem Repeat Finder..."
     find "${SPLIT_DIR}" -name "${SAMPLE}.*.fa" | parallel -j ${NTHREADS} --bar "${TRF_BINARY} {} 2 7 7 80 10 50 500 -h -ngs > {.}.dat" || die "failed"
@@ -201,15 +177,15 @@ show_output_paths() {
     info "SV VCF with repeats annotated: ${ANNOTATED_VCF}"
 }
 
-# check_required
-# create_output_dir
-# extract_flanking_regions
-# create_fasta_files
-# run_trf
-# run_repeatmasker
-# process_repeatmasker_output
-# combine_split_files
-# run_visualiser
+check_required
+create_output_dir
+extract_flanking_regions
+create_fasta_files
+run_trf
+run_repeatmasker
+process_repeatmasker_output
+combine_split_files
+run_visualiser
 annotate_vcf_with_repeats
 sort_and_index_vcf
 remove_intermediates

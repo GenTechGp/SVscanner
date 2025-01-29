@@ -7,3 +7,5 @@ RepeatMasker
 __pycache__
 dfam*
 SVtoolkit*
+!test/sample.fa
+test/sample.fa.*
