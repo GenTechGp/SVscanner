@@ -3,3 +3,4 @@ numpy
 pandas
 tqdm
 h5py
+biopython

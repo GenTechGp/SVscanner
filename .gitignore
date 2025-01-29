@@ -1,0 +1,9 @@
+svtools
+.vscode
+hmmer-3.4
+trf409.linux64
+out
+RepeatMasker
+__pycache__
+dfam*
+SVtoolkit*
