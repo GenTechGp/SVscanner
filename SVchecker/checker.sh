@@ -8,6 +8,7 @@
 #PBS -l walltime=1:00:00                      
 #PBS -j oe
 
+
 # #################################### BRENNER ###################################
 
 # $ -S /bin/bash
@@ -16,54 +17,54 @@
 # $ -l mem_requested=8G 
 # $ -l tmp_requested=60G 
 # $ -pe smp 16
-# $ -N TH126TU_checker
+# $ -N HG002_checker
 # $ -V
 
 # # Modules
-# export PATH=/share/ClusterShare/software/contrib/hirsam/Clair3:$PATH
-# export PYTHONPATH=/share/ClusterShare/software/contrib/hirsam/miniconda3/bin:$PYTHONPATH
-# export PATH=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/software:$PATH
-# module load centos7.8/phuluu/bedtools/2.29.2
-# # Path to virtual environment
-# source /directflow/KCCGGenometechTemp/projects/jasyip/checkerEnv/bin/activate
-
-# #------------------------------------------------------------------------------#
-# sample=HG002
-# caller=Sniffles # Caller options ['Sniffles', 'CuteSV', 'SVIM']
-# buffer=20       # Buffer surrounding each SV breakpoint for intersection 
-
-# # Directories 
-# checkerDir=/directflow/KCCGGenometechTemp/projects/jasyip/SVtoolkit/SVchecker
-# outputDir=/directflow/KCCGGenometechTemp/projects/jasyip/analysis
-
-# # Input Files
-# refFASTA=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/References/hg38/hg38noAlt.fa
-# readsBAM=/directflow/KCCGGenometechTemp/projects/jasyip/HG002_prac/minimap/HG002.sorted.bam
-# svVCF=/directflow/KCCGGenometechTemp/projects/jasyip/HG002_prac/sniffles/HG002noMin.sorted.vcf.gz
-
-##################################### NCI ######################################
-cd $PBS_O_WORKDIR      
-
-# Modules
-# BEDTOOLS, 
-module load bedtools/2.31.0 
-module load bcftools/1.12 
+export PATH=/share/ClusterShare/software/contrib/hirsam/Clair3:$PATH
+export PYTHONPATH=/share/ClusterShare/software/contrib/hirsam/miniconda3/bin:$PYTHONPATH
+export PATH=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/software:$PATH
+module load centos7.8/phuluu/bedtools/2.29.2
 # Path to virtual environment
-source svtools/bin/activate
+source /directflow/KCCGGenometechTemp/projects/jasyip/checkerEnv/bin/activate
 
-# #----------------------------------------------------------------------------#
+#------------------------------------------------------------------------------#
 sample=HG002
 caller=Sniffles # Caller options ['Sniffles', 'CuteSV', 'SVIM']
 buffer=20       # Buffer surrounding each SV breakpoint for intersection 
 
 # Directories 
-checkerDir=/g/data/kr68/jasmin/SVtoolkit/SVchecker 
-outputDir=/g/data/kr68/jasmin/sampleResults
+checkerDir=/directflow/KCCGGenometechTemp/projects/jasyip/SVtoolkit/SVchecker
+outputDir=/directflow/KCCGGenometechTemp/projects/jasyip/analysis
 
 # Input Files
-refFASTA=/g/data/kr68/jasmin/references/hg38noAlt.fa
-readsBAM=/g/data/kr68/jasmin/samples/HG002/HG002.sorted.bam
-svVCF=/g/data/kr68/jasmin/samples/HG002/HG002.sorted.vcf.gz
+refFASTA=/directflow/KCCGGenometechTemp/projects/andmar/human_genome_pipeline/References/hg38/hg38noAlt.fa
+readsBAM=/directflow/KCCGGenometechTemp/projects/jasyip/samples/HG002/HG002.sorted.bam
+svVCF=/directflow/KCCGGenometechTemp/projects/jasyip/samples/HG002/HG002.sorted.vcf.gz
+
+# ##################################### NCI ######################################
+# cd $PBS_O_WORKDIR      
+
+# # Modules
+# # BEDTOOLS, 
+# module load bedtools/2.31.0 
+# module load bcftools/1.12 
+# # Path to virtual environment
+# source svtools/bin/activate
+
+# # #----------------------------------------------------------------------------#
+# sample=HG002_subset
+# caller=Sniffles # Caller options ['Sniffles', 'CuteSV', 'SVIM']
+# buffer=20       # Buffer surrounding each SV breakpoint for intersection 
+
+# # Directories 
+# checkerDir=/g/data/kr68/jasmin/SVtoolkit/SVchecker 
+# outputDir=/g/data/kr68/jasmin/sampleResults
+
+# # Input Files
+# refFASTA=/g/data/kr68/jasmin/references/hg38noAlt.fa
+# readsBAM=/g/data/kr68/jasmin/samples/HG002_subset/HG002_subset.bam
+# svVCF=/g/data/kr68/jasmin/samples/HG002_subset/HG002_subset.vcf.gz
 
 ################################################################################
 
@@ -161,41 +162,41 @@ fi
 
 ########################## Alignment Preprocessing #############################
 # 1. Convert bam using external program with the FLAGS and alignment info
-# python $BAM2BED -i $readsBAM > $readsBED
+python $BAM2BED -i $readsBAM > $readsBED
 # chr   start   end    readID   MAPQ    flag    mismatch primary_tag    SA_tag
 
 ####################### Structural Variant Preprocessing #######################
 
 # ## 2. Get breakpoints of Sniffles (VCF) output for duplications in single bed format 
 # # Extracts location, id, sv and supporting read information and outputs to files 
-# process_svtype() {
-#     local svType="$1"       # SVTYPE (e.g., DUP or INV)
-#     local svBED="$2"        # Output BED file
-#     local svSupport="$3"    # Output support file
+process_svtype() {
+    local svType="$1"       # SVTYPE (e.g., DUP or INV)
+    local svBED="$2"        # Output BED file
+    local svSupport="$3"    # Output support file
 
-#     # Process the VCF with bcftools and awk
-#     bcftools query -f "${svQuery}" "${svVCF}" | \
-#     awk -v svtype="${svType}" -v svBED="${svBED}" -v svSupport="${svSupport}" 'OFS="\t" {
-#         if ($1 ~ /^chr([1-9]$|1[0-9]$|2[0-2]$|X$|Y$)/ && $5 == svtype) {
-#             # Count the number of RNAMES by splitting them on commas
-#             # NOTE: Count instead of using INFO:SUPPROT/RE as the flag differs between callers 
-#             numSupport = split($6, rnames, ",")  
+    # Process the VCF with bcftools and awk
+    bcftools query -f "${svQuery}" "${svVCF}" | \
+    awk -v svtype="${svType}" -v svBED="${svBED}" -v svSupport="${svSupport}" 'OFS="\t" {
+        if ($1 ~ /^chr([1-9]$|1[0-9]$|2[0-2]$|X$|Y$)/ && $5 == svtype) {
+            # Count the number of RNAMES by splitting them on commas
+            # NOTE: Count instead of using INFO:SUPPROT/RE as the flag differs between callers 
+            numSupport = split($6, rnames, ",")  
 
-#             # If $7 (FILTER-SVIM) is missing, output "NA" instead
-#             filterField = ($7 == "" ? "NA" : $7)
+            # If $7 (FILTER-SVIM) is missing, output "NA" instead
+            filterField = ($7 == "" ? "NA" : $7)
 
-#             # CHR,POS,END,ID - remove SVTYPE column ($5)
-#             print $1, $2, $3, $4 > svBED
+            # CHR,POS,END,ID - remove SVTYPE column ($5)
+            print $1, $2, $3, $4 > svBED
 
-#             # ID, SUPPORT (count of RNAMES), RNAMES, FILTER
-#             print $4, numSupport, $6, $7 > svSupport
-#         }
-#     }'
-# }
+            # ID, SUPPORT (count of RNAMES), RNAMES, FILTER
+            print $4, numSupport, $6, $7 > svSupport
+        }
+    }'
+}
 
-# # Process different SVTYPEs
-# process_svtype "DUP" "$dupBED" "$dupSupport"
-# process_svtype "INV" "$invBED" "$invSupport"
+# Process different SVTYPEs
+process_svtype "DUP" "$dupBED" "$dupSupport"
+process_svtype "INV" "$invBED" "$invSupport"
 
 ################################# Duplications #################################
 if [[ ! -s ${dupBED} || ! -s ${dupSupport} ]]; then
@@ -228,7 +229,6 @@ else
 
     # RUN READ CHECKER 
     python3 $DUPLICATION -i $dupOrdered -d $dupDepth -o $dupSupportingReads -r $dupSupportingReadsDetails -mapq $mapq -min-alignment-length $min_alignment_length -max-splits-kb $max_splits_kb -max-splits-base $max_splits_base 
-
 
     python3 ${DISCORDANT} -c $dupSupportingReads -i $dupSupport -o $dupDiscordant
 
@@ -281,14 +281,14 @@ else
 fi
 
 ####################### Cleanup: Remove Intermediates ##########################
-# filesToRemove=(
-#     "$invBED" "$invSupport" "$invBuffer" "$invDepth" "$invOverlaps" "$invOrdered" "$invSupportingReads"
-#     "$dupBED" "$dupSupport" "$dupBuffer" "$dupDepth" "$dupOverlaps" "$dupOrdered" "$dupSupportingReads"
-# )
-# # Loop through and remove each file
-# for file in "${filesToRemove[@]}"; do
-#     rm -f "$file"
-# done
+filesToRemove=(
+    "$invBED" "$invSupport" "$invBuffer" "$invDepth" "$invOverlaps" "$invOrdered" "$invSupportingReads"
+    "$dupBED" "$dupSupport" "$dupBuffer" "$dupDepth" "$dupOverlaps" "$dupOrdered" "$dupSupportingReads"
+)
+# Loop through and remove each file
+for file in "${filesToRemove[@]}"; do
+    rm -f "$file"
+done
 
 
 

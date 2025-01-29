@@ -53,29 +53,43 @@ def readDepth(depthFile):
 ################################################################################
 
 #------------------------------ Quality Checks---------------------------------#
-def filter_reads(group, base_split, max_split, mapq):
+def filter_reads(group, base_split, max_split, min_len, mapq):
     '''
     Filters out any reads that exceed the max number of splits or reads with single low quality alignment less
     input
     '''
     isSupport = True
     flag = ''
+
+    # determine alignment lengths 
+    readStart = group['readStart'].astype(int)
+    readEnd = group['readEnd'].astype(int)
+    alignment_lengths = readEnd - readStart
+    
+    # calculate splits
     max_read = int(group['readEnd'].max())
     min_read = int(group['readStart'].min())
     total_length =  max_read - min_read
     additional_splits = int((total_length / 1000) * max_split)
     allowed_splits = base_split + additional_splits
     num_splits = group['readOrder'].nunique() - 1
-    if num_splits > allowed_splits:
-        isSupport = False
-        flag = 'NUM_SPLIT'
-        return isSupport, flag
-    
+
+    # determine MAPQ
     group['quality'] = group['quality'].astype(int)  # Ensure quality is integer
     filtered_quality = group[group['quality'] >= mapq]
     total_reads = group['readOrder'].nunique()    
     num_reads = filtered_quality['readOrder'].nunique()    
-    if num_reads < 2 and total_reads > 1:
+
+    # All alignments below min --> reject
+    if (alignment_lengths < min_len).all():
+        isSupport = False
+        flag = 'ALIGNMENT_LENGTH'
+    # Alignments greater than max split --> reject
+    elif num_splits > allowed_splits:
+        isSupport = False
+        flag = 'NUM_SPLIT'
+    # Alignments have low MAPQ --> reject
+    elif num_reads < 2 and total_reads > 1:
         isSupport = False
         flag = 'MAPQ'
     
@@ -249,12 +263,13 @@ def countDuplicationFlags(details):
         'MISSING_PAIRS':0, 
         'MISSING_INTERSECT': 0,
         'NUM_SPLIT' : 0,
-        'MAPQ' : 0
+        'ALIGNMENT_LENGTH': 0, 
+        'MAPQ' : 0,
     }
 
     # List of passed and rejected flags
     passedFlags = ['TANDEM_DUPLICATION', 'TANDEM_REPEAT', 'INTERSPERSED_DUPLICATION', 'INTERSPERSED_REPEAT', 'DUPLEX']
-    rejectedFlags = ['MISSING_INTERSECT', 'MISSING_PAIRS', 'NUM_SPLIT', 'MAPQ']
+    rejectedFlags = ['MISSING_INTERSECT', 'MISSING_PAIRS', 'NUM_SPLIT', 'ALIGNMENT_LENGTH', 'MAPQ']
 
     # Count occurrences of passed flags
     for item in passedFeature:
@@ -378,7 +393,7 @@ if __name__ == "__main__":
     for (dupID, read), group in readGroups:
         # print(f'{dupID} {read}')
         numReads += 1
-        isSupport, flag = filter_reads(group, args.max_splits_base, args.max_splits_kb, args.mapq)
+        isSupport, flag = filter_reads(group, args.max_splits_base, args.max_splits_kb, args.min_alignment_length, args.mapq)
 
         if isSupport:
             isSupport, flag = isSupporting(group)
