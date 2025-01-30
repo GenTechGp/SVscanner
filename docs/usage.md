@@ -177,9 +177,11 @@ $REPEAT_MASKER test/sample.fa
 
 ### Quick example run
 
-The following example run process the `test/HG002_subset_mini.vcf.gz` dataset (100 records)
-It will take about 10 minutes.
-The majority of time is taken by the RepeatMasker step.
+The following example run process the `test/HG002_subset_mini.vcf.gz` dataset (100 records).
+
+It will take about 10 minutes. The majority of time is taken by the RepeatMasker step.
+
+You may need to change the `REF_FASTA` variable to set the reference genome path (see below - Input Files).
 
 ```
 ./SVClassifier/run_classifier.sh
@@ -187,7 +189,7 @@ The majority of time is taken by the RepeatMasker step.
 
 ### Usage
 
-**1. Update the following variables**
+**1. Update the following variables if you are using a different dataset**
 
 
 ```
@@ -212,7 +214,7 @@ MIN_COVERAGE=0.5
 INTERVAL=0.05
 DIAGRAM_LEN=100
 ```
-**2. Adjust parameters**
+**2. Adjust parameters (if necessary)**
 
 | Parameter  | Description  | Default |
 | :---- | :---- | :---- |
