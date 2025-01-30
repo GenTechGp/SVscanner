@@ -18,7 +18,7 @@
 git clone https://github.com/KCCGGenomeTechLab/SVtoolkit.git
 ```
 
-2. Set up Virtual Environment and install required packages
+2. Set up Virtual Environment and install required packages. Tested with `python 3.8` and should work with higher versions as well.
 
 ```
 cd SVtoolkit
