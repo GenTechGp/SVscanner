@@ -3,11 +3,15 @@
 #### Naming Principles 
 For inversions, creating suitable names that accurately reflect the alignment pattern is challenging as they can  be misinterpreted. For inversions, the current naming convention of PASSED_LEFT and PASSED_RIGHT reflects the alignment breakpoints e.g. PASSED_RIGHT refers to the end of the alignments supporting the SV breakpoints. However, if misunderstood as specifying which SV breakpoints the read supports as it appears in the sample, the opposite definition may apply. If renamed as the latter, this may cause confusion with the REJECTED read definitions. This ambiguity is slightly improved in rejected reads by specifying _BP. Further consideration of naming may be beneficial for clarity. 
 
+#### Primary and Supplementary alignments
+In `extractReads.py`, if the current alignment is_supplementary (i.e. FLAG != 0 || FLAG != 16) the primary alignment is accessed via the SA tag. From analysing Sniffles results, the primary alignment appears to be the read that is the first entry in the string e.g. `chr19,58568863,-,11S38592M2D4277S,60,1679` in `SA:Z:chr19,58568863,-,11S38592M2D4277S,60,1679;chrX,156028611,-,37449S2190M848I2393S,60,1082;chr20,64286700,-,41293S911M23D676S,13,95;`.
+ However this may not be the case for other callers, and changes to the code may be needed. But if the check for primary chr is removed for inversions and it does not significantly affect the discordance then potentially the extraction for the primary chr from the BAM file can be removed. 
+
 #### Filtering 
 * Evaluate SV caller output for additional filtering to reduce discordance 
 
 #### Insertions/Deletions
-Breakpoint validation will not be a suitable method for INS/DEL as they do not contain the detailed read information
+* Breakpoint validation will not be a suitable method for INS/DEL as they do not contain the detailed read information
 
 ### Extensions
 #### Insertions/Deletions

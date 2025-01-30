@@ -18,18 +18,18 @@ STR_BED="test/STRchive-disease-loci.bed"
 TRF_BINARY="/data/hiruna/SVtoolkit/trf409.linux64"
 REPEATMASKER="/data/hiruna/SVtoolkit/RepeatMasker/RepeatMasker"
 
+# Parameters (change)
+SAMPLE=HG002_subset
+NUM_SPLIT=100        # Number of sequences per file 
+MIN_INTERSECT=0.05   # Min intersect between SV and repeat to be considered repetitive
+MIN_COVERAGE=0.5     # Min coverage of an SV by repeat(s) to be considered repetitive
+INTERVAL=0.05
+DIAGRAM_LEN=100
+
 # NTHREADS=$NSLOTS   # Total number of threads
 NTHREADS=$(nproc --all)
 MAX_JOBS=8          # Max number of RepeatMasker process to run in parallel 
 THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
-
-# Parameters (keep as it is)
-SAMPLE=HG002_subset
-NUM_SPLIT=100        # Number of sequences per file 
-MIN_INTERSECT=0.05
-MIN_COVERAGE=0.5
-INTERVAL=0.05
-DIAGRAM_LEN=100
 
 # Python and bash scripts (keep as it is)
 VARIANT_FLANKING=${CLASSIFIER_DIR}/extractSVs.py

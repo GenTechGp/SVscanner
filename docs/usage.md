@@ -177,37 +177,37 @@ $REPEAT_MASKER test/sample.fa
 
 ```
 # Load bedtools, samtools, bcftools
-export PATH=...
-source ../svtools/bin/activate # Activate virtual environment
+# ...
 
-sample=HG002  
-numSplit=100        # Number of sequences per file
+# Directories (change)
+OUTPUT_DIR="sample"
+CLASSIFIER_DIR="SVclassifier"
+# Input Files (change)
+REF_FASTA="/genome/hg38noAlt.fa"
+SV_VCF="test/HG002_subset/HG002_subset.vcf.gz"
+STR_BED="test/STRchive-disease-loci.bed"
+# Repeat Masker and TRF programs (change if not correct)
+TRF_BINARY="..."
+REPEATMASKER="..."
 
-# Directories
-classifierDir=.../SVtools/SVchecker
-
-outputSampleDir=${outputDir}/${sample}  
-splitDir=${outputSampleDir}/${sample}_${numSplit}
-
-# Input Files  
-refFASTA=.../hg38noAlt.fa
-svVCF=.../HG002.sorted.vcf.gz
-
-# Repeat Masker and TRF programs 
-TRF_BINARY=.../trf409.linux64  
-repeatMasker=.../RepeatMasker  
-export PATH=.../hmmer-3.4/src:$PATH
+# Parameters (change)
+SAMPLE=sample
+NUM_SPLIT=100        
+MIN_INTERSECT=0.05   
+MIN_COVERAGE=0.5     
+INTERVAL=0.05
+DIAGRAM_LEN=100
 ```
 **2. Adjust parameters**
 
 | Parameter  | Description  | Default |
 | :---- | :---- | :---- |
-| `$sample` | Name of sample being analysed  |  |
-| `$numSplit` | Number of sequences/SVs in each split file  | 100 |
-| `$minIntersect` | Minimum intersection between repeat and SV to be considered before filtering | 0.05 (5%) |
-| `$minCoverage` | Minimum coverage of SV by repeats to be considered repetitive  | 0.5 (50%) |
-| `$interval` | Chosen intervals to prioritise period size over intersection (for tandem repeats) | 0.05 (5%) |
-| `$diagramLength` | Number of characters used for the diagrams | 100 |
+| `$SAMPLE` | Name of sample being analysed  |  |
+| `$NUM_SPLIT` | Number of sequences/SVs in each split file  | 100 |
+| `$MIN_INTERSECT` | Minimum intersection between repeat and SV to be considered before filtering | 0.05 (5%) |
+| `$MIN_COVERAGE` | Minimum coverage of SV by repeats to be considered repetitive  | 0.5 (50%) |
+| `$INTERVAL` | Chosen intervals to prioritise period size over intersection (for tandem repeats) | 0.05 (5%) |
+| `$DIAGRAM_LEN` | Number of characters used for the diagrams | 100 |
 
 **3. Run script**  
 ```

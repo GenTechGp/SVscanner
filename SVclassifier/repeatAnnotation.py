@@ -38,8 +38,7 @@ def rotate_reverse(repeat):
         repeat:             string                  e.g. CAT
     Output: 
         motifs
-            repeat_motifs:      list of strings         e.g. ['CAT', 'ATC', 'TCA']
-            reverse_motifs:     list of strings         e.g. ['ATG', 'GAT', 'TGA']
+            repeat_motifs:      list of strings         e.g. repeat ['CAT', 'ATC', 'TCA'] reverse ['ATG', 'GAT', 'TGA']
     """
     motifs = []
 

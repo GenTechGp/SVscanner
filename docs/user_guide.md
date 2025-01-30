@@ -26,7 +26,9 @@ A read is rejected when it does not pass quality checks and/or one or both of th
 
 ### Duplications
 A read is **valid** when the intersection between the start of an alignment with the left breakpoint (LS) and the end of another alignment with the right breakpoint (RE) can be paired. A valid pairing requires consecutive LS and RE alignments in the same orientation.  
-![](/images/duplication_pair.svg) 
+![GS](/images/duplication_pair_dark.svg#gh-dark-mode-only)
+![GS](/images/duplication_pair.svg#gh-light-mode-only)
+
 The read order and number of alignments is assessed to classify alignments as tandem (consecutive) or interspersed (gaps) and duplication or repeat. 
 * TANDEM\_DUPLICATION  
 * TANDEM\_REPEAT  
@@ -71,10 +73,12 @@ If any alignment intersects are unpaired, these flags are appended with the maxi
 ## SVClassifier
 For **Tandem Repeat Finder**, entries are determined by prioritising maximal intersection between SV and repeat and minimal period size in intervals (e.g. 0.05). Non-overlapping entries are selected in order of priority. Based on the period size of the repeat, each filtered entry is identified as HOMO (1bp), STR (2-12bp), TR (\>12bp).   
 ![](/images/TRF_workflow.svg) 
+![GS](/images/TRF_workflow_dark.svg#gh-dark-mode-only)
+![GS](/images/TRF_workflow.svg#gh-light-mode-only)
 
 For **RepeatMasker**, entries are determined by prioritising those with maximal intersection between the SV and repeat entry. Entries are grouped into their repeat class (e.g. SINE, LINE) and in order of priority non-overlapping entries are selected within each class. Based on the element coverage and SV coverage, the SV is classified as a complete transposition when there is a reciprocal overlap of \>=75% or a fragment.
-![](/images/RM_workflow.svg) 
-
+![GS](/images/RM_workflow_dark.svg.svg#gh-dark-mode-only)
+![GS](/images/RM_workflow.svg.svg#gh-light-mode-only)
 The ‘Repetitive’ classification is given to SVs where the intersecting repeat elements cover a threshold (e.g. 0.5). For SVs containing both tandem repeats and mobile elements, the final classification is determined by the type with the highest total coverage. 
 
 ### Annotations
