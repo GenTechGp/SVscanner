@@ -6,21 +6,23 @@ die() { echo -e "${RED}$1${NC}" >&2 ; echo ; exit 1 ; } # terminate script
 info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
 info "$(date)"
 
-
 # Directories (change)
-OUTPUT_DIR="SVtoolkit_output_1"
-CLASSIFIER_DIR="SVclassifier"
-# Input Files (change)
-REF_FASTA="/genome/hg38noAlt.fa"
-SV_VCF="test/HG002_subset/HG002_subset.vcf.gz"
-STR_BED="test/STRchive-disease-loci.bed"
-# Repeat Masker and TRF programs (change if not correct)
-TRF_BINARY="/data/hiruna/SVtoolkit/trf409.linux64"
-REPEATMASKER="/data/hiruna/SVtoolkit/RepeatMasker/RepeatMasker"
+OUTPUT_DIR=$(realpath "SVtoolkit_output_1")
+CLASSIFIER_DIR=$(realpath "SVclassifier")
 
-# NTHREADS=$NSLOTS   # Total number of threads
-NTHREADS=$(nproc --all)
-MAX_JOBS=8          # Max number of RepeatMasker process to run in parallel 
+# Input Files (change)
+REF_FASTA=$(realpath "/genome/hg38noAlt.fa")
+SV_VCF=$(realpath "test/HG002_subset/HG002_subset.vcf.gz")
+STR_BED=$(realpath "test/STRchive-disease-loci.bed")
+
+# Repeat Masker and TRF programs (change if not correct)
+TRF_BINARY=$(realpath "trf409.linux64")
+REPEAT_MASKER=$(realpath "RepeatMasker/RepeatMasker")
+
+# NTHREADS=$NSLOTS
+# NTHREADS=$(nproc --all)
+NTHREADS=1
+MAX_JOBS=1          # Max number of RepeatMasker process to run in parallel 
 THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
 # Parameters (keep as it is)
@@ -69,7 +71,7 @@ check_required() {
     
     command -v split >/dev/null 2>&1 || die "split program not found"
     command -v ${TRF_BINARY} >/dev/null 2>&1 || die "TRF binary not found"
-    command -v ${REPEATMASKER} >/dev/null 2>&1 || die "RepeatMasker not found"
+    command -v ${REPEAT_MASKER} >/dev/null 2>&1 || die "RepeatMasker not found"
     command -v bcftools >/dev/null 2>&1 || die "bcftools not found"
     command -v parallel >/dev/null 2>&1 || die "parallel not found"
 }
@@ -102,8 +104,7 @@ create_fasta_files() {
 }
 
 run_trf() {
-    set -x
-    
+    # set -x
     # 3) Run Tandem Repeat Finder and RepeatMasker - wait for both to complete
     info "3. Running Tandem Repeat Finder..."
     find "${SPLIT_DIR}" -name "${SAMPLE}.*.fa" | parallel -j ${NTHREADS} --bar "${TRF_BINARY} {} 2 7 7 80 10 50 500 -h -ngs > {.}.dat" || die "failed"
@@ -114,7 +115,8 @@ run_repeatmasker() {
     info "3. Running RepeatMasker..."
     cd ${SPLIT_RM}
     # find "${SPLIT_DIR}" -name "${SAMPLE}.*.fa" | parallel -j "$MAX_JOBS" "RepeatMasker {} -pa $THREADS_PER_JOB -html -gff -dir '${SPLIT_DIR}'"
-    find "../" -name "${SAMPLE}.*.fa" | parallel -j "${MAX_JOBS}" "${REPEATMASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir '../'" || die "failed"
+    # set -x
+    find "../" -name "${SAMPLE}.*.fa" | parallel -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir '../'" || die "failed"
     wait 
     # cd ${OUTPUT_SAMPLE_DIR}
     info "done"
