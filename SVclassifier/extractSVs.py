@@ -2,25 +2,25 @@ import sys
 import argparse
 import pysam
 
-def getFlankingCoordinates(pos, end, flanking, chrom_length):
+def get_flanking_coordinates(pos, end, flanking, chrom_length):
     """
     Calculates the start and end flanking coordinates ensuring it is not less than and 
     does not exceed the chromosome size
     """
-    startFlanking = max(0, pos - flanking - 1)
-    endFlanking = min(chrom_length - 1, end + flanking - 1)
+    start_flanking = max(0, pos - flanking - 1)
+    end_flanking = min(chrom_length - 1, end + flanking - 1)
 
-    return startFlanking, endFlanking
+    return start_flanking, end_flanking
 
-def getSequences(fasta, chrom, pos, end, startFlanking, endFlanking):
+def get_sequences(fasta, chrom, pos, end, start_flanking, end_flanking):
     """
     Fetches the sequences 
     """
     # Start position to be 0-based and half-open (end exclusive)
     sequence = fasta.fetch(chrom, pos, end-1) if pos-1 >= 0 else ''
-    flankingSequence = fasta.fetch(chrom, startFlanking, endFlanking)
+    flanking_sequence = fasta.fetch(chrom, start_flanking, end_flanking)
 
-    return sequence, flankingSequence
+    return sequence, flanking_sequence
 
 def get_flanking_regions(vcf_file, fasta_file, output_file, min_size, max_size, flanking_factor):
     """
@@ -75,32 +75,32 @@ def get_flanking_regions(vcf_file, fasta_file, output_file, min_size, max_size, 
                     continue
 
                 length = len(alt)
-                startFlanking = max(0, pos - flanking_factor * length)
-                endFlanking = min(chrom_length - 1, pos + flanking_factor * length)
+                start_flanking = max(0, pos - flanking_factor * length)
+                end_flanking = min(chrom_length - 1, pos + flanking_factor * length)
 
                 sequence = alt[len(ref):]
-                flanking_region = fasta.fetch(chrom, startFlanking, endFlanking)
+                flanking_region = fasta.fetch(chrom, start_flanking, end_flanking)
 
                 # Find the position within the flanking sequence to insert the new sequence
-                if startFlanking < pos < endFlanking:
+                if start_flanking < pos < end_flanking:
                     # Join the flanking sequences and inserted sequence (between them) to make the ALT allele as a FASTA sequence
                     left_flank_end = pos - 1
                     right_flank_start = pos - 1
                     
-                    if left_flank_end < startFlanking:
+                    if left_flank_end < start_flanking:
                         left_flank = ''
                     else:
-                        left_flank = fasta.fetch(chrom, startFlanking, left_flank_end)
+                        left_flank = fasta.fetch(chrom, start_flanking, left_flank_end)
                     
-                    if right_flank_start > endFlanking:
+                    if right_flank_start > end_flanking:
                         right_flank = ''
                     else:
-                        right_flank = fasta.fetch(chrom, right_flank_start + 1, endFlanking)
+                        right_flank = fasta.fetch(chrom, right_flank_start + 1, end_flanking)
                     
                     # Concatenate the sequence between flanking regions 
-                    flankingSequence = left_flank + sequence + right_flank
+                    flanking_sequence = left_flank + sequence + right_flank
                 else:
-                    flankingSequence = flanking_region
+                    flanking_sequence = flanking_region
             
             # DELETION
             elif svtype == 'DEL' and end > pos:  
@@ -108,23 +108,23 @@ def get_flanking_regions(vcf_file, fasta_file, output_file, min_size, max_size, 
                     length = abs(end - pos) 
 
                 length = len(ref)
-                startFlanking, endFlanking = getFlankingCoordinates(pos, pos+length, flanking_factor*length, chrom_length)
-                sequence, flankingSequence = getSequences(fasta, chrom, pos, pos+length, startFlanking, endFlanking)
+                start_flanking, end_flanking = get_flanking_coordinates(pos, pos+length, flanking_factor*length, chrom_length)
+                sequence, flanking_sequence = get_sequences(fasta, chrom, pos, pos+length, start_flanking, end_flanking)
 
             # DUPLICATION            # INVERSION  
             elif svtype == 'DUP' or svtype == "INV":
                 length = end - pos + 1 
-                startFlanking = max(0, pos - flanking_factor * length)
-                endFlanking = min(chrom_length - 1, end + flanking_factor * length - 1)
-                startFlanking, endFlanking = getFlankingCoordinates(pos, end, flanking_factor*length, chrom_length)
-                sequence, flankingSequence = getSequences(fasta, chrom, pos, pos+length, startFlanking, endFlanking)
+                start_flanking = max(0, pos - flanking_factor * length)
+                end_flanking = min(chrom_length - 1, end + flanking_factor * length - 1)
+                start_flanking, end_flanking = get_flanking_coordinates(pos, end, flanking_factor*length, chrom_length)
+                sequence, flanking_sequence = get_sequences(fasta, chrom, pos, pos+length, start_flanking, end_flanking)
 
             else:
                 continue
 
             # Filter out any SV smaller than the min and greater than max -> output only within 
             if length >= min_size and length <= max_size:
-                out.write(f'{chrom}\t{startFlanking}\t{endFlanking}\t{pos}\t{end}\t{length}\t{svID}\t{flankingSequence}\t{sequence}\t{svtype}\t{callerID}\n')
+                out.write(f'{chrom}\t{start_flanking}\t{end_flanking}\t{pos}\t{end}\t{length}\t{svID}\t{flanking_sequence}\t{sequence}\t{svtype}\t{callerID}\n')
                 filtered_count[svtype] += 1
                 total_sv += 1
             elif length < min_size:

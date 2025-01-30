@@ -129,6 +129,55 @@ def get_repeat_info(sv_data, key):
         return sv_data[key]
     return []
 
+
+def add_rm_diagrams(rm, rm_output_flanking, rm_output, diagram_length, flanking_scale, sv_scale, start, sv_start):
+    for classification in rm:
+        elements = rm[classification]
+        # Initialize diagrams for both flanking and SV regions
+        rm_diagram_flanking = [' '] * diagram_length
+        rm_diagram_sv = [' '] * diagram_length
+        
+        intersect_percentages = []
+        repeat_names = set()
+
+        for element in elements:
+            # Process flanking region
+            rm_diagram_flanking = create_rm(rm_diagram_flanking, element, diagram_length, flanking_scale, start)
+            intersection = round(element['intersection'] * 100, 2)
+            intersect_percentages.append(f'{intersection}%')
+
+            # Process SV region
+            rm_diagram_sv = create_rm(rm_diagram_sv, element, diagram_length, sv_scale, sv_start)
+            repeat_names.add(element['repeat'])
+
+        # Convert diagrams to string format
+        formatted_info = f' {classification}'
+        rm_diagram_flanking = format_trf_info(formatted_info, ''.join(rm_diagram_flanking), diagram_length)
+        rm_diagram_sv = format_trf_info(formatted_info, ''.join(rm_diagram_sv), diagram_length)
+
+        # Append results to respective outputs
+        rm_output_flanking.append(f'{rm_diagram_flanking}\t{",".join(intersect_percentages)}\n')
+        rm_output.append(f'{rm_diagram_sv}\t{",".join(repeat_names)}\n')
+
+    return rm_output_flanking, rm_output
+    
+def add_trf_diagrams(trf, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, start, sv_start, motif_length=80):
+    for repeat in trf:
+        # Process flanking region
+        trf_diagram_flanking = create_trf(repeat, diagram_length, flanking_scale, start)
+        intersect = round(repeat['intersection'] * 100, 2)
+        trf_output_flanking.append(f'{trf_diagram_flanking}\t{intersect}%\n')
+
+        # Process SV region
+        motif = repeat['motif']
+        if len(motif) > motif_length:
+            motif = f'*{motif_length}plus'
+
+        trf_diagram_sv = create_trf(repeat, diagram_length, sv_scale, sv_start)
+        trf_output.append(f'{trf_diagram_sv}\t{motif}\n')
+
+    return trf_output_flanking, trf_output
+
 def create_SV(sv_info, diagram_length, output_file):
     """
     Creates and writes structural variant (SV) and repeat diagrams to an output file.
@@ -142,7 +191,6 @@ def create_SV(sv_info, diagram_length, output_file):
     - diagram_length (int): The length of the diagram to generate for the SV and repeats.
     - output_file (str):    The path to the output file where the diagrams will be written.
     """
-    motif_length = 80
     with open(output_file, 'w') as f:  # Open the file for writing
         for sv_id in sv_info:
             sv_data = sv_info[sv_id]
@@ -161,87 +209,32 @@ def create_SV(sv_info, diagram_length, output_file):
             trf_output = []
 
             start, end = sv_data['start'], sv_data['end']
+            sv_start, sv_end, sv_length = sv_data['rel_start'], sv_data['rel_end'], sv_data['length']
 
-            sv_start = sv_data['rel_start']
-            sv_end = sv_data['rel_end']
-            sv_length = sv_data['length']
-
+            # Calcualte scaling factors for diagrams
             flanking_scale = diagram_length / end
+            sv_scale = diagram_length / sv_length
+            
             sv_start_scaled = int((sv_start - start) * flanking_scale)
             sv_end_scaled = int((sv_end - start) * flanking_scale)
-
-
-            ###################### SV & FLANKING DIAGRAM #######################
+            
+            # Generate the SV w/ flanking diagram 
             # Don't generate the flanking diagram if sv ends after the flanking
             if sv_end > end and sv_end_scaled > 100:
                 id_str = id_str.replace('\t', ' ')
                 print(f"Unable to generate sv + flanking diagram for {id_str}")
-                # print(f'\tSV_Start {start}   SV_End {end}')
-                # print(f'\tRelative Start {sv_start}   Relative {sv_end}')
-                # print(f'Relative Start {sv_start}   Relative {sv_end}')
                 flanking_diagram = None
             else:
                 flanking_diagram = create_diagram(diagram_length, sv_start_scaled, sv_end_scaled)
                 flanking_diagram = format_trf_info('SV & flanking', flanking_diagram, diagram_length)
             
-            
-            ## REPEAT MASKER 
-            for classification in rm:
-                elements = rm[classification]
-                rm_diagram = [' '] * diagram_length
-                info = classification
-                intersect_percentages = []
-                for element in elements:
-                    rm_diagram = create_rm(rm_diagram, element, diagram_length, flanking_scale, start)
-                    intersection = round(element['intersection']*100, 2)
-                    intersect_percentages.append(f'{intersection}%')
-
-                rm_diagram = ''.join(rm_diagram)
-                rm_diagram = format_trf_info(f' {info}', rm_diagram, diagram_length)
-                intersects = ','.join(intersect_percentages)
-                    
-                rm_output_flanking.append(f'{rm_diagram}\t{intersects}\n')
-            
-            ## TANDEM REPEAT FINDER  
-            # Write out repeats as fraction of flanking region with SV
-            for repeat in trf:                
-                trf_diagram = create_trf(repeat, diagram_length, flanking_scale, start)
-                intersect = round(repeat['intersection']*100,2)
-                trf_output_flanking.append(f'{trf_diagram}\t{intersect}%\n')
-
-            ########## SV DIAGRAM: Write out repeats as fraction of SV #########
-            sv_scale = diagram_length / sv_length
+            # Generate the SV Diagram 
             sv_diagram = create_diagram(diagram_length, 0, diagram_length-1)
             sv_diagram = format_trf_info('SV Diagram', sv_diagram, diagram_length)
 
-            ## REPEAT MASKER
-            for classification in rm:
-
-                elements = rm[classification]
-                repeat_names = []
-
-                rm_diagram = [' '] * diagram_length
-                info = classification
-                for element in elements:
-                    repeat_name = element['repeat']
-
-                    rm_diagram = create_rm(rm_diagram, element, diagram_length, sv_scale, sv_start)
-                    if repeat_name not in repeat_names:
-                        repeat_names.append(repeat_name)
-               
-                rm_diagram = ''.join(rm_diagram)
-                rm_diagram = format_trf_info(f' {info}', rm_diagram, diagram_length)
-                names = ','.join(repeat_names)
-                rm_output.append(f'{rm_diagram}\t{names}\n')
-
-            # TANDEM REPEAT FINDER
-            for repeat in trf:
-                motif = repeat['motif']
-                if len(motif) > motif_length:
-                    motif = f'*{motif_length}plus'
-
-                trf_diagram = create_trf(repeat, diagram_length, sv_scale, sv_start)
-                trf_output.append(f'{trf_diagram}\t{motif}\n')
+            # Create the diagrams for the RepeatMasker and TRF entries
+            rm_output_flanking, rm_output = add_rm_diagrams(rm, rm_output_flanking, rm_output, diagram_length, flanking_scale, sv_scale, start, sv_start)
+            trf_output_flanking, trf_output = add_trf_diagrams(trf, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, start, sv_start, motif_length=80)
 
             # Output the diagrams
             if rm_output_flanking != [] or trf_output_flanking != [] or rm_output != [] or trf_output != []:

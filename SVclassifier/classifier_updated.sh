@@ -15,23 +15,28 @@ REF_FASTA=$(realpath "/genome/hg38noAlt.fa")
 SV_VCF=$(realpath "test/HG002_subset/HG002_subset.vcf.gz")
 STR_BED=$(realpath "test/STRchive-disease-loci.bed")
 
-# Repeat Masker and TRF programs (change if not correct)
+# Repeat Masker and TRF programs (change if necessary)
 TRF_BINARY=$(realpath "trf409.linux64")
 REPEAT_MASKER=$(realpath "RepeatMasker/RepeatMasker")
 
-# NTHREADS=$NSLOTS
-# NTHREADS=$(nproc --all)
-NTHREADS=1
-MAX_JOBS=1          # Max number of RepeatMasker process to run in parallel 
+# NTHREADS=$NSLOTS   # Total number of threads
+NTHREADS=$(nproc --all)
+MAX_JOBS=8          # Max number of RepeatMasker process to run in parallel 
 THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
-# Parameters (keep as it is)
+# Parameters (change if necessary)
 SAMPLE=HG002_subset
 NUM_SPLIT=100        # Number of sequences per file 
-MIN_INTERSECT=0.05
-MIN_COVERAGE=0.5
+MIN_INTERSECT=0.05   # Min intersect between SV and repeat to be considered repetitive
+MIN_COVERAGE=0.5     # Min coverage of an SV by repeat(s) to be considered repetitive
 INTERVAL=0.05
 DIAGRAM_LEN=100
+
+# Final Outputs (change if necessary)
+VIS_OUTPUT=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_diagrams.txt
+ANNOTATED_VCF=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotated.vcf
+RM_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedRM.tsv
+TRF_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedTRF.tsv
 
 # Python and bash scripts (keep as it is)
 VARIANT_FLANKING=${CLASSIFIER_DIR}/extractSVs.py
@@ -49,12 +54,6 @@ SV_TAB=${OUTPUT_SAMPLE_DIR}/variant_flanking.tab
 ID_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_id.tab
 RM_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_rm.tab
 TRF_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_trf.tab
-
-# Final Outputs (keep as it is)
-VIS_OUTPUT=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_diagrams.txt
-ANNOTATED_VCF=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotated.vcf
-RM_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedRM.tsv
-TRF_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedTRF.tsv
 
 check_required() {
     [ -n "$VIRTUAL_ENV" ] && info "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
