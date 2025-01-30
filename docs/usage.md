@@ -5,6 +5,7 @@
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 3. [SVClassifier](#svclassifier)
    - [Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker](#setting-up-trf--sequence-search-engine--te-database--repeatmasker)
+   - [Quick example run](#quick-example-run)
    - [Usage](#usage)
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 
@@ -174,28 +175,37 @@ REPEAT_MASKER=$(realpath RepeatMasker/RepeatMasker)
 $REPEAT_MASKER test/sample.fa
 ```
 
+### Quick example run
+
+The following example run process the `test/HG002_subset_mini.vcf.gz` dataset (100 records)
+It will take about 10 minutes.
+The majority of time is taken by the RepeatMasker step.
+
+```
+./SVClassifier/run_classifier.sh
+```
+
 ### Usage
 
-**1. Update paths to input/output files (examples given)**
+**1. Update the following variables**
 
 
 ```
-# Load bedtools, samtools, bcftools
-# ...
-
 # Directories (change)
-OUTPUT_DIR="sample"
-CLASSIFIER_DIR="SVclassifier"
-# Input Files (change)
-REF_FASTA="/genome/hg38noAlt.fa"
-SV_VCF="test/HG002_subset/HG002_subset.vcf.gz"
-STR_BED="test/STRchive-disease-loci.bed"
-# Repeat Masker and TRF programs (change if not correct)
-TRF_BINARY="..."
-REPEATMASKER="..."
+OUTPUT_DIR=$(realpath "SVtoolkit_output_1")
+CLASSIFIER_DIR=$(realpath "SVclassifier")
 
-# Parameters (change)
-SAMPLE=sample
+# Input Files (change)
+REF_FASTA=$(realpath "/genome/hg38noAlt.fa")
+SV_VCF=$(realpath "test/HG002_subset_mini/HG002_subset_mini.vcf.gz")
+STR_BED=$(realpath "test/STRchive-disease-loci.bed")
+
+# Repeat Masker and TRF programs (change if necessary)
+TRF_BINARY=$(realpath "trf409.linux64")
+REPEAT_MASKER=$(realpath "RepeatMasker/RepeatMasker")
+
+# Parameters (change if necessary)
+SAMPLE="HG002_subset_mini"
 NUM_SPLIT=100        
 MIN_INTERSECT=0.05   
 MIN_COVERAGE=0.5     
@@ -215,8 +225,7 @@ DIAGRAM_LEN=100
 
 **3. Run script**  
 ```
-chmod +x classifier.sh
-./classifier.sh 
+./SVClassifier/run_classifier.sh
 ```
 
 ### Inputs & Outputs (Extended)

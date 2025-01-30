@@ -12,7 +12,7 @@ CLASSIFIER_DIR=$(realpath "SVclassifier")
 
 # Input Files (change)
 REF_FASTA=$(realpath "/genome/hg38noAlt.fa")
-SV_VCF=$(realpath "test/HG002_subset/HG002_subset.vcf.gz")
+SV_VCF=$(realpath "test/HG002_subset_mini/HG002_subset_mini.vcf.gz")
 STR_BED=$(realpath "test/STRchive-disease-loci.bed")
 
 # Repeat Masker and TRF programs (change if necessary)
@@ -21,11 +21,11 @@ REPEAT_MASKER=$(realpath "RepeatMasker/RepeatMasker")
 
 # NTHREADS=$NSLOTS   # Total number of threads
 NTHREADS=$(nproc --all)
-MAX_JOBS=8          # Max number of RepeatMasker process to run in parallel 
-THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
+# MAX_JOBS=8          # Max number of RepeatMasker process to run in parallel 
+# THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
 # Parameters (change if necessary)
-SAMPLE=HG002_subset
+SAMPLE="HG002_subset_mini"
 NUM_SPLIT=100        # Number of sequences per file 
 MIN_INTERSECT=0.05   # Min intersect between SV and repeat to be considered repetitive
 MIN_COVERAGE=0.5     # Min coverage of an SV by repeat(s) to be considered repetitive
@@ -65,6 +65,8 @@ check_required() {
     info "Reference: ${REF_FASTA}"
     info "Input SV VCF: ${SV_VCF}"
     info "Input BED: ${STR_BED}"
+
+    info "NTHREADS: ${NTHREADS}"
     
     command -v split >/dev/null 2>&1 || die "split program not found"
     command -v ${TRF_BINARY} >/dev/null 2>&1 || die "TRF binary not found"
@@ -110,13 +112,21 @@ run_trf() {
 
 run_repeatmasker() {
     info "3. Running RepeatMasker..."
+    T2=$(date +%s)
     cd ${SPLIT_RM}
-    # find "${SPLIT_DIR}" -name "${SAMPLE}.*.fa" | parallel -j "$MAX_JOBS" "RepeatMasker {} -pa $THREADS_PER_JOB -html -gff -dir '${SPLIT_DIR}'"
     # set -x
-    find "../" -name "${SAMPLE}.*.fa" | parallel -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir '../'" || die "failed"
+    # find "${SPLIT_DIR}" -name "${SAMPLE}.*.fa" | parallel -j "$MAX_JOBS" "RepeatMasker {} -pa $THREADS_PER_JOB -html -gff -dir '${SPLIT_DIR}'"
+    # find "../" -name "${SAMPLE}.*.fa" | parallel -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir '../'" || die "failed"
+    # find "../" -name "${SAMPLE}.*.fa" | xargs -I {} taskset -c 0-9 "${REPEAT_MASKER}" {}  -html -gff -dir '../'
+    # ls *.fasta | parallel --load 75% -j $(( $(nproc) / 4 )) repeatmasker -engine nhmmer -pa 2 {}
+
+    # nhmmer search engine takes 2 cpus per job. hence -pa 2 means 2x2=4 cpus are used. Only runs new jobs if system load is below 75%.
+    find "../" -name "${SAMPLE}.*.fa" | parallel --load 75% -j $(( $(nproc) / 4 )) ${REPEAT_MASKER} {} -pa 2 -html -gff -dir "../" || die "failed"
     wait 
-    # cd ${OUTPUT_SAMPLE_DIR}
-    info "done"
+    cd -
+    T3=$(date +%s)
+    RM_TIME=$((T3 - T2))
+    info "done. RepeatMasker took ${RM_TIME} seconds"
 }
 
 process_repeatmasker_output() {
@@ -176,6 +186,8 @@ show_output_paths() {
     info "SV VCF with repeats annotated: ${ANNOTATED_VCF}"
 }
 
+T0=$(date +%s)
+
 check_required
 create_output_dir
 extract_flanking_regions
@@ -189,6 +201,10 @@ annotate_vcf_with_repeats
 sort_and_index_vcf
 remove_intermediates
 show_output_paths
+
+T1=$(date +%s)
+ELAPSED_TIME=$((T1 - T0))
+info "The SVclassifier pipeline took ${ELAPSED_TIME} seconds"
 
 info "$(date)"
 info "Success!"
