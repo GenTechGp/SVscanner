@@ -32,28 +32,26 @@ MIN_COVERAGE=0.5     # Min coverage of an SV by repeat(s) to be considered repet
 INTERVAL=0.05
 DIAGRAM_LEN=100
 
-# Final Outputs (change if necessary)
-VIS_OUTPUT=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_diagrams.txt
-ANNOTATED_VCF=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotated.vcf
-RM_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedRM.tsv
-TRF_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedTRF.tsv
-
 # Python and bash scripts (keep as it is)
 VARIANT_FLANKING=${CLASSIFIER_DIR}/extractSVs.py
 TO_FASTA=${CLASSIFIER_DIR}/toFasta.sh
 ANNOTATE=${CLASSIFIER_DIR}/repeatAnnotation.py
 VISUALISE=${CLASSIFIER_DIR}/repeatDiagram.py
-
 # Internal directories (keep as it is)
 OUTPUT_SAMPLE_DIR=${OUTPUT_DIR}/${SAMPLE}
 SPLIT_DIR=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_${NUM_SPLIT}
 SPLIT_RM=${SPLIT_DIR}/RMtmp
-
 # File Intermediates (keep as it is)
 SV_TAB=${OUTPUT_SAMPLE_DIR}/variant_flanking.tab
 ID_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_id.tab
 RM_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_rm.tab
 TRF_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_trf.tab
+
+# Final Outputs (change if necessary)
+VIS_OUTPUT=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_diagrams.txt
+ANNOTATED_VCF=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotated.vcf
+RM_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedRM.tsv
+TRF_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedTRF.tsv
 
 check_required() {
     [ -n "$VIRTUAL_ENV" ] && info "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
