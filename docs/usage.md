@@ -184,7 +184,7 @@ It will take about 10 minutes. The majority of time is taken by the RepeatMasker
 You may need to change the `REF_FASTA` variable to set the reference genome path (see below - Input Files).
 
 ```
-./SVClassifier/run_classifier.sh
+./SVclassifier/run_classifier.sh
 ```
 
 ### Usage
