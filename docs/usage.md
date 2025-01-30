@@ -233,8 +233,9 @@ DIAGRAM_LEN=100
 ### Inputs & Outputs (Extended)
 
 #### Inputs
-* `$svVCF`   	path to .vcf file containing structural variants called by SV caller  
-* `$refFASTA` 	path to .fa file containing reference 
+* `$REF_FASTA` path to .fa file containing reference 
+* `$SV_VCF`   	path to .vcf file containing structural variants called by SV caller  
+* `$STR_BED`   path to strchive bed file 
 
 #### Outputs
 ```
