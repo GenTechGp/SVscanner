@@ -4,7 +4,7 @@
    - [Usage](#usage)
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 3. [SVClassifier](#svclassifier)
-   - [Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker](#setting-up-trf--sequence-search-engine--te-database--repeatmasker)
+   - [Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker + Other](#sequence-search-engine--te-database--repeatmasker--other)
    - [Quick example run](#quick-example-run)
    - [Usage](#usage)
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
@@ -131,7 +131,7 @@ chmod +x trf409.linux64
 TRF_BINARY=$(realpath trf409.linux64)
 ```
 
-#### Sequence Search Engine + TE Database + RepeatMasker 
+#### Sequence Search Engine + TE Database + RepeatMasker + Other
 1. Download Sequence Search Engine (e.g. HMMER)
 ```
 wget http://eddylab.org/software/hmmer/hmmer-3.4.tar.gz
@@ -173,6 +173,17 @@ rm RepeatMasker-4.1.6.tar.gz
 
 REPEAT_MASKER=$(realpath RepeatMasker/RepeatMasker)
 $REPEAT_MASKER test/sample.fa
+```
+4. Other
+   
+   Check if you have the following tools installed ont the system.
+
+   The tools can be activated on some HPCs, e.g. `module load bcftools`
+```
+realpath
+split
+bcftools
+parallel
 ```
 
 ### Quick example run
