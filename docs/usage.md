@@ -4,7 +4,7 @@
    - [Usage](#usage)
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
 3. [SVClassifier](#svclassifier)
-   - [Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker + Other](#sequence-search-engine--te-database--repeatmasker--other)
+   - [Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker + Other](#setting-up-trf--sequence-search-engine--te-database--repeatmasker--other)
    - [Quick example run](#quick-example-run)
    - [Usage](#usage)
    - [Inputs & Outputs (Extended)](#inputs--outputs-extended)
@@ -121,9 +121,9 @@ This file includes the flag of every read for each SV.
 
 ## SVClassifier
 
-### Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker
+### Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker + Other
 
-#### TRF (Tandem Repeats Finder) 
+1. TRF (Tandem Repeats Finder) 
 ```
 wget https://github.com/Benson-Genomics-Lab/TRF/releases/download/v4.09.1/trf409.linux64
 chmod +x trf409.linux64
@@ -131,8 +131,7 @@ chmod +x trf409.linux64
 TRF_BINARY=$(realpath trf409.linux64)
 ```
 
-#### Sequence Search Engine + TE Database + RepeatMasker + Other
-1. Download Sequence Search Engine (e.g. HMMER)
+2. Download Sequence Search Engine (e.g. HMMER)
 ```
 wget http://eddylab.org/software/hmmer/hmmer-3.4.tar.gz
 tar -xvf hmmer-3.4.tar.gz
@@ -147,7 +146,7 @@ rm hmmer-3.4.tar.gz
 HMMER_DIR=$(realpath hmmer-3.4/src)
 
 ```
-2. Download DFAM (8.9 GB - takes about 1 hour to download) and extract (67 GB - takes about 15 mins to extract)
+3. Download DFAM (8.9 GB - takes about 1 hour to download) and extract (67 GB - takes about 15 mins to extract)
    
    Skip if you already have downloaded a copy of the Dfam database.
    
@@ -157,7 +156,7 @@ wget https://www.dfam.org/releases/Dfam_3.8/families/FamDB/dfam38-1_full.0.h5.gz
 gunzip dfam38-1_full.0.h5.gz
 DFAM_FILE=$(realpath dfam38-1_full.0.h5)
 ```
-3. Download RepeatMasker
+4. Download RepeatMasker
    
    Discard the error `Can't open DateRepeats: No such file or directory.` in the configuration step below.
 
@@ -174,7 +173,7 @@ rm RepeatMasker-4.1.6.tar.gz
 REPEAT_MASKER=$(realpath RepeatMasker/RepeatMasker)
 $REPEAT_MASKER test/sample.fa
 ```
-4. Other
+5. Other
    
    Check if you have the following tools installed ont the system.
 
