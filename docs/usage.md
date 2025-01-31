@@ -243,9 +243,9 @@ DIAGRAM_LEN=100
 ### Inputs & Outputs (Extended)
 
 #### Inputs
-* `$REF_FASTA` path to .fa file containing reference 
-* `$SV_VCF`   	path to .vcf file containing structural variants called by SV caller  
-* `$STR_BED`   path to strchive bed file 
+* `$REF_FASTA`:path to .fa file containing reference 
+* `$SV_VCF`:path to .vcf file containing structural variants called by SV caller  
+* `$STR_BED`:path to strchive bed file containing STR loci downloaded at https://strchive.org/loci/
 
 #### Outputs
 ```
