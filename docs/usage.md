@@ -175,7 +175,7 @@ $REPEAT_MASKER test/sample.fa
 ```
 5. Other
    
-   Check if you have the following tools installed ont the system.
+   Check if you have the following tools installed on the computer system.
 
    The tools can be activated on some HPCs, e.g. `module load bcftools`
 ```
@@ -237,7 +237,7 @@ DIAGRAM_LEN=100
 
 **3. Run script**  
 ```
-./SVClassifier/run_classifier.sh
+./SVclassifier/run_classifier.sh
 ```
 
 ### Inputs & Outputs (Extended)
