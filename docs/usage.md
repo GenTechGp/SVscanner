@@ -154,6 +154,7 @@ HMMER_DIR=$(realpath hmmer-3.4/src)
 ```
 wget https://www.dfam.org/releases/Dfam_3.8/families/FamDB/dfam38-1_full.0.h5.gz
 gunzip dfam38-1_full.0.h5.gz
+
 DFAM_FILE=$(realpath dfam38-1_full.0.h5)
 ```
 4. Download RepeatMasker
@@ -187,7 +188,7 @@ parallel
 
 ### Quick example run
 
-The following example run process the `test/HG002_subset_mini.vcf.gz` dataset (100 records).
+The following example processes the `test/HG002_subset_mini.vcf.gz` dataset (100 records).
 
 It will take about 10 minutes. The majority of time is taken by the RepeatMasker step.
 
