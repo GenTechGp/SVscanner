@@ -27,8 +27,63 @@ e.g. depending whether RepeatMasker is a module vs installed
 find "$splitDir" -name "${sample}.*.fa" | parallel -j "$MAX_JOBS" "RepeatMasker {} -pa $THREADS_PER_JOB -html -gff -dir '$splitDir'" #NCI
 find "$splitDir" -name "${sample}.*.fa" | parallel -j "$MAX_JOBS" "${repeatMasker} {} -pa $THREADS_PER_JOB -html -gff -dir '$splitDir'" #Brenner
 ```
-* Improved id generation in extractSVs.py - currently it increments index (New ids are created incase vcfs are merged and caller recreates ids) 
-* Error checking and handling for files 
+
+ID Generation 
+* Removal of custom id - test deletion of in `repeatAnnotation` `record.id=sv_id # line 524`
+
+**Annotation of SVs** \
+Ensure final annotated SVs contain all original (filtered by size) SVs even though they may not intersect a TRF or RepeatMasker entry 
+* Currently we loop through all the SVs in `output_annotations()` (598) that were added based on them having an intersection with trf and rm in `read_trf()/read_rm()`. Then we search for the SV in the original VCF (520) which maybe eliminates the SVs that TRF and RM did not find any repeats for (needs double checking)
+```
+631 for sv_id in sv_info:
+634    classification, transposition = create_vcf_record(vcf_out, sv_vcf, sv_info, sv_id, min_repetitive, strchive)
+
+435 def create_vcf_record(vcf_file, sv_vcf, sv_info, sv_id, min_repetitive, strchive):
+520     records = sv_vcf.fetch(chrom, pos-1, pos+1)
+```
+* Instead this could be refactored for the reverse, where you open the original SV, parse the entries and locate the annotations for that SV in the `sv_info` dict. This would also reduce additional searches by pos. 
+
+**NON_REPETITIVE and NA labels**\
+Currently 
+* NON_REPETITIVE = intersection < threshold
+* NA = no intersection with TRF entry or RepeatMasker Entry
+
+Change
+* NON_REPETITIVE = below threshold and not intersecting 
+
+Most likely changes to code 
+```
+# Line 299-391 prepare() functions
+# Change the else for classication to # 'NON_REPETITIVE'
+def prepare_rm_data(rm_data):
+    """Extract repeat data fields from TRF records."""
+    ...
+    return {
+        'RM_CLASSIFICATION': ','.join(classifications) if classifications else 'NA',    
+        'RM_ELEMENTS_COVERAGE': ','.join(element_coverage) if element_coverage else 'NA',
+        'RM_ELEMENT_PROPORTION': ','.join(parts) if parts else 'NA',
+        'RM_SV_COVERAGE': ','.join(sv_coverage) if sv_coverage else 'NA',
+    }
+
+def prepare_trf_data(trf_data):
+    ...
+    return {
+        'TRF_CLASSIFICATION': ','.join(classifications) if classifications else 'NA',
+        'TRF_PERIOD_SIZE': ','.join(period_sizes) if period_sizes else 'NA',
+        'TRF_COPY_NUMBER': ','.join(copy_number) if copy_number else 'NA',
+        'CONSENSUS_REPEAT': ','.join(consensus_repeats) if consensus_repeats else 'NA',
+        'TRF_SV_COVERAGE': ','.join(sv_coverage) if sv_coverage else 'NA',
+    }
+
+# Also check line 468-480
+if total_rm_coverage != 'NA' and float(total_rm_coverage) < min_repetitive:
+    rm_data.update({key: 'NA' for key in rm_data if key != 'RM_TOTAL_SV_COVERAGE'})
+    rm_data['RM_CLASSIFICATION'] = 'NON_REPETITIVE'
+if total_trf_coverage != 'NA' and float(total_trf_coverage) < min_repetitive:
+    trf_data.update({key: 'NA' for key in trf_data if key != 'TRF_TOTAL_SV_COVERAGE'})
+    trf_data['TRF_CLASSIFICATION'] = 'NON_REPETITIVE'
+
+```
 
 ### Extensions
 #### Annotations
