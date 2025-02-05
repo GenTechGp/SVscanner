@@ -1,8 +1,8 @@
 #!/bin/bash
 #PBS -P ox63
 #PBS -N a_SVclassifier
-#PBS -l ncpus=16
-#PBS -l mem=4GB
+#PBS -l ncpus=48
+#PBS -l mem=128GB
 #PBS -l walltime=1:00:00
 #PBS -l wd
 
