@@ -9,3 +9,6 @@ dfam*
 SVtoolkit*
 !test/sample.fa
 test/sample.fa.*
+test/RM_seq
+test/search_dfam
+test/bench
