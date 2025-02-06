@@ -47,7 +47,7 @@ def get_flanking_regions(vcf_file, fasta_file, output_file, min_size, max_size, 
     symbolic_ins = 0
 
     # Count for print of filtering 
-    sv_count = {'INS' : 0, 'DEL' : 0, 'INV' : 0, 'DUP' : 0, 'BND' : 0}
+    sv_count = {'INS' : 0, 'DEL' : 0, 'INV' : 0, 'DUP' : 0, 'BND' : 0} #todo: rename to original or total svs
     min_count = {'INS' : 0, 'DEL' : 0, 'INV' : 0, 'DUP' : 0, 'BND' : 0}
     max_count = {'INS' : 0, 'DEL' : 0, 'INV' : 0, 'DUP' : 0, 'BND' : 0}
     filtered_count = {'INS' : 0, 'DEL' : 0, 'INV' : 0, 'DUP' : 0, 'BND' : 0}
@@ -63,7 +63,7 @@ def get_flanking_regions(vcf_file, fasta_file, output_file, min_size, max_size, 
             callerID = record.id
 
             # Generate a unique ID
-            svID = f'{svtype}.{i}'
+            svID = f'{svtype}.{i}' #todo: use callerID here?
             sv_count[svtype] += 1
             # Get the length of the chromosome sequence
             chrom_length = fasta.lengths[fasta.references.index(chrom)]
@@ -78,7 +78,7 @@ def get_flanking_regions(vcf_file, fasta_file, output_file, min_size, max_size, 
                 start_flanking = max(0, pos - flanking_factor * length)
                 end_flanking = min(chrom_length - 1, pos + flanking_factor * length)
 
-                sequence = alt[len(ref):]
+                sequence = alt[len(ref):] #todo: check if this is correct. this might affect the end pos of the final vcf
                 flanking_region = fasta.fetch(chrom, start_flanking, end_flanking)
 
                 # Find the position within the flanking sequence to insert the new sequence
@@ -120,11 +120,12 @@ def get_flanking_regions(vcf_file, fasta_file, output_file, min_size, max_size, 
                 sequence, flanking_sequence = get_sequences(fasta, chrom, pos, pos+length, start_flanking, end_flanking)
 
             else:
-                continue
+                continue #todo: count other svtypes 
 
-            # Filter out any SV smaller than the min and greater than max -> output only within 
+            # Filter out any SV smaller than the min and greater than max -> output only within #todo: first filter. then no need to generate flanking sequences
             if length >= min_size and length <= max_size:
-                out.write(f'{chrom}\t{start_flanking}\t{end_flanking}\t{pos}\t{end}\t{length}\t{svID}\t{flanking_sequence}\t{sequence}\t{svtype}\t{callerID}\n')
+                len_flank = len(flanking_sequence)
+                out.write(f'{chrom}\t{start_flanking}\t{end_flanking}\t{pos}\t{end}\t{length}\t{len_flank}\t{svID}\t{flanking_sequence}\t{sequence}\t{svtype}\t{callerID}\n') # maintain same variable names across scripts (check toFasta.sh)
                 filtered_count[svtype] += 1
                 total_sv += 1
             elif length < min_size:
@@ -136,8 +137,8 @@ def get_flanking_regions(vcf_file, fasta_file, output_file, min_size, max_size, 
 
 
     #------------------------ Command Line Output -----------------------------#           
-    print(f'Total SV:           \t{total_sv:>6}')
-    print(f'Filtered (<{min_size}):   \t{filtered_min:>6}')
+    print(f'Total SV:           \t{total_sv:>6}') #todo: differentiate filterted (here refered to as Total) from original (actually total) svs.
+    print(f'Filtered (<{min_size}):   \t{filtered_min:>6}') #todo: add bp
     print(f'Filtered (>{max_size}):   \t{filtered_max:>6}')
 
     # Header with SV types
@@ -175,8 +176,9 @@ if __name__ == "__main__":
     parser.add_argument("-max",
         help="The maximum length of the SV", default=50000, type=int)
     parser.add_argument("-flank",
-        help="Flanking factor surrounding the SV ", default=10, type=int)
+        help="Flanking factor surrounding the SV ", default=10, type=int) #todo: check repeat finders' outputs and revise this number/strategy. maybe the flanking intervals are too long and unncessary
 
     args = parser.parse_args()
 
     get_flanking_regions(args.vcf, args.fa, args.out, args.min, args.max, args.flank)
+#todo: what happens when there are SVs in the flanking sequence according to the vcf file.

@@ -11,8 +11,9 @@ OUTPUT_DIR=$(realpath "SVtoolkit_output_1")
 CLASSIFIER_DIR=$(realpath "SVclassifier")
 
 # Input Files (change)
+SAMPLE="HG002_subset"
 REF_FASTA=$(realpath "/genome/hg38noAlt.fa")
-SV_VCF=$(realpath "test/HG002_subset_mini/HG002_subset_mini.vcf.gz")
+SV_VCF=$(realpath "test/${SAMPLE}/${SAMPLE}.vcf.gz")
 STR_BED=$(realpath "test/STRchive-disease-loci.bed")
 
 # Repeat Masker and TRF programs (change if necessary)
@@ -25,15 +26,14 @@ NTHREADS=$(nproc --all)
 # THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
 # Parameters (change if necessary)
-SAMPLE="HG002_subset_mini"
-NUM_SPLIT=100        # Number of sequences per file 
+NUM_SPLIT=100        # Number of sequences per file #todo: this should be calculated depending on the number of parallel jobs that can be run. also each split .fasta file should have similar size approx.
 MIN_INTERSECT=0.05   # Min intersect between SV and repeat to be considered repetitive
 MIN_COVERAGE=0.5     # Min coverage of an SV by repeat(s) to be considered repetitive
 INTERVAL=0.05
 DIAGRAM_LEN=100
 
 # Python and bash scripts (keep as it is)
-VARIANT_FLANKING=${CLASSIFIER_DIR}/extractSVs.py
+EXTRACT_SV_FLANKINGS=${CLASSIFIER_DIR}/extractSVs.py
 TO_FASTA=${CLASSIFIER_DIR}/toFasta.sh
 ANNOTATE=${CLASSIFIER_DIR}/repeatAnnotation.py
 VISUALISE=${CLASSIFIER_DIR}/repeatDiagram.py
@@ -85,14 +85,14 @@ create_output_dir() {
 extract_flanking_regions() {
     # 1) Extract sequence and flanking regions for variants
     info "1. Extracting structural variant sequences from VCF..."
-    python3 ${VARIANT_FLANKING} -vcf ${SV_VCF} -fa ${REF_FASTA} -out ${SV_TAB} || die "failed"
+    python3 ${EXTRACT_SV_FLANKINGS} -vcf ${SV_VCF} -fa ${REF_FASTA} -out ${SV_TAB} || die "failed"
     info "done"
 }
 
 create_fasta_files() {
     # 2) Create fasta sequences
     info "2. Converting structural variant sequences to FASTA..."
-    split --numeric-suffixes=1 --suffix-length=3 -l ${NUM_SPLIT} "${SV_TAB}" ${SPLIT_DIR}/${SAMPLE}. || die "split failed"
+    split --numeric-suffixes=1 --suffix-length=3 -l ${NUM_SPLIT} "${SV_TAB}" ${SPLIT_DIR}/${SAMPLE} || die "split failed"
     chmod +r ${SPLIT_DIR}/*
     chmod +w ${SPLIT_DIR}/*
     find "${SPLIT_DIR}" -name "${SAMPLE}.[0-9]*" | parallel -j ${NTHREADS} "
