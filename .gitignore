@@ -4,7 +4,7 @@ hmmer-3.4
 trf409.linux64
 out
 RepeatMasker
-__pycache__/
+__pycache__
 *.pyc
 *.pyo
 dfam*
