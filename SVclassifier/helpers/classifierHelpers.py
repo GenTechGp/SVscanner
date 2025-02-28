@@ -5,6 +5,8 @@ def read_sv_info(sv_file):
     with open(sv_file, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
         for sv in reader:
+            # if sv[6] != "INS.36":
+            #     continue
             # Extract values from the columns
             chrom = sv[0]
             query_start = int(sv[1])
@@ -23,7 +25,7 @@ def read_sv_info(sv_file):
                 'ID': sv_id, 
                 'chrom': chrom,
                 'position': pos,
-                'end' : end, 
+                # 'end' : end, 
                 'length': length, 
                 'rel_start' : rel_start, 
                 'rel_end' : rel_end,
