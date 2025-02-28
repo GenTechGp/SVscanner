@@ -13,9 +13,10 @@ TABIX="./htslib-1.21/tabix"
 NO_RETURN_CODES=15
 
 def get_f_len(svlen, args):
-    flen_svlen = svlen + args.flen
-    ffac_svlen = svlen * args.ffac
-    return min(flen_svlen, ffac_svlen)
+    if args.flen < svlen * args.ffac:
+        return args.flen
+    else:
+        return svlen * args.ffac
 
 def check_program(tool):
     if not (os.path.exists(tool) and os.path.isfile(tool)):
@@ -90,9 +91,8 @@ def process_fasta(input_fasta, output_fasta, new_title):
     return seq_length, sequence
 
 #bcftools consensus method
-def handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i):
+def handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i, f_len):
     svlen = get_svlen(record)
-    f_len = get_f_len(abs(svlen), args)
     output_dir = args.out
 
     # Write a new VCF file with only the ith record
@@ -143,7 +143,7 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
     seq = record.alts[0]
     svlen = len(seq)
     assert svlen > 0
-    f_len = get_f_len(abs(svlen), args)
+    f_len = get_f_len(svlen, args)
 
     output_dir = args.out
     
@@ -171,7 +171,7 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
     seq_consensus = seq_fl + seq + seq_fr
 
     if args.debug:
-        _,_,_,seq_bcf,_,_ = handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i)
+        _,_,_,seq_bcf,_,_ = handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i, f_len)
         flag_homozygous_for_ref_allele = record.samples[list(vcf.header.samples)[0]]["GT"] == (0,0)
         if seq_consensus.lower() != seq_bcf.lower() and not flag_homozygous_for_ref_allele:
             print(f"svlen ({get_svlen(record)}) != len(ALT[0]) ({len(seq)})")
@@ -225,7 +225,7 @@ def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
 def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
     svlen = get_svlen(record) 
     assert svlen > 0
-    f_len = get_f_len(abs(svlen), args)
+    f_len = get_f_len(svlen, args)
 
     output_dir = args.out
     
@@ -264,7 +264,7 @@ def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
 def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
     svlen = get_svlen(record) 
     assert svlen > 0
-    f_len = get_f_len(abs(svlen), args)
+    f_len = get_f_len(svlen, args)
 
     output_dir = args.out
     
