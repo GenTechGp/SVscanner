@@ -4,12 +4,23 @@ import sys
 import argparse
 import os
 from Bio.Seq import Seq
+import time
 
-SAMTOOLS="samtools-1.21/samtools"
-BCFTOOLS="bcftools-1.21/bcftools"
-TABIX="htslib-1.21/tabix"
+SAMTOOLS="./samtools-1.21/samtools"
+BCFTOOLS="./bcftools-1.21/bcftools"
+TABIX="./htslib-1.21/tabix"
 
-NO_RETURN_CODES=12
+NO_RETURN_CODES=15
+
+def get_f_len(svlen, args):
+    flen_svlen = svlen + args.flen
+    ffac_svlen = svlen * args.ffac
+    return min(flen_svlen, ffac_svlen)
+
+def check_program(tool):
+    if not (os.path.exists(tool) and os.path.isfile(tool)):
+        print("Error: {} does not exist. Run ./scripts/install_tools.sh".format(tool))
+        exit(1)
 
 def extract_chromosome_lengths(vcf):
     # Create a dictionary to store chromosome lengths
@@ -76,10 +87,14 @@ def process_fasta(input_fasta, output_fasta, new_title):
         f.write(f">{new_title}\n{sequence}\n")
 
     # print(f"{new_title}: seq_len = {seq_length}")
-    return seq_length
+    return seq_length, sequence
 
-def handle_vcf_types_0(args, vcf, record, chrom_lengths, i, f_len):
+#bcftools consensus method
+def handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i):
+    svlen = get_svlen(record)
+    f_len = get_f_len(abs(svlen), args)
     output_dir = args.out
+
     # Write a new VCF file with only the ith record
     single_record_vcf = f"{output_dir}/temp_record_{i}.vcf.gz"
     with pysam.VariantFile(single_record_vcf, "w", header=vcf.header) as out_vcf:
@@ -90,14 +105,11 @@ def handle_vcf_types_0(args, vcf, record, chrom_lengths, i, f_len):
     run_subprocess(tabix_command, "tabix")
     
     svtype = record.info.get("SVTYPE", None)
-    svlen = get_svlen(record) #todo:check multi-allelic scenario
-    if abs(svlen) < f_len:
-        f_len += f_len
 
     # Determine chrom:start-end values
     chrom = record.chrom
     start = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
-    end = record.stop + f_len # End position of the REF allele
+    end = record.stop+f_len-1 # End position of the REF allele
     chrom_length = chrom_lengths.get(chrom, 0)
     end = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
     
@@ -113,7 +125,7 @@ def handle_vcf_types_0(args, vcf, record, chrom_lengths, i, f_len):
     run_subprocess(bcftools_command, "bcftoools consensus")
 
     output_fasta = f"{output_dir}/{svID}.fa"
-    seq_len = process_fasta(temp_fasta, output_fasta, svID)
+    seq_len, seq = process_fasta(temp_fasta, output_fasta, svID)
 
     # print(f"Info: Successfully created consensus sequence for record {i} at {output_fasta}\n")
     
@@ -123,35 +135,121 @@ def handle_vcf_types_0(args, vcf, record, chrom_lengths, i, f_len):
     os.remove(reference_fasta)
     os.remove(temp_fasta)
 
-    return svID, svlen, seq_len
+    return svID, svlen, seq_len, seq, start, end
 
-# https://github.com/samtools/bcftools/issues/1778
-# DUP
-def handle_vcf_types_1(args, vcf, record, chrom_lengths, i, f_len):
+#INS
+def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
+    # svlen = get_svlen(record) 
+    seq = record.alts[0]
+    svlen = len(seq)
+    assert svlen > 0
+    f_len = get_f_len(abs(svlen), args)
+
     output_dir = args.out
-    fasta = pysam.FastaFile(args.ref)
     
     svtype = record.info.get("SVTYPE", None)
     svID = f'{svtype}.{i}'
 
-    svlen = get_svlen(record) #todo:check multi-allelic scenario
-    if abs(svlen) < f_len:
-        f_len += f_len
+    assert record.pos == record.stop
 
     # Determine chrom:start-end values
     chrom = record.chrom
     start_fl = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
-    end_fl = record.pos # End position of the REF allele
+    end_fl = record.pos-1 # End position of the REF allele
 
-    start_fr = record.stop
+    start_fr = record.stop+1
     chrom_length = chrom_lengths.get(chrom, 0)
-    end = record.stop + f_len # End position of the REF allele
+    end = record.stop+f_len-1 # End position of the REF allele
     end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
     seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
     seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
 
-    seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop}")
+    if svlen != len(seq):
+        print(f"Error: record at {record.chrom}:{record.pos} svlen ({svlen}) != len(ALT[0]) ({len(seq)})")
+
+    seq_consensus = seq_fl + seq + seq_fr
+
+    if args.debug:
+        _,_,_,seq_bcf,_,_ = handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i)
+        flag_homozygous_for_ref_allele = record.samples[list(vcf.header.samples)[0]]["GT"] == (0,0)
+        if seq_consensus.lower() != seq_bcf.lower() and not flag_homozygous_for_ref_allele:
+            print(f"svlen ({get_svlen(record)}) != len(ALT[0]) ({len(seq)})")
+            print(len(seq_fl))
+            print(len(seq_fr))
+            print(f"Error: record at {record.chrom}:{record.pos} seq_consensus != seq_bcf")
+            print(">seq_consensus")
+            print(seq_consensus)
+            print(">seq_bcf")
+            print(seq_bcf)
+            exit(1)
+
+    seq_len = len(seq_consensus)
+
+    output_fasta = f"{output_dir}/{svID}.fa"
+    with open(output_fasta, "w") as f:
+        f.write(f">{svID}\n{seq_consensus}\n")
+    
+    return svID, svlen, seq_len, start_fl, end_fr
+
+#DEL
+def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
+    svlen = get_svlen(record) 
+    assert svlen < 0
+    f_len = get_f_len(abs(svlen), args)
+
+    output_dir = args.out
+    
+    svtype = record.info.get("SVTYPE", None)
+    svID = f'{svtype}.{i}'
+
+    # Determine chrom:start-end values
+    chrom = record.chrom
+    start_f = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
+    end = record.stop+f_len-1 # End position of the REF allele
+    chrom_length = chrom_lengths.get(chrom, 0)
+    end_f = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
+
+    seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
+    seq_consensus = seq # assuming tandem dups
+    seq_len = len(seq_consensus)
+
+    output_fasta = f"{output_dir}/{svID}.fa"
+    with open(output_fasta, "w") as f:
+        f.write(f">{svID}\n{seq_consensus}\n")
+    
+    return svID, svlen, seq_len, start_f, end_f
+
+# https://github.com/samtools/bcftools/issues/1778
+# DUP
+def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
+    svlen = get_svlen(record) 
+    assert svlen > 0
+    f_len = get_f_len(abs(svlen), args)
+
+    output_dir = args.out
+    
+    svtype = record.info.get("SVTYPE", None)
+    svID = f'{svtype}.{i}'
+
+
+    # Determine chrom:start-end values
+    chrom = record.chrom
+    start_fl = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
+    end_fl = record.pos-1 # End position of the REF allele
+
+    start_fr = record.stop
+    chrom_length = chrom_lengths.get(chrom, 0)
+    end = record.stop+f_len-1 # End position of the REF allele
+    end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
+
+    seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
+    seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
+    seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop-1}")
+
+    # print(len(seq_fl))
+    # print(len(seq_fr))
+    assert len(seq) == svlen
 
     seq_consensus = seq_fl + seq + seq + seq_fr # assuming tandem dups
     seq_len = len(seq_consensus)
@@ -160,34 +258,37 @@ def handle_vcf_types_1(args, vcf, record, chrom_lengths, i, f_len):
     with open(output_fasta, "w") as f:
         f.write(f">{svID}\n{seq_consensus}\n")
     
-    return svID, svlen, seq_len
+    return svID, svlen, seq_len, start_fl, end_fr
 
 # INV
-def handle_vcf_types_2(args, vcf, record, chrom_lengths, i, f_len):
+def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
+    svlen = get_svlen(record) 
+    assert svlen > 0
+    f_len = get_f_len(abs(svlen), args)
+
     output_dir = args.out
-    fasta = pysam.FastaFile(args.ref)
     
     svtype = record.info.get("SVTYPE", None)
     svID = f'{svtype}.{i}'
 
-    svlen = get_svlen(record) #todo:check multi-allelic scenario
-    if abs(svlen) < f_len:
-        f_len += f_len
 
     # Determine chrom:start-end values
     chrom = record.chrom
     start_fl = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
-    end_fl = record.pos # End position of the REF allele
+    end_fl = record.pos-1 # End position of the REF allele
 
     start_fr = record.stop
     chrom_length = chrom_lengths.get(chrom, 0)
-    end = record.stop + f_len # End position of the REF allele
+    end = record.stop+f_len-1 # End position of the REF allele
     end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
     seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
     seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
+    seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop-1}")
 
-    seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop}")
+    # print(len(seq_fl))
+    # print(len(seq_fr))
+    assert len(seq) == svlen
 
     seq_rc = Seq(seq).reverse_complement()
 
@@ -198,11 +299,32 @@ def handle_vcf_types_2(args, vcf, record, chrom_lengths, i, f_len):
     with open(output_fasta, "w") as f:
         f.write(f">{svID}\n{seq_consensus}\n")
     
-    return svID, svlen, seq_len
+    return svID, svlen, seq_len, start_fl, end_fr
 
-def handle_vcf_types_3(args, vcf, record, chrom_lengths, i, f_len):
+#BND
+def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
+    f_len = args.flen
     output_dir = args.out
-    return 1
+    
+    svtype = record.info.get("SVTYPE", None)
+    svID = f'{svtype}.{i}'
+
+    # Determine chrom:start-end values
+    chrom = record.chrom
+    start_f = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
+    end = record.pos+f_len-1 # End position of the REF allele
+    chrom_length = chrom_lengths.get(chrom, 0)
+    end_f = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
+
+    seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
+    seq_consensus = seq
+    seq_len = len(seq_consensus)
+
+    output_fasta = f"{output_dir}/{svID}.fa"
+    with open(output_fasta, "w") as f:
+        f.write(f">{svID}\n{seq_consensus}\n")
+    
+    return svID, seq_len, seq_len, start_f, end_f
 
 def is_valid_vcf_record(record, args):
     """
@@ -232,41 +354,45 @@ def is_valid_vcf_record(record, args):
 
     if "SVLEN" in record.info:
         svlen = abs(get_svlen(record))
-        if svlen < args.min or svlen > args.max:
-            return 1
+        if svlen < args.min:
+            return 6
+        if svlen > args.max:
+            return 7
+        if svtype not in {"DEL", "INS"} and svlen != record.stop - record.pos:
+            return 13
     
     if svtype == "INS" and record.pos != record.stop:
         print(f"Error: record at {record.chrom}:{record.pos} is an INS with end ({record.end}) not equal to pos")
-        return -1
+        return 15
 
     # Categorize based on SVTYPE and symbolic alleles
-    if svtype in {"DEL"}:
+    if svtype == "INS":
+        if has_symbolic_alt:
+            return 12
+        if "SVLEN" in record.info:
+            return 1
+        else:
+            return 8
+    elif svtype in {"DEL"}:
         if "SVLEN" in record.info:
             return 2
         else:
-            return 3
-    elif svtype == "INS":
-        if has_symbolic_alt:
-            return 4
-        if "SVLEN" in record.info:
-            return 5
-        else:
-            return 6
+            return 9
     elif svtype in {"DUP"}:
         if "SVLEN" in record.info:
-            return 7
-        else:
-            return 8
-    elif svtype in {"INV"}:
-        if "SVLEN" in record.info:
-            return 9
+            return 3
         else:
             return 10
+    elif svtype in {"INV"}:
+        if "SVLEN" in record.info:
+            return 4
+        else:
+            return 11
     elif svtype == "BND":
-        return 11
+        return 5
     else:
-        print(f"Warning: unknown SVTYPE ({svtype}) record at {record.chrom}:{record.pos}")
-        return 12
+        # print(f"Warning: unknown SVTYPE ({svtype}) record at {record.chrom}:{record.pos}")
+        return 14
     
     # 3. Further checks can be added here (e.g., check if REF matches the reference, check for missing info, etc.)
     # Example: Check if REF allele matches the reference genome
@@ -279,21 +405,23 @@ def is_valid_vcf_record(record, args):
     # Return True if the record is valid (after all checks), or False otherwise
     # (you could return False if you want to skip invalid records)
 
-
 def print_vcf_summary(args, vcf_summary):
     RETURN_CODE_DESCRIPTIONS = ["",
-                            f"args.min ({args.min}) <= SVLEN <= args.max ({args.max}) not satisfied",
-                            "proper SV DEL",
-                            "SVLEN missing for DEL",
-                            "INS has symbolic ALT",
-                            "proper SV INS",
-                            "SVLEN missing for INS",
-                            "proper SV DUP",
-                            "SVLEN missing for DUP",
-                            "proper SV INV",
-                            "SVLEN missing for INV",
-                            "proper SV BND",
-                            "unknown SVTYPE"]
+                            "proper SV INS", # 1
+                            "proper SV DEL", # 2
+                            "proper SV DUP", # 3
+                            "proper SV INV", # 4
+                            "proper SV BND", # 5
+                            f"SVLEN >= args.min ({args.min}) is not satisfied", # 6
+                            f"SVLEN <= args.max ({args.max}) is not satisfied", # 7
+                            "SVLEN missing for INS", # 8
+                            "SVLEN missing for DEL", # 9
+                            "SVLEN missing for DUP", # 10
+                            "SVLEN missing for INV", # 11
+                            "INS has symbolic ALT", # 12
+                            "malformed record SVLEN != END - POS", # 13
+                            "unknown SVTYPE", #14
+                            "other"] # 15
 
     code = 1
     with open(args.summary, "w") as f:
@@ -301,18 +429,20 @@ def print_vcf_summary(args, vcf_summary):
         f.write(f"records stats (count : description)\n")
         for count in vcf_summary[1:]:
             # print("code {}: record count: {} {}".format(code, count, RETURN_CODE_DESCRIPTIONS[code]))
-            print(f"{count} : {RETURN_CODE_DESCRIPTIONS[code]}")
-            f.write(f"{count} : {RETURN_CODE_DESCRIPTIONS[code]}\n")
+            if count > 0:
+                print(f"{count} : {RETURN_CODE_DESCRIPTIONS[code]} (code: {code})")
+            f.write(f"{count} : {RETURN_CODE_DESCRIPTIONS[code]} (code: {code})\n")
             code += 1
 
 def print_record_stats(args, record_stats_arr, balanced_seq_bins):
     with open(args.summary, "a") as f:
+        f.write(f".fa, no.of.seqs, total.seq.len\n")
+        for i, b in enumerate(balanced_seq_bins):
+            f.write(f"{i}.fa, {len(b)}, {sum(x[2] for x in b)}\n")
+
         f.write(f"('SV_ID', svlen, consensus_seq_len)\n")
         for record in record_stats_arr:
             f.write(f"{record}\n")
-        for i, b in enumerate(balanced_seq_bins):
-            f.write(f"Bin {i+1}: {b}, Total sum: {sum(x[2] for x in b)}")
-
 
 def balance_bins(items, n_bins):
     """
@@ -323,7 +453,8 @@ def balance_bins(items, n_bins):
     :return: List of bins, where each bin is a list of tuples
     """
     # Sort items by value2 in descending order for greedy balancing
-    items = sorted(items, key=lambda x: x[2], reverse=True)
+    if n_bins > 1:
+        items = sorted(items, key=lambda x: x[2], reverse=True)
 
     # Initialize bins
     bins = [[] for _ in range(n_bins)]
@@ -349,16 +480,25 @@ def concat_fasta(args, balanced_seq_bins):
                     lines = input.readlines()
                     svID = lines[0]
                     seq_consensus = lines[1]
-                    output.write(f">{svID}{seq_consensus}")
+                    output.write(f"{svID}{seq_consensus}")
                 os.remove(input_fasta)
+
+def write_to_id_file(args, vcf, record, record_stats):
+    with open(args.info, "a") as f:
+        # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}"
+        info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, abs(record_stats[1]), record_stats[0], record.id)
+        # print(info)
+        f.write(f"{info}\n")
+
 
 def process_vcf_records(args):
     # Load the VCF file
     vcf = pysam.VariantFile(args.vcf)
     print(f"\nWarning: Please make sure the input ref ({args.ref}) is same as the reference in the vcf header ({args.vcf})\n")
 
+    fasta = pysam.FastaFile(args.ref)
+
     # Extract chromosome lengths
-    f_len = args.flank
     chrom_lengths = extract_chromosome_lengths(vcf)
 
     vcf_summary = [0]*(NO_RETURN_CODES+1)
@@ -370,35 +510,40 @@ def process_vcf_records(args):
         # Perform error checks (you can add your custom checks here)
         ret = is_valid_vcf_record(record, args)
         vcf_summary[ret] += 1
-        if ret == 2 or ret == 5:
-            record_stats = handle_vcf_types_0(args, vcf, record, chrom_lengths, i, f_len)
-        elif ret == 7:
-            record_stats = handle_vcf_types_1(args, vcf, record, chrom_lengths, i, f_len)
-        elif ret == 9:
-            record_stats = handle_vcf_types_2(args, vcf, record, chrom_lengths, i, f_len)
-        elif ret == 11:
-            record_stats = handle_vcf_types_3(args, vcf, record, chrom_lengths, i, f_len)
+        if ret == 1:
+            record_stats = handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i)
+        elif ret == 2:
+            record_stats = handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i)
+        elif ret == 3:
+            record_stats = handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i)
+        elif ret == 4:
+            record_stats = handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i)
+        elif ret == 5:
+            record_stats = handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i)
         else:
-            print(f"Skipping invalid record at {record.chrom}:{record.pos}")
+            print(f"Skipped. vcf check failed (code: {ret}) for record at {record.chrom}:{record.pos}")
             continue
+        write_to_id_file(args, vcf, record, record_stats)
         # if i == 100:
         #     break
         record_stats_arr.append(record_stats)
     
-    balanced_seq_bins = balance_bins(record_stats_arr, 10)
+    balanced_seq_bins = balance_bins(record_stats_arr, args.n)
     concat_fasta(args, balanced_seq_bins)
     
     print_vcf_summary(args, vcf_summary)
     print_record_stats(args, record_stats_arr, balanced_seq_bins)
 
 
-    
+def argparser():
 
-def check_program(tool):
-    command = [tool, "--version"]
-    result = run_subprocess(command, tool)
+    def positive_int(value):
+        ivalue = int(value)
+        if ivalue <= 0:
+            raise argparse.ArgumentTypeError(f"{value} is an invalid. It must be greater than zero.")
+        return ivalue
 
-if __name__ == "__main__":
+
     parser = argparse.ArgumentParser(
         description="Process VCF file and create alternative sequences",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
@@ -409,21 +554,40 @@ if __name__ == "__main__":
     required_args.add_argument('-v', '--vcf', required=True, type=str, help="Path to the input VCF file (compressed or uncompressed)")
     required_args.add_argument('-r', '--ref', required=True, type=str, help="Path to the reference FASTA file")
     required_args.add_argument('-o', '--out', required=True, type=str, help="Path to the output directory")
+    required_args.add_argument('-i', '--info', required=True, type=str, help="Path to write the info file")
     
     optional_args = parser.add_argument_group("optional arguments")
-    optional_args.add_argument('--min', required=False, type=int, default=50, help="The minimum length of the SV")
-    optional_args.add_argument('--max', required=False, type=int, default=50000, help="The maximum length of the SV")
-    optional_args.add_argument('--flank', required=False, type=int, default=2000, help="The maximum detectable period size supported by TRF to determine the flanking sequences")
+    optional_args.add_argument('--min', required=False, type=positive_int, default=50, help="The minimum length of the SV")
+    optional_args.add_argument('--max', required=False, type=positive_int, default=50000, help="The maximum length of the SV")
+    optional_args.add_argument('--flen', required=False, type=positive_int, default=2000, help="The maximum detectable period size supported by TRF to determine the length of flanking sequences")
+    optional_args.add_argument('--ffac', required=False, type=positive_int, default=10, help="Multiplication factor for SVLEN to determine the length of flanking sequences")
     optional_args.add_argument('--summary', required=False, type=str, default="extract_sv.summary", help="Path to write the summary file")
+    optional_args.add_argument('-n', required=False, type=positive_int, default=1, help="Number of equal-sized output fasta files")
+    optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
     optional_args.add_argument('-h', '--help', action='help', help="Show this help message and exit")
 
-    args = parser.parse_args()
+    return parser
 
+if __name__ == "__main__":
+    start = time.time()
+    
+    parser = argparser()
+    args = parser.parse_args()
+    
     print(f"Info: VCF File: {args.vcf}")
     print(f"Info: Reference FASTA: {args.ref}")
     print(f"info: Output Directory: {args.out}")
     print(f"info: Min SV Length: {args.min}")
     print(f"Info: Max SV Length: {args.max}")
+    print(f"Info: Number of output fasta files: {args.n}")
+    print(f"Info: flen: {args.flen}")
+    print(f"Info: ffac: {args.ffac}")
+
+    if args.debug:
+        print(f"Info: Debug mode: {args.debug}")
+        check_program(SAMTOOLS)
+        check_program(BCFTOOLS)
+        check_program(TABIX)
 
     if not os.path.exists(args.out):
         os.mkdir(args.out)
@@ -431,8 +595,7 @@ if __name__ == "__main__":
         print("Error: {} output dir already exists.".format(args.out))
         exit(1)
 
-    check_program(SAMTOOLS)
-    check_program(BCFTOOLS)
-    check_program(TABIX)
-
     process_vcf_records(args)
+
+    end = time.time()
+    print(f"Run time: {end - start:.3f} seconds")
