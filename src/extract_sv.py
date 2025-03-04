@@ -324,7 +324,7 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     with open(output_fasta, "w") as f:
         f.write(f">{svID}\n{seq_consensus}\n")
     
-    return svID, seq_len, seq_len, start_f, end_f
+    return svID, -1, seq_len, start_f, end_f
 
 def is_valid_vcf_record(record, args):
     """
@@ -486,10 +486,9 @@ def concat_fasta(args, balanced_seq_bins):
 def write_to_id_file(args, vcf, record, record_stats):
     with open(args.info, "a") as f:
         # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}"
-        info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, abs(record_stats[1]), record_stats[0], record.id)
+        info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, record_stats[1], record_stats[0], record.id)
         # print(info)
         f.write(f"{info}\n")
-
 
 def process_vcf_records(args):
     # Load the VCF file
@@ -533,7 +532,6 @@ def process_vcf_records(args):
     
     print_vcf_summary(args, vcf_summary)
     print_record_stats(args, record_stats_arr, balanced_seq_bins)
-
 
 def argparser():
 
