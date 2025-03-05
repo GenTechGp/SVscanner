@@ -7,26 +7,27 @@ import time
 import csv
 import pandas as pd
 import math
+import copy
 
 BND_LEN_THRESHOLD=0.25
 
-ANNOTATE_NEW_TAGS_HEADER=" \
-##INFO=<ID=RM_CLASSIFICATION,Number=1,Type=String,Description=\"Classification of repeat class covering the SV [SINE,LINE,LTR,DNA,Retroposon or NON-REPETITIVE]\">\n \
-##INFO=<ID=RM_ELEMENTS_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the transposable element covered by the SV\">\n \
-##INFO=<ID=RM_ELEMENT_PROPORTION,Number=1,Type=String,Description=\"Proportion of the query sequence (includes flanking region) found in the transposable element\">\n \
-##INFO=<ID=RM_TRANSPOSITION,Number=1,Type=String,Description=\"Type of transposition [COMPLETE/FRAGMENT]\">\n \
-##INFO=<ID=RM_SV_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the SV by the transposable element\">\n \
-##INFO=<ID=RM_TOTAL_SV_COVERAGE,Number=1,Type=String,Description=\"Total coverage of the SV covered by transposable elements\">\n \
-##INFO=<ID=TRF_CLASSIFICATION,Number=1,Type=String,Description=\"Classification(s) of tandem repeat class covering the SV [HOMO,STR,TR or NON-REPETITIVE]\">\n \
-##INFO=<ID=TRF_SV_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the SV by the tandem repeat(s)\">\n \
-##INFO=<ID=TRF_TOTAL_SV_COVERAGE,Number=1,Type=String,Description=\"Total coverage of the SV covered by tandem repeats\">\n \
-##INFO=<ID=TRF_PERIOD_SIZE,Number=1,Type=String,Description=\"Period size of the repeat(s)\">\n \
-##INFO=<ID=TRF_COPY_NUMBER,Number=1,Type=String,Description=\"Copy number of the repeat(s)\">\n \
-##INFO=<ID=CONSENSUS_REPEAT,Number=1,Type=String,Description=\"Motif of repeat(s) found by Tandem Repeat Finder\">\n \
-##INFO=<ID=FINAL_CLASSIFICATION,Number=1,Type=String,Description=\"Classification of SV as repetitive element based on TRF and RepeatMasker results\">\n \
-##INFO=<ID=DISEASE_GENE,Number=1,Type=String,Description=\"STR disease associated with gene\">\n \
-##INFO=<ID=STRCHIVE_MOTIF,Number=1,Type=String,Description=\"Is consensus repeat a version (rotation/complement) of pathogenic motif(s) annotated by STRchive \">\n \
-##INFO=<ID=PATHOGENIC_MIN,Number=1,Type=String,Description=\"Minimum pathogenic number\">\n \
+ANNOTATE_NEW_TAGS_HEADER="\
+##INFO=<ID=RM_CLASSIFICATION,Number=1,Type=String,Description=\"Classification of repeat class covering the SV [SINE,LINE,LTR,DNA,Retroposon or NON-REPETITIVE]\">\n\
+##INFO=<ID=RM_ELEMENTS_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the transposable element covered by the SV\">\n\
+##INFO=<ID=RM_ELEMENT_PROPORTION,Number=1,Type=String,Description=\"Proportion of the query sequence (includes flanking region) found in the transposable element\">\n\
+##INFO=<ID=RM_TRANSPOSITION,Number=1,Type=String,Description=\"Type of transposition [COMPLETE/FRAGMENT]\">\n\
+##INFO=<ID=RM_SV_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the SV by the transposable element\">\n\
+##INFO=<ID=RM_TOTAL_SV_COVERAGE,Number=1,Type=String,Description=\"Total coverage of the SV covered by transposable elements\">\n\
+##INFO=<ID=TRF_CLASSIFICATION,Number=1,Type=String,Description=\"Classification(s) of tandem repeat class covering the SV [HOMO,STR,TR or NON-REPETITIVE]\">\n\
+##INFO=<ID=TRF_SV_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the SV by the tandem repeat(s)\">\n\
+##INFO=<ID=TRF_TOTAL_SV_COVERAGE,Number=1,Type=String,Description=\"Total coverage of the SV covered by tandem repeats\">\n\
+##INFO=<ID=TRF_PERIOD_SIZE,Number=1,Type=String,Description=\"Period size of the repeat(s)\">\n\
+##INFO=<ID=TRF_COPY_NUMBER,Number=1,Type=String,Description=\"Copy number of the repeat(s)\">\n\
+##INFO=<ID=CONSENSUS_REPEAT,Number=1,Type=String,Description=\"Motif of repeat(s) found by Tandem Repeat Finder\">\n\
+##INFO=<ID=FINAL_CLASSIFICATION,Number=1,Type=String,Description=\"Classification of SV as repetitive element based on TRF and RepeatMasker results\">\n\
+##INFO=<ID=DISEASE_GENE,Number=1,Type=String,Description=\"STR disease associated with gene\">\n\
+##INFO=<ID=STRCHIVE_MOTIF,Number=1,Type=String,Description=\"Is consensus repeat a version (rotation/complement) of pathogenic motif(s) annotated by STRchive \">\n\
+##INFO=<ID=PATHOGENIC_MIN,Number=1,Type=String,Description=\"Minimum pathogenic number\">\n\
 "
 
 ANNOTATE_COLS=["CHROM","POS","ID","RM_CLASSIFICATION","RM_ELEMENTS_COVERAGE","RM_ELEMENT_PROPORTION",\
@@ -817,7 +818,7 @@ def output_annotations(args, strchive, sv_info):
         'BND': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : 0, 'LINE' : 0, 'LTR' : 0, 'DNA' : 0, 'Retroposon' : 0, 'NON_REPETITIVE' : 0},
     }
 
-    annotate_tsv_out = f"{args.out}/annotate_tsv"
+    annotate_tsv_out = f"{args.out}/vcf_annotate.tsv"
     with open(annotate_tsv_out, "w") as f:
         # print("\t".join(ANNOTATE_COLS))
         f.write("#")
@@ -843,13 +844,13 @@ def output_annotations(args, strchive, sv_info):
                 count_by_sv[sv_type][classification] += 1
 
     
-    header_out = f"{args.out}/header.txt"
+    header_out = f"{args.out}/vcf_header.txt"
     with open(header_out, "w") as f:
             # print(ANNOTATE_NEW_TAGS_HEADER)
             f.write(f"{ANNOTATE_NEW_TAGS_HEADER}")
 
-    tsv_rm_out = f"{args.out}/rm_annot.tsv"
-    tsv_trf_out = f"{args.out}/trf_annot.tsv"
+    tsv_rm_out = f"{args.out}/rm_annotate.tsv"
+    tsv_trf_out = f"{args.out}/trf_annotate.tsv"
     # Write RepeatMasker and TRF records to separate TSV files 
     with open(tsv_rm_out, 'w') as tsv_rm_out, open(tsv_trf_out, 'w') as tsv_trf_out:
         # Write headers for both files
@@ -870,7 +871,244 @@ def output_annotations(args, strchive, sv_info):
         # DEL
     print(sv_type_df)
 
+def create_SV(args, sv_info):
+    """
+    Creates and writes structural variant (SV) and repeat diagrams to an output file.
+
+    The function processes information from structural variants, RepeatMasker (RM), 
+    and Tandem Repeat Finder (TRF) data, generating a graphical representation of the 
+    SV and its associated repeats, both in the flanking region and within the SV region itself.
+
+    Input
+    - sv_info (dict):       A dictionary containing the structural variants
+    - diagram_length (int): The length of the diagram to generate for the SV and repeats.
+    - output_file (str):    The path to the output file where the diagrams will be written.
+    """
+    def create_trf(repeat, diagram_length, scale, start):
+        """
+        Creates the diagram for a TRF entry
+        """
+        repeat_start = repeat['repeat_start']
+        repeat_end = repeat['repeat_end']
+        
+        repeat_start_scale = int((repeat_start - start) * scale)
+        repeat_end_scale = int((repeat_end - start) * scale)
+
+        repeat_start_scaled = max(0, repeat_start_scale)
+        repeat_end_scaled = min(diagram_length - 1, repeat_end_scale)
+
+        trf_diagram = [' '] * diagram_length
+        period_size = repeat['period_size']
+
+        for i in range(repeat_start_scaled, repeat_end_scaled + 1):
+            trf_diagram[i] = '.'
+        # Set boundary if within the scale
+        if 0 <= repeat_start_scale < diagram_length:
+            trf_diagram[repeat_start_scaled] = '['  
+        if 0 <= repeat_end_scale < diagram_length:
+            trf_diagram[repeat_end_scaled] = ']' 
+        trf_diagram = ''.join(trf_diagram)
+        trf_diagram = format_trf_info(f' {period_size}', trf_diagram, diagram_length)
+
+        return trf_diagram
+
+    def create_rm(rm_diagram, element, diagram_length, scale, start):
+        """
+        Creates the diagram for a RepeatMasker entry
+        """
+        element_start = element['te_start']
+        element_end = element['te_end']
+        
+        element_start_scale = int((element_start - start) * scale)
+        element_end_scale = int((element_end - start) * scale)
+
+        element_start_scaled = max(0, element_start_scale)
+        element_end_scaled = min(diagram_length - 1, element_end_scale)
+
+        for i in range(element_start_scaled, element_end_scaled + 1):
+            rm_diagram[i] = '.'
+        # Set boundary if within the scale
+        if 0 <= element_start_scale < diagram_length:
+            if rm_diagram[element_start_scaled] != '.':
+                rm_diagram[element_start_scaled] = '|'  
+            else:
+                rm_diagram[element_start_scaled] = '['
+        if 0 <= element_end_scale < diagram_length:
+            if rm_diagram[element_end_scaled] != '.':
+                rm_diagram[element_end_scaled] = '|'
+            else:
+                rm_diagram[element_end_scaled] = ']'
+        
+        return rm_diagram
+    
+    def get_repeat_info(sv_data, key):
+        if key in sv_data:
+            return sv_data[key]
+        return []
+    
+    def create_diagram(diagram_length, start, end):
+        """
+        Creates the diagram for SV and SV with flanking 
+        """
+        if start < 0 or start >= diagram_length or end < 0 or end >= diagram_length:
+            return None
+        
+        diagram = ['-'] * diagram_length
+        diagram[start] = '['
+        diagram[end] = ']'
+        for i in range(start+1, end):
+            diagram[i] = '#'
+        diagram = ''.join(diagram)
+
+        return diagram
+
+    def format_trf_info(info, diagram, diagram_length, field_width=20):
+        info_str = f" {info}".ljust(field_width)  # Left-align the info within a fixed-width field
+        diagram_str = f"{diagram}".ljust(diagram_length + 1)  # Ensure diagram is aligned by adding a marker (*)
+        return f"{info_str}{diagram_str}"
+
+    def add_rm_diagrams(rm, rm_output_flanking, rm_output, diagram_length, flanking_scale, sv_scale, start, sv_start):
+        for classification in rm:
+            elements = rm[classification]
+            # Initialize diagrams for both flanking and SV regions
+            rm_diagram_flanking = [' '] * diagram_length
+            rm_diagram_sv = [' '] * diagram_length
+            
+            intersect_percentages = []
+            repeat_names = set()
+
+            for element in elements:
+                # Process flanking region
+                rm_diagram_flanking = create_rm(rm_diagram_flanking, element, diagram_length, flanking_scale, start)
+                intersection = round(element['intersection'] * 100, 2)
+                intersect_percentages.append(f'{intersection}%')
+
+                # Process SV region
+                rm_diagram_sv = create_rm(rm_diagram_sv, element, diagram_length, sv_scale, sv_start)
+                repeat_names.add(element['repeat'])
+
+            # Convert diagrams to string format
+            formatted_info = f' {classification}'
+            rm_diagram_flanking = format_trf_info(formatted_info, ''.join(rm_diagram_flanking), diagram_length)
+            rm_diagram_sv = format_trf_info(formatted_info, ''.join(rm_diagram_sv), diagram_length)
+
+            # Append results to respective outputs
+            rm_output_flanking.append(f'{rm_diagram_flanking}\t{",".join(intersect_percentages)}\n')
+            rm_output.append(f'{rm_diagram_sv}\t{",".join(repeat_names)}\n')
+
+        return rm_output_flanking, rm_output
+
+    def add_trf_diagrams(trf, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, start, sv_start, motif_length=80):
+        for repeat in trf:
+            # Process flanking region
+            trf_diagram_flanking = create_trf(repeat, diagram_length, flanking_scale, start)
+            intersect = round(repeat['intersection'] * 100, 2)
+            trf_output_flanking.append(f'{trf_diagram_flanking}\t{intersect}%\n')
+
+            # Process SV region
+            motif = repeat['motif']
+            if len(motif) > motif_length:
+                motif = f'*{motif_length}plus'
+
+            trf_diagram_sv = create_trf(repeat, diagram_length, sv_scale, sv_start)
+            trf_output.append(f'{trf_diagram_sv}\t{motif}\n')
+
+        return trf_output_flanking, trf_output
+
+    def write_flanking(f, flanking_diagram, rm_output_flanking, trf_output_flanking):
+        """
+        Writes the SV and flanking diagram with RepeatMasker
+        and TRF entries 
+        """
+        if rm_output_flanking != [] or trf_output_flanking != []:
+            f.write(f"{flanking_diagram}\n")
+            if rm_output_flanking:
+                f.write(' -RM-\n')
+                f.writelines(rm_output_flanking)
+            if trf_output_flanking:
+                f.write(' -TRF-\n')
+                f.writelines(trf_output_flanking)
+            f.write('\n')
+    
+    def write_SV(f, sv_diagram, rm_output, trf_output):
+        """
+        Writes the SV diagram with RepeatMasker (RM) 
+        and TRF entries 
+        """
+        if rm_output != [] or trf_output != []:
+
+            f.write(f"{sv_diagram}\n")
+            if rm_output:
+                f.write(' -RM-\n')
+                f.writelines(rm_output)
+            if trf_output:
+                f.write(' -TRF-\n')
+                f.writelines(trf_output)
+            f.write('\n')
+
+    output_file = f"{args.out}/diagram.txt"
+    diagram_length = args.len
+    with open(output_file, 'w') as f:  # Open the file for writing
+        for sv_id in sv_info:
+            sv_data = sv_info[sv_id]
+            
+            id_str = sv_data['header']
+            rm = get_repeat_info(sv_data, 'RM')
+            trf = get_repeat_info(sv_data, 'TRF')
+
+            # Check if there is RepeatMasker and TRF
+            if rm == [] and trf == []:
+                continue
+
+            rm_output_flanking = []
+            trf_output_flanking = []
+            rm_output = []
+            trf_output = []
+
+            start, end = sv_data['start'], sv_data['end']
+            sv_start, sv_end, sv_length = sv_data['rel_start'], sv_data['rel_end'], sv_data['length']
+
+            # Calcualte scaling factors for diagrams
+            flanking_scale = diagram_length / end
+            sv_scale = diagram_length / sv_length
+            
+            sv_start_scaled = int((sv_start - start) * flanking_scale)
+            sv_end_scaled = int((sv_end - start) * flanking_scale)
+            
+            # Generate the SV w/ flanking diagram 
+            # Don't generate the flanking diagram if sv ends after the flanking
+            if sv_end > end and sv_end_scaled > 100:
+                id_str = id_str.replace('\t', ' ')
+                print(f"Unable to generate sv + flanking diagram for {id_str}")
+                flanking_diagram = None
+            else:
+                flanking_diagram = create_diagram(diagram_length, sv_start_scaled, sv_end_scaled)
+                flanking_diagram = format_trf_info('SV & flanking', flanking_diagram, diagram_length)
+            
+            # Generate the SV Diagram 
+            sv_diagram = create_diagram(diagram_length, 0, diagram_length-1)
+            sv_diagram = format_trf_info('SV Diagram', sv_diagram, diagram_length)
+
+            # Create the diagrams for the RepeatMasker and TRF entries
+            rm_output_flanking, rm_output = add_rm_diagrams(rm, rm_output_flanking, rm_output, diagram_length, flanking_scale, sv_scale, start, sv_start)
+            trf_output_flanking, trf_output = add_trf_diagrams(trf, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, start, sv_start, motif_length=80)
+
+            # Output the diagrams
+            if rm_output_flanking != [] or trf_output_flanking != [] or rm_output != [] or trf_output != []:
+                f.write(f"{id_str}\n")
+                if flanking_diagram:
+                    write_flanking(f, flanking_diagram, rm_output_flanking, trf_output_flanking)
+                
+                write_SV(f, sv_diagram, rm_output, trf_output)
+                f.write(f"\n")
+
 def argparser():
+    def positive_int(value):
+        ivalue = int(value)
+        if ivalue <= 0:
+            raise argparse.ArgumentTypeError(f"{value} is an invalid. It must be greater than zero.")
+        return ivalue
+    
     def positive_float(value):
         ivalue = float(value)
         if ivalue <= 0 or ivalue > 1:
@@ -895,6 +1133,7 @@ def argparser():
     optional_args.add_argument('--minsec', required=False, type=positive_float, default=0.05, help="The minimum intersection between repeat and SV e.g. 0.05 (5%) (0 < min_intersect < 1)")
     optional_args.add_argument('--minrep', required=False, type=positive_float, default=0.5, help="The minimum coverage of SV by repeats to be considered repetitive")
     optional_args.add_argument('--div', required=False, type=positive_float, default=0.05, help="The chosen intervals to prioritise period size over intersection (0 < divisor < 1)")
+    optional_args.add_argument('-l', '--len', required=False, type=positive_int, default=100, help="Diagram length")
     optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
     optional_args.add_argument('-h', '--help', action='help', help="Show this help message and exit")
 
@@ -915,6 +1154,11 @@ if __name__ == "__main__":
     print(f"Info: min_repetitive: {args.minrep}")
     print(f"Info: divisor: {args.div}")
     print(f"info: Output Directory: {args.out}")
+    print(f"info: Output vcf header file: {args.out}/vcf_header.txt")
+    print(f"info: Output vcf tsv file: {args.out}/vcf_annotate.tsv")
+    print(f"info: Output RM annoatations file: {args.out}/rm_annotate.tsv")
+    print(f"info: Output TRF annotations file: {args.out}/trf_annotate.tsv")
+    print(f"info: SV diagram file: {args.out}/diagram.txt")
 
     if args.debug:
         print(f"Info: Debug mode: {args.debug}")
@@ -927,8 +1171,11 @@ if __name__ == "__main__":
 
     # Read in data
     sv_info = read_sv_info(args.info)
-    sv_info = read_rm(sv_info, args.rm, args.minsec, False)
     sv_info = read_trf(sv_info, args.trf, args.minsec)
+    sv_info_vis = copy.deepcopy(sv_info)
+    sv_info_vis = read_rm(sv_info_vis, args.rm, args.minsec, True)
+    sv_info = read_rm(sv_info, args.rm, args.minsec, False)
+
     strchive = None
     if args.str:
         strchive = load_strchive(args.str)
@@ -940,6 +1187,9 @@ if __name__ == "__main__":
 
     # Write to files 
     output_annotations(args, strchive, filtered_sv_info)
+
+    # Diagrams
+    create_SV(args, sv_info_vis)
 
     end = time.time()
     print(f"Run time: {end - start:.3f} seconds")

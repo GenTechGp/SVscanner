@@ -7,11 +7,11 @@ info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
 info "$(date)"
 
 # Directories (change)
-OUTPUT_DIR=$(realpath "SVtoolkit_output_1")
+OUTPUT_DIR=$(realpath "SVtoolkit_output_2")
 CLASSIFIER_DIR=$(realpath "SVclassifier")
 
 # Input Files (change)
-SAMPLE="HG002_subset"
+SAMPLE="HG002_subset_mini"
 REF_FASTA=$(realpath "/genome/hg38noAlt.fa")
 SV_VCF=$(realpath "test/${SAMPLE}/${SAMPLE}.vcf.gz")
 STR_BED=$(realpath "test/STRchive-disease-loci.bed")
@@ -26,24 +26,21 @@ NTHREADS=$(nproc --all)
 # THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
 # Parameters (change if necessary)
-NUM_SPLIT=100        # Number of sequences per file #todo: this should be calculated depending on the number of parallel jobs that can be run. also each split .fasta file should have similar size approx.
 MIN_INTERSECT=0.05   # Min intersect between SV and repeat to be considered repetitive
 MIN_COVERAGE=0.5     # Min coverage of an SV by repeat(s) to be considered repetitive
 INTERVAL=0.05
 DIAGRAM_LEN=100
 
 # Python and bash scripts (keep as it is)
-EXTRACT_SV_FLANKINGS=${CLASSIFIER_DIR}/extractSVs.py
-TO_FASTA=${CLASSIFIER_DIR}/toFasta.sh
-ANNOTATE=${CLASSIFIER_DIR}/repeatAnnotation.py
-VISUALISE=${CLASSIFIER_DIR}/repeatDiagram.py
+EXTRACT_SV_FLANKINGS=src/extract_sv.py
+ANNOTATION=src/repeat_annotation.py
 # Internal directories (keep as it is)
 OUTPUT_SAMPLE_DIR=${OUTPUT_DIR}/${SAMPLE}
-SPLIT_DIR=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_${NUM_SPLIT}
-SPLIT_RM=${SPLIT_DIR}/RMtmp
+EXTRACT_SV_FLANKS_OUT=${OUTPUT_SAMPLE_DIR}/extract_sv_flanks_out
+ANNOTATIONS_OUT=${OUTPUT_SAMPLE_DIR}/annotations_out
+RM_TMP=${OUTPUT_SAMPLE_DIR}/RMtmp
 # File Intermediates (keep as it is)
-SV_TAB=${OUTPUT_SAMPLE_DIR}/variant_flanking.tab
-ID_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_id.tab
+INFO_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_info.tab
 RM_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_rm.tab
 TRF_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_trf.tab
 
@@ -72,33 +69,21 @@ check_required() {
     command -v ${TRF_BINARY} >/dev/null 2>&1 || die "TRF binary not found"
     command -v ${REPEAT_MASKER} >/dev/null 2>&1 || die "RepeatMasker not found"
     command -v bcftools >/dev/null 2>&1 || die "bcftools not found"
+    command -v bgzip >/dev/null 2>&1 || die "bgzip not found"
+    command -v tabix >/dev/null 2>&1 || die "tabix not found"
     command -v parallel >/dev/null 2>&1 || die "parallel not found"
 }
 
 create_output_dir() {
 	test -d "${OUTPUT_DIR}" && rm -r "${OUTPUT_DIR}"
 	mkdir "${OUTPUT_DIR}" || die "Failed creating ${OUTPUT_DIR}"
-    mkdir -p ${SPLIT_DIR}
-    mkdir -p ${SPLIT_RM}
+    mkdir -p ${RM_TMP}
 }
 
 extract_flanking_regions() {
     # 1) Extract sequence and flanking regions for variants
     info "1. Extracting structural variant sequences from VCF..."
-    python3 ${EXTRACT_SV_FLANKINGS} -vcf ${SV_VCF} -fa ${REF_FASTA} -out ${SV_TAB} || die "failed"
-    info "done"
-}
-
-create_fasta_files() {
-    # 2) Create fasta sequences
-    info "2. Converting structural variant sequences to FASTA..."
-    split --numeric-suffixes=1 --suffix-length=3 -l ${NUM_SPLIT} "${SV_TAB}" ${SPLIT_DIR}/${SAMPLE} || die "split failed"
-    chmod +r ${SPLIT_DIR}/*
-    chmod +w ${SPLIT_DIR}/*
-    find "${SPLIT_DIR}" -name "${SAMPLE}.[0-9]*" | parallel -j ${NTHREADS} "
-        output_fasta=\"{}.fa\"
-        id_file=\"{}_id.tab\"
-        bash \"${TO_FASTA}\" {} \"\$output_fasta\" \"\$id_file\"" || die "failed"
+    python3 ${EXTRACT_SV_FLANKINGS} --vcf ${SV_VCF} --ref ${REF_FASTA} --out ${EXTRACT_SV_FLANKS_OUT} -n 1 --info ${INFO_FILE} || die "failed"
     info "done"
 }
 
@@ -106,59 +91,74 @@ run_trf() {
     # set -x
     # 3) Run Tandem Repeat Finder and RepeatMasker - wait for both to complete
     info "3. Running Tandem Repeat Finder..."
-    find "${SPLIT_DIR}" -name "${SAMPLE}.*.fa" | parallel -j ${NTHREADS} --bar "${TRF_BINARY} {} 2 7 7 80 10 50 500 -h -ngs > {.}.dat" || die "failed"
+    find "${EXTRACT_SV_FLANKS_OUT}" -name "*.fa" | parallel -j ${NTHREADS} --bar "${TRF_BINARY} {} 2 7 7 80 10 50 500 -h -ngs > {.}.dat" || die "failed"
     info "done"
 }
 
 run_repeatmasker() {
     info "3. Running RepeatMasker..."
     T2=$(date +%s)
-    cd ${SPLIT_RM}
+    cd ${RM_TMP}
     # set -x
-    # find "${SPLIT_DIR}" -name "${SAMPLE}.*.fa" | parallel -j "$MAX_JOBS" "RepeatMasker {} -pa $THREADS_PER_JOB -html -gff -dir '${SPLIT_DIR}'"
+    # find "${EXTRACT_SV_FLANKS_OUT}" -name "${SAMPLE}.*.fa" | parallel -j "$MAX_JOBS" "RepeatMasker {} -pa $THREADS_PER_JOB -html -gff -dir '${EXTRACT_SV_FLANKS_OUT}'"
     # find "../" -name "${SAMPLE}.*.fa" | parallel -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir '../'" || die "failed"
     # find "../" -name "${SAMPLE}.*.fa" | xargs -I {} taskset -c 0-9 "${REPEAT_MASKER}" {}  -html -gff -dir '../'
     # ls *.fasta | parallel --load 75% -j $(( $(nproc) / 4 )) repeatmasker -engine nhmmer -pa 2 {}
 
     # nhmmer search engine takes 2 cpus per job. hence -pa 2 means 2x2=4 cpus are used. Only runs new jobs if system load is below 75%.
-    find "../" -name "${SAMPLE}.*.fa" | parallel --load 75% -j $(( $(nproc) / 4 )) ${REPEAT_MASKER} {} -pa 2 -html -gff -dir "../" || die "failed"
-    wait 
+    # find "../" -name "${SAMPLE}.*.fa" | parallel --load 75% -j $(( $(nproc) / 4 )) ${REPEAT_MASKER} {} -pa 2 -html -gff -dir "../" || die "failed"
+    # find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa"
+    find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | xargs -I {} "${REPEAT_MASKER}" {} -pa 8 -html -gff -dir ${EXTRACT_SV_FLANKS_OUT}
     cd -
     T3=$(date +%s)
     RM_TIME=$((T3 - T2))
+    rm -r ${RM_TMP} || die "failed to remove ${RM_TMP}"
     info "done. RepeatMasker took ${RM_TIME} seconds"
 }
 
 process_repeatmasker_output() {
     # Process the RepeatMasker files (remove the header and 16th column)
     info "Process the RepeatMasker files (remove the header and 16th column)..."
-    for rm_output in "${SPLIT_DIR}"/*.fa.out; do
+    for rm_output in "${EXTRACT_SV_FLANKS_OUT}"/*.fa.out; do
         tail -n +4 "${rm_output}" | awk '{
             if ($16 == "*") $16 = "";
             else $16 = "";
             print $0
         }' OFS='\t' > "${rm_output}.tab" || die "failed"
     done
+    rm -rf "${EXTRACT_SV_FLANKS_OUT}"/*.fa.out"
     info "done"
 }
 
 combine_split_files() {
-    # # COMBINE SPLIT FILES
-    cat ${SPLIT_DIR}/*_id.tab > ${ID_FILE}
-    cat ${SPLIT_DIR}/*.out.tab > ${RM_FILE}
-    cat ${SPLIT_DIR}/*.dat > ${TRF_FILE}
+    cat ${EXTRACT_SV_FLANKS_OUT}/*.dat > ${TRF_FILE}
+    cat ${EXTRACT_SV_FLANKS_OUT}/*.out.tab > ${RM_FILE}
+    rm -rf ${EXTRACT_SV_FLANKS_OUT}/*.dat
+    rm -rf ${EXTRACT_SV_FLANKS_OUT}/*.out.tab
 }
 
-run_visualiser() {
-    info "4. Running visualiser..."
-    python3 ${VISUALISE} -sv ${ID_FILE} -trf ${TRF_FILE} -rm ${RM_FILE} -out ${VIS_OUTPUT} -length ${DIAGRAM_LEN} -min ${MIN_INTERSECT} || die "failed"
-    info "done"
-}
+annotation() {
+    info "4. Annotating..."
+    test -d "${ANNOTATIONS_OUT}" && rm -r "${ANNOTATIONS_OUT}"
+    python3 ${ANNOTATION} \
+        --vcf ${SV_VCF}\
+        --rm ${RM_FILE}\
+        --trf ${TRF_FILE}\
+        --info ${INFO_FILE}\
+        --str ${STR_BED}\
+        --out ${ANNOTATIONS_OUT}\
+        --minsec ${MIN_INTERSECT}\
+        --minrep ${MIN_COVERAGE}\
+        --div ${INTERVAL}\
+        --len ${DIAGRAM_LEN} || die "failed"
+    
+    COL_LIST=$(head -n 1 ${ANNOTATIONS_OUT}/vcf_annotate.tsv | cut -c2- | tr '\t' ',')
+    bgzip ${ANNOTATIONS_OUT}/vcf_annotate.tsv -c > ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "bgzip failed"
+    tabix -s1 -b2 -e2 ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "tabix failed"
+    bcftools annotate -a ${ANNOTATIONS_OUT}/vcf_annotate.gz -c ${COL_LIST} -h ${ANNOTATIONS_OUT}/vcf_header.txt ${SV_VCF} -o ${ANNOTATED_VCF} || die "bcftools annotate failed"
 
-annotate_vcf_with_repeats() {
-    info "5. Annotating SV VCF with repeat information..."
-    python3 ${ANNOTATE} -id ${ID_FILE} -trf ${TRF_FILE} -rm ${RM_FILE} -vcf ${ANNOTATED_VCF} -trf_tsv ${TRF_TSV} -rm_tsv ${RM_TSV} -sv_vcf ${SV_VCF} -min ${MIN_INTERSECT} -mr ${MIN_COVERAGE} -div ${INTERVAL} -strchive ${STR_BED} || die "failed"
     info "done"
+
 }
 
 sort_and_index_vcf() {
@@ -166,23 +166,12 @@ sort_and_index_vcf() {
     info "6. Sort and Index the annotated VCF..."
     bcftools sort -Oz -o ${ANNOTATED_VCF}.gz ${ANNOTATED_VCF} || die "bcftools sort failed"
     bcftools index -t ${ANNOTATED_VCF}.gz || die "bcftools index failed"
+    
     info "done"
 }
 
-remove_intermediates() {
-    ####################### Cleanup: Remove Intermediates ##########################
-    rm -r ${SPLIT_DIR} || die "failed to remove ${SPLIT_DIR}"
-    filesToRemove=("${SV_TAB}" "${ID_FILE}" "${RM_FILE}" "${TRF_FILE}")
-    # Loop through and remove each file
-    for file in "${filesToRemove[@]}"; do
-        rm -f "${file}" || die "failed to remove ${file}"
-    done
-}
-
 show_output_paths() {
-    info "RepeatMasker output: ${RM_TSV}"
-    info "TRF output: ${TRF_TSV}"
-    info "Visualisation: ${VIS_OUTPUT}"
+    info "Annotation outputs dir: ${ANNOTATIONS_OUT}"
     info "SV VCF with repeats annotated: ${ANNOTATED_VCF}"
 }
 
@@ -191,15 +180,12 @@ T0=$(date +%s)
 check_required
 create_output_dir
 extract_flanking_regions
-create_fasta_files
 run_trf
 run_repeatmasker
 process_repeatmasker_output
 combine_split_files
-run_visualiser
-annotate_vcf_with_repeats
+annotation
 sort_and_index_vcf
-remove_intermediates
 show_output_paths
 
 T1=$(date +%s)

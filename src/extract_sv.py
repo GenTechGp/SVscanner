@@ -424,7 +424,8 @@ def print_vcf_summary(args, vcf_summary):
                             "other"] # 15
 
     code = 1
-    with open(args.summary, "w") as f:
+    summary_out = f"{args.out}/extract_sv.summary"
+    with open(summary_out, "w") as f:
         print("records stats (count : description)")
         f.write(f"records stats (count : description)\n")
         for count in vcf_summary[1:]:
@@ -435,7 +436,8 @@ def print_vcf_summary(args, vcf_summary):
             code += 1
 
 def print_record_stats(args, record_stats_arr, balanced_seq_bins):
-    with open(args.summary, "a") as f:
+    summary_out = f"{args.out}/extract_sv.summary"
+    with open(summary_out, "a") as f:
         f.write(f".fa, no.of.seqs, total.seq.len\n")
         for i, b in enumerate(balanced_seq_bins):
             f.write(f"{i}.fa, {len(b)}, {sum(x[2] for x in b)}\n")
@@ -559,7 +561,6 @@ def argparser():
     optional_args.add_argument('--max', required=False, type=positive_int, default=50000, help="The maximum length of the SV")
     optional_args.add_argument('--flen', required=False, type=positive_int, default=2000, help="The maximum detectable period size supported by TRF to determine the length of flanking sequences")
     optional_args.add_argument('--ffac', required=False, type=positive_int, default=10, help="Multiplication factor for SVLEN to determine the length of flanking sequences")
-    optional_args.add_argument('--summary', required=False, type=str, default="extract_sv.summary", help="Path to write the summary file")
     optional_args.add_argument('-n', required=False, type=positive_int, default=1, help="Number of equal-sized output fasta files")
     optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
     optional_args.add_argument('-h', '--help', action='help', help="Show this help message and exit")
