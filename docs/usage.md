@@ -123,12 +123,15 @@ This file includes the flag of every read for each SV.
 
 ### Setting up TRF + Sequence Search Engine + TE Database + RepeatMasker + Other
 
-1. TRF (Tandem Repeats Finder) 
+1. TRF (Tandem Repeats Finder), bcftools, bgzip, tabix, samtools 
 ```
-wget https://github.com/Benson-Genomics-Lab/TRF/releases/download/v4.09.1/trf409.linux64
-chmod +x trf409.linux64
+./scripts/install_tools.sh
 
 TRF_BINARY=$(realpath trf409.linux64)
+BCFTOOLS=$(realpath bcftools-1.21/bcftools)
+BGZIP=$(realpath htslib-1.21/bgzip)
+TABIX=$(realpath htslib-1.21/tabix)
+
 ```
 
 2. Download Sequence Search Engine (e.g. HMMER)
@@ -182,7 +185,6 @@ $REPEAT_MASKER test/sample.fa
 ```
 realpath
 split
-bcftools
 parallel
 ```
 
@@ -195,7 +197,7 @@ It will take about 10 minutes. The majority of time is taken by the RepeatMasker
 You may need to change the `REF_FASTA` variable to set the reference genome path (see below - Input Files).
 
 ```
-./SVclassifier/run_classifier.sh
+./scripts/run_classifier.sh
 ```
 
 ### Usage
