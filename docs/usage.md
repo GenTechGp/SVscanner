@@ -208,7 +208,6 @@ You may need to change the `REF_FASTA` variable to set the reference genome path
 ```
 # Directories (change)
 OUTPUT_DIR=$(realpath "SVtoolkit_output_1")
-CLASSIFIER_DIR=$(realpath "SVclassifier")
 
 # Input Files (change)
 REF_FASTA=$(realpath "/genome/hg38noAlt.fa")
@@ -218,6 +217,10 @@ STR_BED=$(realpath "test/STRchive-disease-loci.bed")
 # Repeat Masker and TRF programs (change if necessary)
 TRF_BINARY=$(realpath "trf409.linux64")
 REPEAT_MASKER=$(realpath "RepeatMasker/RepeatMasker")
+
+BCFTOOLS=$(realpath bcftools-1.21/bcftools)
+BGZIP=$(realpath htslib-1.21/bgzip)
+TABIX=$(realpath htslib-1.21/tabix)
 
 # Parameters (change if necessary)
 SAMPLE="HG002_subset_mini"
