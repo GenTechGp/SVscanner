@@ -12,7 +12,7 @@ TABIX="./htslib-1.21/tabix"
 
 NO_RETURN_CODES=15
 
-def get_f_len(svlen, args):
+def get_f_len(args, svlen) :
     if args.flen < svlen * args.ffac:
         return args.flen
     else:
@@ -139,11 +139,11 @@ def handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i, 
 
 #INS
 def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
-    # svlen = get_svlen(record) 
+    # svlen = get_svlen(record) #commented because sniffles svlen for ins is incorrect
     seq = record.alts[0]
     svlen = len(seq)
     assert svlen > 0
-    f_len = get_f_len(svlen, args)
+    f_len = get_f_len(args, svlen)
 
     output_dir = args.out
     
@@ -196,7 +196,7 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
 def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
     svlen = get_svlen(record) 
     assert svlen < 0
-    f_len = get_f_len(abs(svlen), args)
+    f_len = get_f_len(args, abs(svlen))
 
     output_dir = args.out
     
@@ -225,7 +225,7 @@ def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
 def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
     svlen = get_svlen(record) 
     assert svlen > 0
-    f_len = get_f_len(svlen, args)
+    f_len = get_f_len(args, svlen)
 
     output_dir = args.out
     
@@ -264,7 +264,7 @@ def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
 def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
     svlen = get_svlen(record) 
     assert svlen > 0
-    f_len = get_f_len(svlen, args)
+    f_len = get_f_len(args, svlen)
 
     output_dir = args.out
     

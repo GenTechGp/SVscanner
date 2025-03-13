@@ -21,3 +21,7 @@ test/out*
 temp/
 test/custom_vcf/
 test/sniffles2.2.6.0/
+VISOR*
+test/visor_test
+test/sim_ref
+test/check_sv_flanks

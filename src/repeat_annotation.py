@@ -58,6 +58,9 @@ def read_sv_info(sv_file):
                 rel_end = pos - query_start + (query_end - pos)*BND_LEN_THRESHOLD
                 length = rel_end - rel_start
             else:
+                if "DEL" in sv_id:
+                    assert length < 0
+                    length = abs(length)
                 rel_start = pos - query_start
                 rel_end = rel_start + length 
             
