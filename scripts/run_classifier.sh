@@ -6,14 +6,19 @@ die() { echo -e "${RED}$1${NC}" >&2 ; echo ; exit 1 ; } # terminate script
 info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
 info "$(date)"
 
-# Directories (change)
-OUTPUT_DIR=$(realpath "SVtoolkit_output_sim_ref")
-
+OUTPUT_DIR=$(realpath "SVtoolkit_output_2")
 # Input Files (change)
-SAMPLE="sim_ref"
-REF_FASTA=$(realpath "test/sim_ref/base_ref/base_ref.fa")
-SV_VCF=$(realpath "test/sim_ref/sniffles.vcf.gz")
+SAMPLE="HG002_subset_mini"
+REF_FASTA=$(realpath "/scratch/ox63/hm4078/genome/hg38noAlt.fa")
+SV_VCF=$(realpath "test/${SAMPLE}/${SAMPLE}.vcf.gz")
 STR_BED=$(realpath "test/STRchive-disease-loci.bed")
+
+##FOR SIMULATION AND TESTING
+# OUTPUT_DIR=$(realpath "SVtoolkit_output_sim_ref")
+# SAMPLE="sim_ref"
+# REF_FASTA=$(realpath "test/sim_ref/base_ref/base_ref.fa")
+# SV_VCF=$(realpath "test/sim_ref/sniffles.vcf.gz")
+
 
 # Repeat Masker and TRF, bcftools, bgzip, tabix  programs (change if necessary)
 TRF_BINARY=$(realpath "trf409.linux64")
