@@ -7,18 +7,21 @@ info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
 info "$(date)"
 
 # Directories (change)
-OUTPUT_DIR=$(realpath "SVtoolkit_output_2")
-CLASSIFIER_DIR=$(realpath "SVclassifier")
+OUTPUT_DIR=$(realpath "SVtoolkit_output_sim_ref")
 
 # Input Files (change)
-SAMPLE="HG002_subset_mini"
-REF_FASTA=$(realpath "/genome/hg38noAlt.fa")
-SV_VCF=$(realpath "test/${SAMPLE}/${SAMPLE}.vcf.gz")
+SAMPLE="sim_ref"
+REF_FASTA=$(realpath "test/sim_ref/base_ref/base_ref.fa")
+SV_VCF=$(realpath "test/sim_ref/sniffles.vcf.gz")
 STR_BED=$(realpath "test/STRchive-disease-loci.bed")
 
-# Repeat Masker and TRF programs (change if necessary)
+# Repeat Masker and TRF, bcftools, bgzip, tabix  programs (change if necessary)
 TRF_BINARY=$(realpath "trf409.linux64")
 REPEAT_MASKER=$(realpath "RepeatMasker/RepeatMasker")
+
+BCFTOOLS=$(realpath bcftools-1.21/bcftools)
+BGZIP=$(realpath htslib-1.21/bgzip)
+TABIX=$(realpath htslib-1.21/tabix)
 
 # NTHREADS=$NSLOTS   # Total number of threads
 NTHREADS=$(nproc --all)
@@ -53,7 +56,6 @@ TRF_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedTRF.tsv
 check_required() {
     [ -n "$VIRTUAL_ENV" ] && info "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
     [ -z "$OUTPUT_DIR" ] && die "OUTPUT_DIR is not set"
-    [ -z "$CLASSIFIER_DIR" ] && die "CLASSIFIER_DIR is not set"
     [ -z "$REF_FASTA" ] && die "REF_FASTA is not set"
     [ -z "$SV_VCF" ] && die "SV_VCF is not set"
     [ -z "$STR_BED" ] && die "STR_BED is not set"
@@ -68,9 +70,9 @@ check_required() {
     command -v split >/dev/null 2>&1 || die "split program not found"
     command -v ${TRF_BINARY} >/dev/null 2>&1 || die "TRF binary not found"
     command -v ${REPEAT_MASKER} >/dev/null 2>&1 || die "RepeatMasker not found"
-    command -v bcftools >/dev/null 2>&1 || die "bcftools not found"
-    command -v bgzip >/dev/null 2>&1 || die "bgzip not found"
-    command -v tabix >/dev/null 2>&1 || die "tabix not found"
+    command -v ${BCFTOOLS} >/dev/null 2>&1 || die "${BCFTOOLS} not found"
+    command -v ${BGZIP} >/dev/null 2>&1 || die "${BGZIP} not found"
+    command -v ${TABIX} >/dev/null 2>&1 || die "${TABIX} not found"
     command -v parallel >/dev/null 2>&1 || die "parallel not found"
 }
 
@@ -83,7 +85,7 @@ create_output_dir() {
 extract_flanking_regions() {
     # 1) Extract sequence and flanking regions for variants
     info "1. Extracting structural variant sequences from VCF..."
-    python3 ${EXTRACT_SV_FLANKINGS} --vcf ${SV_VCF} --ref ${REF_FASTA} --out ${EXTRACT_SV_FLANKS_OUT} -n 1 --info ${INFO_FILE} || die "failed"
+    python3 ${EXTRACT_SV_FLANKINGS} --vcf ${SV_VCF} --ref ${REF_FASTA} --out ${EXTRACT_SV_FLANKS_OUT} --min 10 -n 1 --info ${INFO_FILE} || die "failed"
     info "done"
 }
 
@@ -126,15 +128,15 @@ process_repeatmasker_output() {
             print $0
         }' OFS='\t' > "${rm_output}.tab" || die "failed"
     done
-    rm -rf "${EXTRACT_SV_FLANKS_OUT}"/*.fa.out"
+    # rm -rf "${EXTRACT_SV_FLANKS_OUT}/*.fa.out"
     info "done"
 }
 
 combine_split_files() {
     cat ${EXTRACT_SV_FLANKS_OUT}/*.dat > ${TRF_FILE}
     cat ${EXTRACT_SV_FLANKS_OUT}/*.out.tab > ${RM_FILE}
-    rm -rf ${EXTRACT_SV_FLANKS_OUT}/*.dat
-    rm -rf ${EXTRACT_SV_FLANKS_OUT}/*.out.tab
+    # rm -rf ${EXTRACT_SV_FLANKS_OUT}/*.dat
+    # rm -rf ${EXTRACT_SV_FLANKS_OUT}/*.out.tab
 }
 
 annotation() {
@@ -153,9 +155,9 @@ annotation() {
         --len ${DIAGRAM_LEN} || die "failed"
     
     COL_LIST=$(head -n 1 ${ANNOTATIONS_OUT}/vcf_annotate.tsv | cut -c2- | tr '\t' ',')
-    bgzip ${ANNOTATIONS_OUT}/vcf_annotate.tsv -c > ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "bgzip failed"
-    tabix -s1 -b2 -e2 ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "tabix failed"
-    bcftools annotate -a ${ANNOTATIONS_OUT}/vcf_annotate.gz -c ${COL_LIST} -h ${ANNOTATIONS_OUT}/vcf_header.txt ${SV_VCF} -o ${ANNOTATED_VCF} || die "bcftools annotate failed"
+    ${BGZIP} ${ANNOTATIONS_OUT}/vcf_annotate.tsv -c > ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "${BGZIP} failed"
+    ${TABIX} -s1 -b2 -e2 ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "${TABIX} failed"
+    ${BCFTOOLS} annotate -a ${ANNOTATIONS_OUT}/vcf_annotate.gz -c ${COL_LIST} -h ${ANNOTATIONS_OUT}/vcf_header.txt ${SV_VCF} -o ${ANNOTATED_VCF} || die "${BCFTOOLS} annotate failed"
 
     info "done"
 
@@ -164,8 +166,8 @@ annotation() {
 sort_and_index_vcf() {
     # Sort and Index the annotated VCF
     info "6. Sort and Index the annotated VCF..."
-    bcftools sort -Oz -o ${ANNOTATED_VCF}.gz ${ANNOTATED_VCF} || die "bcftools sort failed"
-    bcftools index -t ${ANNOTATED_VCF}.gz || die "bcftools index failed"
+    ${BCFTOOLS} sort -Oz -o ${ANNOTATED_VCF}.gz ${ANNOTATED_VCF} || die "${BCFTOOLS} sort failed"
+    ${BCFTOOLS} index -t ${ANNOTATED_VCF}.gz || die "${BCFTOOLS} index failed"
     
     info "done"
 }
