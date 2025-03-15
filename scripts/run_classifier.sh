@@ -6,19 +6,23 @@ die() { echo -e "${RED}$1${NC}" >&2 ; echo ; exit 1 ; } # terminate script
 info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
 info "$(date)"
 
-OUTPUT_DIR=$(realpath "SVtoolkit_output_2")
-# Input Files (change)
+# Input/Output (change)
+OUTPUT_DIR=$(realpath "test/output_1")
 SAMPLE="HG002_subset_mini"
-REF_FASTA=$(realpath "/scratch/ox63/hm4078/genome/hg38noAlt.fa")
+# REF_FASTA=$(realpath "/scratch/ox63/hm4078/genome/hg38noAlt.fa")
+REF_FASTA=$(realpath "/genome/hg38.analysisSet.fa")
 SV_VCF=$(realpath "test/${SAMPLE}/${SAMPLE}.vcf.gz")
 STR_BED=$(realpath "test/STRchive-disease-loci.bed")
 
 ##FOR SIMULATION AND TESTING
-# OUTPUT_DIR=$(realpath "SVtoolkit_output_sim_ref")
+# OUTPUT_DIR=$(realpath "test/output_sim_ref")
 # SAMPLE="sim_ref"
 # REF_FASTA=$(realpath "test/sim_ref/base_ref/base_ref.fa")
 # SV_VCF=$(realpath "test/sim_ref/sniffles.vcf.gz")
 
+# Repeat Masker species (change)
+# SPECIES="mammalia"
+SPECIES="human"
 
 # Repeat Masker and TRF, bcftools, bgzip, tabix  programs (change if necessary)
 TRF_BINARY=$(realpath "trf409.linux64")
@@ -43,20 +47,19 @@ DIAGRAM_LEN=100
 EXTRACT_SV_FLANKINGS=src/extract_sv.py
 ANNOTATION=src/repeat_annotation.py
 # Internal directories (keep as it is)
-OUTPUT_SAMPLE_DIR=${OUTPUT_DIR}/${SAMPLE}
-EXTRACT_SV_FLANKS_OUT=${OUTPUT_SAMPLE_DIR}/extract_sv_flanks_out
-ANNOTATIONS_OUT=${OUTPUT_SAMPLE_DIR}/annotations_out
-RM_TMP=${OUTPUT_SAMPLE_DIR}/RMtmp
+EXTRACT_SV_FLANKS_OUT=${OUTPUT_DIR}/extract_sv_flanks_out
+ANNOTATIONS_OUT=${OUTPUT_DIR}/annotations_out
+RM_TMP=${OUTPUT_DIR}/RMtmp
 # File Intermediates (keep as it is)
-INFO_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_info.tab
-RM_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_rm.tab
-TRF_FILE=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_trf.tab
+INFO_FILE=${OUTPUT_DIR}/${SAMPLE}_info.tab
+RM_FILE=${OUTPUT_DIR}/${SAMPLE}_rm.tab
+TRF_FILE=${OUTPUT_DIR}/${SAMPLE}_trf.tab
 
 # Final Outputs (change if necessary)
-VIS_OUTPUT=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_diagrams.txt
-ANNOTATED_VCF=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotated.vcf
-RM_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedRM.tsv
-TRF_TSV=${OUTPUT_SAMPLE_DIR}/${SAMPLE}_annotatedTRF.tsv
+VIS_OUTPUT=${OUTPUT_DIR}/${SAMPLE}_diagrams.txt
+ANNOTATED_VCF=${OUTPUT_DIR}/${SAMPLE}_annotated.vcf
+RM_TSV=${OUTPUT_DIR}/${SAMPLE}_annotatedRM.tsv
+TRF_TSV=${OUTPUT_DIR}/${SAMPLE}_annotatedTRF.tsv
 
 check_required() {
     [ -n "$VIRTUAL_ENV" ] && info "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
@@ -84,7 +87,6 @@ check_required() {
 create_output_dir() {
 	test -d "${OUTPUT_DIR}" && rm -r "${OUTPUT_DIR}"
 	mkdir "${OUTPUT_DIR}" || die "Failed creating ${OUTPUT_DIR}"
-    mkdir -p ${RM_TMP}
 }
 
 extract_flanking_regions() {
@@ -103,6 +105,7 @@ run_trf() {
 }
 
 run_repeatmasker() {
+    mkdir -p ${RM_TMP}
     info "3. Running RepeatMasker..."
     T2=$(date +%s)
     cd ${RM_TMP}
@@ -115,7 +118,7 @@ run_repeatmasker() {
     # nhmmer search engine takes 2 cpus per job. hence -pa 2 means 2x2=4 cpus are used. Only runs new jobs if system load is below 75%.
     # find "../" -name "${SAMPLE}.*.fa" | parallel --load 75% -j $(( $(nproc) / 4 )) ${REPEAT_MASKER} {} -pa 2 -html -gff -dir "../" || die "failed"
     # find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa"
-    find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | xargs -I {} "${REPEAT_MASKER}" {} -pa 8 -html -gff -dir ${EXTRACT_SV_FLANKS_OUT}
+    find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | xargs -I {} "${REPEAT_MASKER}" {} -pa $(( $(nproc) / 2 )) -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} -species ${SPECIES}
     cd -
     T3=$(date +%s)
     RM_TIME=$((T3 - T2))
