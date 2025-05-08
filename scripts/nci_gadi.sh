@@ -12,11 +12,8 @@ die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
 info() {  echo -e "$1" >&2 ; }
 info "$(date)"
 
-module load parallel || die "could not load parallel module"
-cd "/scratch/ox63/hm4078/SVtoolkit"
-source "svtools/bin/activate" || die "could not activate svtools venv"
+export MODULEPATH=/g/data/ox63/install/modules:$MODULEPATH
+module load svclass/1.0 || die "could not load svclass module"
 
 echo "--output_dir $OUTPUT_DIR --sample $SAMPLE --sv_vcf $SV_VCF --ref_fasta $REF"
-./scripts/run_classifier.sh --output_dir $OUTPUT_DIR --sample $SAMPLE --sv_vcf $SV_VCF --ref_fasta $REF || die "could not run_classifier.sh"
-
-## qsub -v OUTPUT_DIR=/scratch/ox63/hm4078/sv_out,SAMPLE=sample_01,SV_VCF=/scratch/ox63/hm4078/SVtoolkit/test/HG002_subset_mini/HG002_subset_mini.vcf.gz /scratch/ox63/hm4078/SVtoolkit/scripts/nci_gadi.sh
+svclass --output_dir $OUTPUT_DIR --sample $SAMPLE --sv_vcf $SV_VCF --ref_fasta $REF || die "could not run svclass"
