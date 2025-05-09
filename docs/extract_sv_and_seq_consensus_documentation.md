@@ -11,8 +11,9 @@ This document summarizes the method used to construct the `seq_consensus` for ea
 
   `f_len = min(args.flen, svlen * args.ffac)`
 
-  `args.flen - "The maximum detectable period size supported by TRF to determine the length of flanking sequences", optional, default=2000`
-  `args.ffac - "Multiplication factor for SVLEN to determine the length of flanking sequences", optional, default=10`
+  `[args.flen - "The maximum detectable period size supported by TRF to determine the length of flanking sequences", optional, default=2000]`
+  
+  `[args.ffac - "Multiplication factor for SVLEN to determine the length of flanking sequences", optional, default=10]`
 
 - **`seq_fl`**: Sequence to the left of the SV (left flank).
 - **`seq_fr`**: Sequence to the right of the SV (right flank).
