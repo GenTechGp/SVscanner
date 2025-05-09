@@ -1,5 +1,5 @@
 
-# Documentation: Construction of `seq_consensus` for Structural Variant (SV) Types
+# Construction of `seq_consensus` for Structural Variant (SV) Types
 
 This document summarizes the method used to construct the `seq_consensus` for each SV type in a VCF file. The consensus sequence is intended to represent the local genomic context around a variant and is output as a FASTA sequence.
 
@@ -10,6 +10,9 @@ This document summarizes the method used to construct the `seq_consensus` for ea
 - **`f_len`**: Flanking length calculated as:
 
   `f_len = min(args.flen, svlen * args.ffac)`
+
+  `args.flen - "The maximum detectable period size supported by TRF to determine the length of flanking sequences", optional, default=2000`
+  `args.ffac - "Multiplication factor for SVLEN to determine the length of flanking sequences", optional, default=10`
 
 - **`seq_fl`**: Sequence to the left of the SV (left flank).
 - **`seq_fr`**: Sequence to the right of the SV (right flank).
