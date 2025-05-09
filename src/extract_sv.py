@@ -451,6 +451,11 @@ def balance_bins(items, n_bins):
     :param n_bins: Number of bins
     :return: List of bins, where each bin is a list of tuples
     """
+    # Ensure the number of items is greater than or equal to the number of bins
+    if len(items) < n_bins:
+        # raise ValueError("The number of items must be greater than or equal to the number of bins.")
+        n_bins = len(items)
+    
     # Sort items by value2 in descending order for greedy balancing
     if n_bins > 1:
         items = sorted(items, key=lambda x: x[2], reverse=True)
