@@ -13,10 +13,7 @@ TABIX="./htslib-1.21/tabix"
 NO_RETURN_CODES=15
 
 def get_f_len(args, svlen) :
-    if args.flen < svlen * args.ffac:
-        return args.flen
-    else:
-        return svlen * args.ffac
+    return min(args.flen, svlen * args.ffac)
 
 def check_program(tool):
     if not (os.path.exists(tool) and os.path.isfile(tool)):
@@ -211,7 +208,7 @@ def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
     end_f = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
     seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
-    seq_consensus = seq # assuming tandem dups
+    seq_consensus = seq
     seq_len = len(seq_consensus)
 
     output_fasta = f"{output_dir}/{svID}.fa"
@@ -292,7 +289,7 @@ def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
 
     seq_rc = Seq(seq).reverse_complement()
 
-    seq_consensus = seq_fl + seq_rc + seq_fr # assuming tandem dups
+    seq_consensus = seq_fl + seq_rc + seq_fr
     seq_len = len(seq_consensus)
 
     output_fasta = f"{output_dir}/{svID}.fa"
