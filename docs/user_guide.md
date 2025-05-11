@@ -85,12 +85,12 @@ The ‘Repetitive’ classification is given to SVs where the intersecting repea
 
 | CALLER\_ID | Caller ID for the SV |
 | :---- | :---- |
-| RM\_CLASSIFICATION | Classification of repeat class covering the SV \[SINE,LINE,LTR,DNA,Retroposon or NON-REPETITIVE\] |
-| RM\_ELEMENTS\_COVERAGE | Fraction of the mobile element covered by the SV |
-| RM\_ELEMENT\_PROPORTION | Proportion of the query sequence (includes flanking region) found in the mobile element |
+| RM\_CLASSIFICATION | (list) Classification of repeat class covering the SV \[SINE,LINE,LTR,DNA,Retroposon or NON-REPETITIVE\] |
+| RM\_ELEMENTS\_COVERAGE | (list) Fraction of the mobile element covered by the SV |
+| RM\_ELEMENT\_PROPORTION | (list) Proportion of the query sequence (includes flanking region) found in the mobile element |
 | RM\_TRANSPOSITION | Type of transposition \[COMPLETE/FRAGMENT\] |
-| RM\_SV\_COVERAGE | Fraction of the SV covered by the mobile element  intersection/SV\_length |
-| RM\_TOTAL\_SV\_COVERAGE | Total coverage of SV covered by mobile elements |
+| RM\_SV\_COVERAGE | (list) Fraction of the SV covered by the mobile element intersection/SV\_length |
+| RM\_TOTAL\_SV\_COVERAGE | (float) Total coverage of SV covered by mobile elements |
 | TRF\_CLASSIFICATION | Classification(s) of tandem repeat class covering the SV \[HOMO,STR,TR or NON-REPETITIVE\] |
 | TRF\_SV\_COVERAGE | Fraction of the SV covered by the tandem repeat |
 | TRF\_PERIOD\_SIZE | Period size of the repeat(s) |
@@ -103,3 +103,12 @@ The ‘Repetitive’ classification is given to SVs where the intersecting repea
 | PATHOGENIC_MIN* | Minimum pathogenic number annotated in STRchive |
 
 *Added as INFO attribute only when SV intersects with position of gene
+
+![Illustration](/images/annotation_tag_illustration.png)
+
+Note - `ri_l` is not necessarily equal to `ri_sv_l`. It can be less than, equal or greater than `ri_sv_l`.
+
+RM\_ELEMENTS\_COVERAGE = `ri_sv_l/ri` e.g. [`r1_sv_l/r1`, `r2_sv_l/r2`]
+RM\_ELEMENT\_PROPORTION = `ri_l/ri` e.g. [`r1_l/r1`, `r2_l/r2`]
+RM\_SV\_COVERAGE = `ri_sv_l/sv_l` e.g. [`r1_sv_l/sv_l`, `r2_sv_l/sv_l`]
+RM\_TOTAL\_SV\_COVERAGE = `sum(ri_sv_l)/sv_l` e.g. `(r1_sv_l+r2_sv_l)/sv_l`

@@ -7,12 +7,17 @@ info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
 info "$(date)"
 
 DIR="test/HG002_subset_mini"
-BCFTOOLS="./bcftools-1.21/bcftools"
+BCFTOOLS=$(realpath bcftools-1.21/bcftools)
+BGZIP=$(realpath htslib-1.21/bgzip)
+TABIX=$(realpath htslib-1.21/tabix)
+
+TABLE="test/anno_table.txt"
 
 set -x 
 
-COL_LIST=$(head -n 1 ${DIR}/ins_anno_table | cut -c2- | tr '\t' ',')
-bgzip ${DIR}/ins_anno_table -c > ${DIR}/ins_anno_table.gz || die "bgzip failed"
-tabix -s1 -b2 -e2 ${DIR}/ins_anno_table.gz || die "tabix failed"
-${BCFTOOLS} annotate -a ${DIR}/ins_anno_table.gz -c ${COL_LIST} -h ${DIR}/header.txt ${DIR}/HG002_subset_mini.vcf -o ${DIR}/anno_HG002_subset_mini.vcf || die "annotate failed"
+COL_LIST=$(head -n 1 ${TABLE} | cut -c2- | tr '\t' ',')
+${BGZIP} ${TABLE} -c > ${DIR}/anno_table.gz || die "bgzip failed"
+${TABIX} -s1 -b2 -e2 ${DIR}/anno_table.gz || die "tabix failed"
+${BCFTOOLS} annotate -a ${DIR}/anno_table.gz -c ${COL_LIST} -h ${DIR}/vcf_header.txt ${DIR}/HG002_subset_mini.vcf -o ${DIR}/anno_HG002_subset_mini.vcf || die "annotate failed"
 
+info "success"

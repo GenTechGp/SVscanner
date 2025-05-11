@@ -123,21 +123,21 @@ def read_rm(sv_info, rm_file, min_intersect, isVisualise):
         - fraction (sv only)
         
         """
+
+        repeat_length = repeat_end + repeat_left
+        element_proportion = (repeat_end - repeat_begin) / repeat_length
+        element_coverage = intersection / repeat_length
+        return element_proportion, element_coverage
+
         # $12           #13         $14 
         # repeat_begin  repeat_end  repeat_left
+        # if strand == '+':
+            # proportion = (repeat_end - repeat_begin) / ((repeat_end - repeat_begin) + repeat_left)
+            # element_coverage = intersection / ((repeat_end - repeat_begin) + repeat_left)
+        # elif strand == 'C':
+            # proportion = (repeat_end - repeat_left) / ((repeat_begin + repeat_end) - repeat_left)
+            # element_coverage = intersection / ((repeat_begin + repeat_end) - repeat_left)
 
-        proportion = None
-        fraction = None 
-        if strand == '+':
-            # ($13-$12)/(($13-$12)+$12+$14)
-            proportion = (repeat_end - repeat_begin) / ((repeat_end - repeat_begin) + repeat_left)
-            fraction = intersection / ((repeat_end - repeat_begin) + repeat_left)
-        elif strand == 'C':    
-            # ($13-$14)/(($13-$14)+$14+$12)
-            proportion = (repeat_end - repeat_left) / ((repeat_begin + repeat_end) - repeat_left)
-            fraction = intersection / ((repeat_begin + repeat_end) - repeat_left)
-
-        return proportion, fraction
 
     with open(rm_file, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
@@ -151,22 +151,35 @@ def read_rm(sv_info, rm_file, min_intersect, isVisualise):
             family = row[10]
             te_id = row[14]
 
+
+            assert te_start < te_end, f"TE start {te_start} should be less than TE end {te_end} for sv_id {sv_id}."
+
             classification = get_RM_classification(family, isVisualise)
 
             # Add element if ['SINE', 'LINE', 'LTR', 'DNA', 'Retroposon']
             if classification and sv_id in sv_info:
                 
-                # Remove the parentheses around the repeat
-                repeat_begin = int(row[11].strip("()"))
-                repeat_end = int(row[12].strip("()"))
-                repeat_left = int(row[13].strip("()"))
-               
+                if strand == '+':
+                    # Remove the parentheses around the repeat
+                    repeat_begin = int(row[11].strip("()"))
+                    repeat_end = int(row[12].strip("()"))
+                    repeat_left = int(row[13].strip("()"))
+                elif strand == 'C':
+                    # Remove the parentheses around the repeat
+                    repeat_begin = int(row[13].strip("()"))
+                    repeat_end = int(row[12].strip("()"))
+                    repeat_left = int(row[11].strip("()"))
+
+                assert repeat_begin < repeat_end, f"Repeat begin {repeat_begin} should be less than repeat end {repeat_end} for strand {strand}."
+
+                # print("query's matching len:{}, repeat's matching len:{}".format(te_end-te_start,repeat_end-repeat_begin))
+
                 sv = sv_info[sv_id]
                 
                 # Add if the transposable element overlaps with the SV
                 intersection = calculate_intersection_length(te_start, te_end, sv['rel_start'], sv['rel_end'])
                 intersect_fraction = round(intersection / sv['length'], 6)
-                element_proportion, element_fraction = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection)
+                element_proportion, element_coverage = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection)
                 
             
                 # Add if the intersection is > min_intersect (e.g. 5%)
@@ -176,7 +189,7 @@ def read_rm(sv_info, rm_file, min_intersect, isVisualise):
                         'te_end': te_end,
                         'family': family,
                         'repeat': repeat,
-                        'element_coverage' : element_fraction,
+                        'element_coverage' : element_coverage,
                         'element_proportion' : element_proportion,
                         'class': classification, 
                         'intersection' : intersect_fraction, 
@@ -401,7 +414,8 @@ def filter_rm(sv_info):
 
                 if transposition_fraction > 0.75 and element_coverage_complete:
                     transposition = "COMPLETE"
-
+                # partial
+                # minimal
                 # Append non-overlapping elements from this element group to the flat list
                 all_non_overlapping.extend(non_overlapping)
             
@@ -545,18 +559,18 @@ def get_annot_info(sv_info, sv_id, min_repetitive, strchive):
         sv_coverage = []
         element_coverage = []
         classifications = []
-        parts = []
+        element_proportion = []
         
         for repeat in rm_data:
             sv_coverage.append(str(round(repeat['intersection'], 2)))
             element_coverage.append(str(round(repeat['element_coverage'], 2)))
             classifications.append(repeat['class'])
-            parts.append(str(round(repeat['element_proportion'], 2)))
+            element_proportion.append(str(round(repeat['element_proportion'], 2)))
 
         return {
             'RM_CLASSIFICATION': ','.join(classifications) if classifications else 'NA',
             'RM_ELEMENTS_COVERAGE': ','.join(element_coverage) if element_coverage else 'NA',
-            'RM_ELEMENT_PROPORTION': ','.join(parts) if parts else 'NA',
+            'RM_ELEMENT_PROPORTION': ','.join(element_proportion) if element_proportion else 'NA',
             'RM_SV_COVERAGE': ','.join(sv_coverage) if sv_coverage else 'NA',
         }
 
@@ -722,6 +736,7 @@ def get_annot_info(sv_info, sv_id, min_repetitive, strchive):
     ### Check total coverage of the SV by RepeatMasker and TRF > 50%
     # --> Replaces any <50% as non-repetitive
 
+    #todo: assert individual coverage sum equal to total coverage
     # RepeatMasker
     total_rm_coverage = calculate_total_coverage(sv_data['rel_start'], sv_data['rel_end'], sv_data['RM']) if 'RM' in sv_data else 'NA'
     rm_data.update({'RM_TOTAL_SV_COVERAGE': total_rm_coverage})    

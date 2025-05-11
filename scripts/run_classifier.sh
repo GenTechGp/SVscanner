@@ -216,8 +216,7 @@ process_repeatmasker_output() {
     info "Process the RepeatMasker files (remove the header and 16th column)..."
     for rm_output in "${EXTRACT_SV_FLANKS_OUT}"/*.fa.out; do
         tail -n +4 "${rm_output}" | awk '{
-            if ($16 == "*") $16 = "";
-            else $16 = "";
+            $16 = "";
             print $0
         }' OFS='\t' > "${rm_output}.tab" || die "failed"
     done
