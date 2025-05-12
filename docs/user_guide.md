@@ -108,7 +108,7 @@ The ‘Repetitive’ classification is given to SVs where the intersecting repea
 
 Note - `ri_l` is not necessarily equal to `ri_sv_l`. It can be less than, equal or greater than `ri_sv_l`.
 
-* RM\_ELEMENTS\_COVERAGE = `ri_sv_l/ri` e.g. [`r1_sv_l/r1`, `r2_sv_l/r2`]
-* RM\_ELEMENT\_PROPORTION = `ri_l/ri` e.g. [`r1_l/r1`, `r2_l/r2`]
-* RM\_SV\_COVERAGE = `ri_sv_l/sv_l` e.g. [`r1_sv_l/sv_l`, `r2_sv_l/sv_l`]
-* RM\_TOTAL\_SV\_COVERAGE = `sum(ri_sv_l)/sv_l` e.g. `(r1_sv_l+r2_sv_l)/sv_l`
+* RM\_ELEMENTS\_COVERAGE = `ri_sv_l/ri_L` e.g. [`r1_sv_l/r1_L`, `r2_sv_l/r2_L`]
+* RM\_ELEMENT\_PROPORTION = `ri_l/ri_L` e.g. [`r1_l/r1_L`, `r2_l/r2_L`]
+* RM\_SV\_COVERAGE = `ri_sv_l/sv_L` e.g. [`r1_sv_l/sv_L`, `r2_sv_l/sv_L`]
+* RM\_TOTAL\_SV\_COVERAGE = `sum(ri_sv_l)/sv_L` e.g. `(r1_sv_l+r2_sv_l)/sv_L`
