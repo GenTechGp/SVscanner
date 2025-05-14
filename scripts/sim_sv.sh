@@ -34,7 +34,7 @@ SIM_REF="src/simulate_sv.py"
 PBSIM3="/data/install/pbsim3-3.0.5/src/pbsim"
 PBSIM3_DATA="/data/install/pbsim3-3.0.5/data"
 
-creat_output_dir() {
+create_output_dir() {
 	test -d "${OUTPUT_DIR}" && rm -r "${OUTPUT_DIR}"
     mkdir ${OUTPUT_DIR}
 }
@@ -44,24 +44,24 @@ sim_ref() {
     python ${SIM_REF} -n ${SV_COUNT} --mob test/dfam-fasta-download.fasta --rep test/GRCh38.microsatellites.bed --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
     deactivate
 
-    source "${SVTOOLS_VENV_PATH}/bin/activate"
+    source "${VISOR_VENV_PATH}/bin/activate"
     VISOR HACk -b ${OUTPUT_DIR}/base_ref/visor_hack.bed -g ${BASE_REF} -o ${OUTPUT_DIR}/visor_hack || die "visor hack failed"
     awk '/^>/ {if (seq) print seq; print; seq=""; next} {seq=seq $0} END {if (seq) print seq}' ${OUTPUT_DIR}/visor_hack/h1.fa > ${SV_TREATED_REF} || die "awk after visor failed"
     
     deactivate
 }
 
-sim_reads_ont() {
-    ${PBSIM3} --strategy wgs \
-      --method qshmm \
-      --qshmm ${PBSIM3_DATA}/QSHMM-ONT-HQ.model \
-      --depth 20 \
-      --genome ${SV_TREATED_REF} \
-      --seed ${SEED} \
-      --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
+# sim_reads_ont() {
+#     ${PBSIM3} --strategy wgs \
+#       --method qshmm \
+#       --qshmm ${PBSIM3_DATA}/QSHMM-ONT-HQ.model \
+#       --depth 20 \
+#       --genome ${SV_TREATED_REF} \
+#       --seed ${SEED} \
+#       --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
 
-    mv ${OUTPUT_DIR}/simualted_reads*.fastq.gz ${SIM_READS}
-}
+#     mv ${OUTPUT_DIR}/simualted_reads*.fastq.gz ${SIM_READS}
+# }
 
 sim_reads_pacbio_hifi() {
     ${PBSIM3} --strategy wgs \
@@ -79,11 +79,11 @@ sim_reads_pacbio_hifi() {
     ${PACBIO_CCS} ${OUTPUT_DIR}/simulated_reads_0001.bam ${SIM_READS} || die "pacbio ccs failed"
 }
 
-align_reads_ont() {
-    minimap2 -cx map-ont ${BASE_REF} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
-    minimap2 -ax map-ont ${BASE_REF} -t32 --secondary=no ${SIM_READS} > ${SAM} || die "minimap2 failed"
-    samtools sort ${SAM} -o ${BAM} && samtools index ${BAM} || die "samtools sort and index failed"
-}
+# align_reads_ont() {
+#     minimap2 -cx map-ont ${BASE_REF} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
+#     minimap2 -ax map-ont ${BASE_REF} -t32 --secondary=no ${SIM_READS} > ${SAM} || die "minimap2 failed"
+#     samtools sort ${SAM} -o ${BAM} && samtools index ${BAM} || die "samtools sort and index failed"
+# }
 
 align_reads_pacbio_hifi() {
     minimap2 -cx map-hifi ${SV_TREATED_REF} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
@@ -106,27 +106,19 @@ variant_call_sniffles() {
     rm -rf ${VCF}.gz && ${BGZIP} -c ${VCF} > ${VCF}.gz && ${TABIX} -p vcf ${VCF}.gz || die "bgzip and tabix failed"
 }
 
-variant_call_bcftools() {
-    ${BCFTOOLS} mpileup -f ${BASE_REF} ${BAM} | ${BCFTOOLS} call -mv -Ov -o ${OUTPUT_DIR}/bcftools_mpileup.vcf
-}
+# variant_call_bcftools() {
+#     ${BCFTOOLS} mpileup -f ${BASE_REF} ${BAM} | ${BCFTOOLS} call -mv -Ov -o ${OUTPUT_DIR}/bcftools_mpileup.vcf
+# }
 
-make_consensus() {
-    ${BCFTOOLS} view -e 'ALT ~ "<"' ${VCF}.gz -O b -o ${OUTPUT_DIR}/sym_filtered.vcf.gz
-    ${TABIX} ${OUTPUT_DIR}/sym_filtered.vcf.gz
-    ${BCFTOOLS} consensus -f ${BASE_REF} ${OUTPUT_DIR}/sym_filtered.vcf.gz -o ${OUTPUT_DIR}/with_variant_ref.fa 2>${OUTPUT_DIR}/bcftools.stderr || die "bcftools failed"
-    ${SAMTOOLS} faidx ${OUTPUT_DIR}/with_variant_ref.fa || die "samtools faidx failed"
-}
+# make_consensus() {
+#     ${BCFTOOLS} view -e 'ALT ~ "<"' ${VCF}.gz -O b -o ${OUTPUT_DIR}/sym_filtered.vcf.gz
+#     ${TABIX} ${OUTPUT_DIR}/sym_filtered.vcf.gz
+#     ${BCFTOOLS} consensus -f ${BASE_REF} ${OUTPUT_DIR}/sym_filtered.vcf.gz -o ${OUTPUT_DIR}/with_variant_ref.fa 2>${OUTPUT_DIR}/bcftools.stderr || die "bcftools failed"
+#     ${SAMTOOLS} faidx ${OUTPUT_DIR}/with_variant_ref.fa || die "samtools faidx failed"
+# }
 
-creat_output_dir
+create_output_dir
 sim_ref
-
-# sim_reads_ont
 sim_reads_pacbio_hifi
-
-# align_reads_ont
 align_reads_pacbio_hifi
-
 variant_call_sniffles
-# variant_call_bcftools
-
-# make_consensus

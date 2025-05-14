@@ -48,8 +48,6 @@ def read_Rep_file(args):
     
     return data, len(data)
 
-# reference insertion tsv file has 4 columns. (1) reference chromsome. (2) insertion position on chromosome. (3) insertion length. (4) insertion ID
-
 
 # DEL - deletion (delete from start to end)
 # chr1	10000000	11000000	deletion	None	0
@@ -57,7 +55,7 @@ def read_Rep_file(args):
 # chr1	20000000	21000000	inversion	None	0
 # TD - tandem duplication (duplicate from start to end) following e.g. the resulting ref will have 2 copies in total
 # chr1	30000000	31000000	tandem duplication	2	0
-# ITD - inverted tandem duplication (duplicate from start to end and invert duplicated segment) following e.g. the resulting ref will have 2 copies in total where one is iverted
+# ITD - inverted tandem duplication (duplicate from start to end and invert duplicated segment) following e.g. the resulting ref will have 2 copies in total where one is inverted
 # chr1	40000000	41000000	inverted tandem duplication	2	0
 # INS - insertion (insert sequence immediately after end)
 # chr1	50999999	51000000	insertion	TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT	0
@@ -168,10 +166,7 @@ def decide_sv_type(mob_seqs, rep_seqs):
         return (inject_to_ref, inj_seq, name, bed_tuple, sv_len)
 
 def get_f_len(args, svlen):
-    if args.flen < svlen * args.ffac:
-        return args.flen
-    else:
-        return svlen * args.ffac
+    return min(args.flen, svlen * args.ffac)
 
 def create_ref(args):
     mob_seqs, mob_count = read_Mob_file(args)
@@ -191,19 +186,17 @@ def create_ref(args):
         sv_i = decide_sv_type(mob_seqs, rep_seqs)
         sv_list.append(sv_i)
         sv_len = sv_i[4]
-        f_len = get_f_len(args, sv_len)
+        f_len = args.flen # get_f_len(args, sv_len)
         flen_array.append(f_len)
 
-    for i in range(0,sv_count-1):
-        f = flen_array[i]
-        flen_array[i] = max(flen_array[i],flen_array[i+1])
-    
-    ran_len = random.randint(1000, 3000)
+    f_len = 0
     ref_tsv_out = f"{args.out}/ref_inj.tsv"
     hack_bed_out = f"{args.out}/visor_hack.bed"
     
     with open(ref_tsv_out, "w") as f1, open(hack_bed_out, "w") as f2:
         for i in range(0, sv_count):
+            f_len = flen_array[i]
+            ran_len = random.randint(f_len, 1.5*f_len)
             ran_seq = generate_random_dna(ran_len)
             ref = ref + ran_seq
             pointer += ran_len
@@ -222,10 +215,7 @@ def create_ref(args):
                 print(f"Warning: reference length reached {args.len} bases after simulating {i} SVs. Finishing simulation...")
                 break
             
-            f_len = flen_array[i]
-            ran_len = random.randint(f_len, 1.5*f_len)
-    
-    ran_len = random.randint(1000, 3000)
+    ran_len = random.randint(f_len, 1.5*f_len)
     ran_seq = generate_random_dna(ran_len)
     ref = ref + ran_seq
     pointer += ran_len
