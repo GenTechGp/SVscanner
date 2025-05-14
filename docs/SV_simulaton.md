@@ -7,3 +7,19 @@ The following figure summarises a SV simulation pipeline comprising SV generatio
 
 The bash script `scripts/sim_sv.sh` contains the pipeline.
 The python script `src/simulate_sv.py` creates the [VISOR compatible SV details in bed format](https://davidebolo1993.github.io/visordoc/usage/usage.html#visor-hack).
+
+## Structural Variant (SV) Simulation Summary
+
+| **Seq Type** | **SV Type**                      | **Simulation Method**                                                                    |
+|--------------|----------------------------------|------------------------------------------------------------------------------------------|
+| **Mobile**   | Deletion                         | Sequence appended (added) to reference; BED record instructs VISOR to delete it          |
+|              | Inversion                        | Sequence added to reference; BED record instructs VISOR to invert it                     |
+|              | Tandem Duplication               | Sequence added to reference; BED record instructs to make a tandem duplication           |
+|              | Inverted Tandem Duplication      | Sequence added to reference; BED record instructs to make an inverted tandem duplication |
+|              | Insertion                        | No sequence added; BED record instructs VISOR to insert it                               |
+| **Repeat**   | Tandem Repeat Expansion          | Repeat sequence added; BED record instructs VISOR to expand it                           |
+|              | Tandem Repeat Contraction        | Repeat sequence added; BED record instructs VISOR to contract (partially delete) it      |
+|              | Perfect Tandem Repetition        | No sequence added; BED record instructs VISOR to insert perfect tandem repeat            |
+|              | Approximate Tandem Repetition    | No sequence added; BED record instructs VISOR to insert approximate tandem repeat        |
+
+Note - the sequence (either Mobile or Repeat) is randomly picked and either added to the base reference or written to the BED file depending on the SV type.
