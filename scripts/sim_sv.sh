@@ -68,6 +68,21 @@ sim_reads_pacbio_hifi() {
       --method qshmm \
       --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
       --depth 20 \
+      --genome ${BASE_REF} \
+      --seed ${SEED} \
+      --pass-num 30 \
+      --accuracy-mean 1 \
+      --accuracy-min 1 \
+      --difference-ratio 0:0:0 \
+      --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
+
+    ${PACBIO_CCS} ${OUTPUT_DIR}/simulated_reads_0001.bam ${OUTPUT_DIR}/base_reads.fq.gz || die "pacbio ccs failed"
+    rm ${OUTPUT_DIR}/simulated_reads_0001.bam*
+
+    ${PBSIM3} --strategy wgs \
+      --method qshmm \
+      --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
+      --depth 20 \
       --genome ${SV_TREATED_REF} \
       --seed ${SEED} \
       --pass-num 30 \
@@ -76,7 +91,9 @@ sim_reads_pacbio_hifi() {
       --difference-ratio 0:0:0 \
       --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
 
-    ${PACBIO_CCS} ${OUTPUT_DIR}/simulated_reads_0001.bam ${SIM_READS} || die "pacbio ccs failed"
+    ${PACBIO_CCS} ${OUTPUT_DIR}/simulated_reads_0001.bam ${OUTPUT_DIR}/sv_reads.fq.gz || die "pacbio ccs failed"
+
+    zcat ${OUTPUT_DIR}/base_reads.fq.gz ${OUTPUT_DIR}/sv_reads.fq.gz | gzip > ${SIM_READS} || die "zcat failed"
 }
 
 # align_reads_ont() {
