@@ -490,7 +490,7 @@ def concat_fasta(args, balanced_seq_bins):
 def write_to_id_file(args, vcf, record, record_stats):
     with open(args.info, "a") as f:
         # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}"
-        info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, record_stats[1], record_stats[0], record.id)
+        info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, record_stats[1], record_stats[0], record.id, record.ref, record.alts[0])
         # print(info)
         f.write(f"{info}\n")
 
@@ -578,6 +578,7 @@ if __name__ == "__main__":
     print(f"Info: VCF File: {args.vcf}")
     print(f"Info: Reference FASTA: {args.ref}")
     print(f"info: Output Directory: {args.out}")
+    print(f"info: SV info file: {args.info}")
     print(f"info: Min SV Length: {args.min}")
     print(f"Info: Max SV Length: {args.max}")
     print(f"Info: Number of output fasta files: {args.n}")
