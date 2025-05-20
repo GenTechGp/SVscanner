@@ -21,7 +21,7 @@ def read_tsv(tsv_file):
     df = df.dropna(subset=['SV_len'])
     return df
 
-def create_hist_plot(df, output_dir):
+def create_hist_plot(df, output_pdf, sv_order):
     """Generate the plot for SV types.
 
     Returns:
@@ -55,7 +55,6 @@ def create_hist_plot(df, output_dir):
 
     # Enforce SV type and SV class order
     grouped['SV_type'] = pd.Categorical(grouped['SV_type'], categories=svtype_order, ordered=True)
-    sv_order = ['INS', 'DEL', 'INV', 'DUP', 'BND']
     grouped['SV'] = pd.Categorical(grouped['SV'], categories=sv_order, ordered=True)
 
     # Plot
@@ -92,7 +91,6 @@ def create_hist_plot(df, output_dir):
     ax.set_ylabel("Count")
     plt.tight_layout()
 
-    output_pdf = os.path.join(output_dir, 'histograms.pdf')
     with PdfPages(output_pdf) as pdf:
         pdf.savefig(fig, bbox_inches='tight')
     plt.close()
@@ -248,7 +246,14 @@ def main():
 
     # Generate the plots using plt
     create_dist_plot(df.copy(), args.out)
-    create_hist_plot(df.copy(), args.out)
+    
+    sv_order = ['INS', 'DEL']
+    output_pdf = os.path.join(args.out, 'histograms_INS_DEL.pdf')
+    create_hist_plot(df.copy(), output_pdf, sv_order)
+
+    sv_order = ['INV', 'DUP', 'BND']
+    output_pdf = os.path.join(args.out, 'histograms_INV_DUP_BND.pdf')
+    create_hist_plot(df.copy(), output_pdf, sv_order)
 
 if __name__ == "__main__":
     main()
