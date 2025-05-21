@@ -35,6 +35,8 @@ ANNOTATE_COLS=["CHROM","POS","ID","REF","ALT","RM_CLASSIFICATION","RM_ELEMENTS_C
                 "TRF_COPY_NUMBER","CONSENSUS_REPEAT","TRF_SV_COVERAGE","TRF_TOTAL_SV_COVERAGE","FINAL_CLASSIFICATION",\
                     "DISEASE_GENE","STRCHIVE_MOTIF","PATHOGENIC_MIN"]
 
+PLOT_COLS=["SVTYPE","SVLEN","CLASSIFICATION","RECIPROCAL"]
+
 def read_sv_info(sv_file):
     sv_info = {}
     with open(sv_file, 'r') as file:
@@ -48,36 +50,36 @@ def read_sv_info(sv_file):
             query_end = int(sv[2])
             pos = int(sv[3])
             end = int(sv[4])
-            length = int(sv[5])
+            sv_len = int(sv[5])
             sv_id = sv[6]
             callerID = sv[7]
             ref_seq = sv[8]
             alt_seq = sv[9]
 
             if "BND" in sv_id:
-                assert length == -1
+                assert sv_len == -1
                 rel_start = pos - query_start - (pos - query_start)*BND_LEN_THRESHOLD
                 rel_end = pos - query_start + (query_end - pos)*BND_LEN_THRESHOLD
-                length = rel_end - rel_start
+                sv_len = rel_end - rel_start
             else:
                 if "DEL" in sv_id:
-                    assert length < 0
-                    length = abs(length)
+                    assert sv_len < 0
+                    sv_len = abs(sv_len)
                 rel_start = pos - query_start
-                rel_end = rel_start + length 
+                rel_end = rel_start + sv_len 
             
             # Add the values to the dictionary
             sv_info[sv_id] = {                
                 'ID': sv_id, 
                 'chrom': chrom,
                 'position': pos,
-                'length': length, 
+                'sv_len': sv_len, 
                 'rel_start' : rel_start, 
                 'rel_end' : rel_end,
                 'start' : 0, 
                 'end' : query_end - query_start,
                 'callerID' : callerID,  
-                'header' : f'{sv_id}\t({callerID})\t{chrom}:{query_start}-{query_end}\t{chrom}:{pos}-{end}\t{length}\t',
+                'header' : f'{sv_id}\t({callerID})\t{chrom}:{query_start}-{query_end}\t{chrom}:{pos}-{end}\t{sv_len}\t',
                 'REF': ref_seq,
                 'ALT': alt_seq,
             }
@@ -179,7 +181,7 @@ def read_rm(args, sv_info, rm_file, isVisualise):
                 
                 # Add if the transposable element overlaps with the SV
                 intersection = calculate_intersection_length(te_start, te_end, sv['rel_start'], sv['rel_end'])
-                sv_coverage = round(intersection / sv['length'], 6)
+                sv_coverage = round(intersection / sv['sv_len'], 6)
                 element_proportion, element_coverage = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection)
             
                 # Add if the intersection is > min_intersect (e.g. 5%)
@@ -246,7 +248,7 @@ def read_trf(args, sv_info, trf_file):
             consensus_repeat = trf_data[13]
             
             intersection = calculate_intersection_length(repeat_start, repeat_end, sv['rel_start'], sv['rel_end'])
-            sv_coverage = round(intersection/ sv['length'], 6)
+            sv_coverage = round(intersection/ sv['sv_len'], 6)
 
             repeat_info = {
                 'repeat_start': repeat_start,
@@ -498,7 +500,7 @@ def create_rm_tsv_record(sv_info, sv_id, tsv_out):
     sv_data = sv_info[sv_id]
     chrom = sv_data['chrom']
     pos = sv_data['position']
-    length = sv_data['length']
+    sv_len = sv_data['sv_len']
     sv_type = sv_id.split('.')[0]
     if 'RM' in sv_data:
         rm_entries = sv_data['RM']
@@ -509,7 +511,7 @@ def create_rm_tsv_record(sv_info, sv_id, tsv_out):
             classification = entry['classification']
             repeat_type = entry['repeat']
 
-            tsv_out.write(f'{sv_id}\t{chrom}\t{pos}\t{length}\t{sv_type}\t{sv_coverage}\t{element_coverage}\t{element_proportion}\t{classification}\t{repeat_type}\n')
+            tsv_out.write(f'{sv_id}\t{chrom}\t{pos}\t{sv_len}\t{sv_type}\t{sv_coverage}\t{element_coverage}\t{element_proportion}\t{classification}\t{repeat_type}\n')
 
 def create_trf_tsv_record(sv_info, sv_id, tsv_out):
     """
@@ -521,7 +523,7 @@ def create_trf_tsv_record(sv_info, sv_id, tsv_out):
     sv_data = sv_info[sv_id]
     chrom = sv_data['chrom']
     pos = sv_data['position']
-    length = sv_data['length']
+    sv_len = sv_data['sv_len']
     sv_type = sv_id.split('.')[0]
     if 'TRF' in sv_data:
         trf_entries = sv_data['TRF']
@@ -531,7 +533,7 @@ def create_trf_tsv_record(sv_info, sv_id, tsv_out):
             sv_coverage = round(entry['sv_coverage'], 2)
             classification = entry['key']
             consensus_repeat = entry['motif']
-            tsv_out.write(f'{sv_id}\t{chrom}\t{pos}\t{length}\t{sv_type}\t{sv_coverage}\t{copy_number}\t{period_size}\t{classification}\t{consensus_repeat}\n')
+            tsv_out.write(f'{sv_id}\t{chrom}\t{pos}\t{sv_len}\t{sv_type}\t{sv_coverage}\t{copy_number}\t{period_size}\t{classification}\t{consensus_repeat}\n')
 
 def print_results(title, repeat_count, total, output_total):
     """    
@@ -726,7 +728,7 @@ def get_annot_info(args, sv_info, sv_id, strchive):
     sv_data = sv_info[sv_id]
     chrom = sv_data['chrom']
     pos = sv_data['position']
-    end = pos + sv_data['length']
+    end = pos + sv_data['sv_len']
     callerID = sv_data['callerID']
 
     ####### 1. Get annotations for RepeatMasker and TRF ######
@@ -843,15 +845,20 @@ def output_annotations(args, strchive, sv_info):
     }
 
     annotate_tsv_out = f"{args.out}/vcf_annotate.tsv"
-    with open(annotate_tsv_out, "w") as f:
+    plot_annotate_out = f"{args.out}/plot_annotate.tsv"
+    with open(annotate_tsv_out, "w") as f, open(plot_annotate_out, "w") as f2:
         # print("\t".join(ANNOTATE_COLS))
         f.write("#")
         f.write("\t".join(ANNOTATE_COLS))
         f.write("\n")
-        
+
+        f2.write("\t".join(PLOT_COLS))
+        f2.write("\n")
+
         # Process each structural variant and write to VCF 
         for sv_id in sv_info:
             sv_type = sv_id.split('.')[0]
+            sv_len = sv_info[sv_id]['sv_len']
             sv_count += 1
             info = get_annot_info(args, sv_info, sv_id, strchive)
             # print("\t".join(str(info[key]) for key in ANNOTATE_COLS))
@@ -866,6 +873,8 @@ def output_annotations(args, strchive, sv_info):
             else: 
                 repeat_count[transposition] += 1
                 count_by_sv[sv_type][classification] += 1
+            
+            f2.write(f"{sv_type}\t{sv_len}\t{classification}\t{transposition}\n")
 
     
     header_out = f"{args.out}/vcf_header.txt"
@@ -1090,11 +1099,11 @@ def create_SV(args, sv_info):
             trf_output = []
 
             start, end = sv_data['start'], sv_data['end']
-            sv_start, sv_end, sv_length = sv_data['rel_start'], sv_data['rel_end'], sv_data['length']
+            sv_start, sv_end, sv_len = sv_data['rel_start'], sv_data['rel_end'], sv_data['sv_len']
 
             # Calcualte scaling factors for diagrams
             flanking_scale = diagram_length / end
-            sv_scale = diagram_length / sv_length
+            sv_scale = diagram_length / sv_len
             
             sv_start_scaled = int((sv_start - start) * flanking_scale)
             sv_end_scaled = int((sv_end - start) * flanking_scale)
@@ -1182,6 +1191,7 @@ if __name__ == "__main__":
     print(f"info: Output Directory: {args.out}")
     print(f"info: Output vcf header file: {args.out}/vcf_header.txt")
     print(f"info: Output vcf tsv file: {args.out}/vcf_annotate.tsv")
+    print(f"info: Output plot tsv file: {args.out}/plot_annotate.tsv")
     print(f"info: Output RM annoatations file: {args.out}/rm_annotate.tsv")
     print(f"info: Output TRF annotations file: {args.out}/trf_annotate.tsv")
     print(f"info: SV diagram file: {args.out}/diagram.txt")

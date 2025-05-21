@@ -17,8 +17,8 @@ def read_cmd_args():
 def read_tsv(tsv_file):
     """Read and preprocess the TSV file."""
     df = pd.read_csv(tsv_file, sep='\t')
-    df['SV_len'] = pd.to_numeric(df['SV_len'], errors='coerce')
-    df = df.dropna(subset=['SV_len'])
+    df['SVLEN'] = pd.to_numeric(df['SVLEN'], errors='coerce')
+    df = df.dropna(subset=['SVLEN'])
     return df
 
 def create_hist_plot(df, output_pdf, sv_order):
@@ -35,7 +35,7 @@ def create_hist_plot(df, output_pdf, sv_order):
     }
 
     # Flatten the hue order
-    svtype_order = [svtype for group in legend_labels.values() for svtype in group]
+    classification_type_order = [classification_type for group in legend_labels.values() for classification_type in group]
 
     # Set color map
     colors = {
@@ -51,16 +51,16 @@ def create_hist_plot(df, output_pdf, sv_order):
     }
 
     # Group and count
-    grouped = df.groupby(['SV', 'SV_type']).size().reset_index(name='Count')
+    grouped = df.groupby(['SVTYPE', 'CLASSIFICATION']).size().reset_index(name='Count')
 
     # Enforce SV type and SV class order
-    grouped['SV_type'] = pd.Categorical(grouped['SV_type'], categories=svtype_order, ordered=True)
-    grouped['SV'] = pd.Categorical(grouped['SV'], categories=sv_order, ordered=True)
+    grouped['CLASSIFICATION'] = pd.Categorical(grouped['CLASSIFICATION'], categories=classification_type_order, ordered=True)
+    grouped['SVTYPE'] = pd.Categorical(grouped['SVTYPE'], categories=sv_order, ordered=True)
 
     # Plot
     fig = plt.figure(figsize=(10, 6))
     sns.set(style="whitegrid")
-    ax = sns.barplot(data=grouped, x='SV', y='Count', hue='SV_type', hue_order=svtype_order, palette=colors)
+    ax = sns.barplot(data=grouped, x='SVTYPE', y='Count', hue='CLASSIFICATION', hue_order=classification_type_order, palette=colors)
 
     # Custom legend with bold section headers
     legend_handles = []
@@ -105,13 +105,10 @@ def create_dist_plot(df, output_dir):
     Returns:
         None: The plot is generated using plt.
     """
-    # Map STATUS to Complete and Fragment
-    # df['STATUS_RECODED'] = df['STATUS'].replace({'Full': 'Complete', 'Partial': 'Fragment', 'Minimal': 'Fragment'})
-
     # Log transform SV length
-    df['log2_SV_len'] = np.log2(df['SV_len'])
+    df['log2_SV_len'] = np.log2(df['SVLEN'])
 
-    # Define categories based on 'SV_type'
+    # Define categories based on 'CLASSIFICATION'
     def categorize_sv_type(sv_type):
         if sv_type in ['HOMO']:
             return 'Tandem repeat'
@@ -124,10 +121,10 @@ def create_dist_plot(df, output_dir):
         else:
             return 'Non-repetitive'
 
-    df['SV_CATEGORY'] = df['SV_type'].apply(categorize_sv_type)
+    df['CLASSIFICATION_CATEGORY'] = df['CLASSIFICATION'].apply(categorize_sv_type)
 
     # Define the desired order of SV types
-    ordered_sv_types = ['Non-repetitive', 'HOMO', 'STR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
+    ordered_classification_types = ['Non-repetitive', 'HOMO', 'STR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
 
     # Define colors based on the provided image
     colors = {
@@ -145,26 +142,26 @@ def create_dist_plot(df, output_dir):
     # Create the output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
 
-    num_subplots = len(ordered_sv_types)
+    num_subplots = len(ordered_classification_types)
     fig, axes = plt.subplots(num_subplots, 1, figsize=(5, 0.8 * num_subplots), sharex=True)
     if num_subplots == 1:
         axes = [axes]
 
     legend_handles = []
 
-    for i, sv_type in enumerate(ordered_sv_types):
+    for i, classification_type in enumerate(ordered_classification_types):
         ax = axes[i]
-        sv_type_df = df[df['SV_type'] == sv_type]
-        color = colors.get(sv_type, 'gray')
+        classification_type_df = df[df['CLASSIFICATION'] == classification_type]
+        color = colors.get(classification_type, 'gray')
 
-        if not sv_type_df.empty:
-            if sv_type_df['SV_CATEGORY'].iloc[0] == 'Mobile element':
-                complete_df = sv_type_df[sv_type_df['STATUS'] == 'Full']
-                fragment_df = sv_type_df[sv_type_df['STATUS'] == 'Partial']
-                sns.kdeplot(data=complete_df, x='log2_SV_len', fill=True, alpha=1, color=color, label=f'{sv_type} (Full)', ax=ax)
-                sns.kdeplot(data=fragment_df, x='log2_SV_len', fill=True, alpha=0.3, color=color, label=f'{sv_type} (Partial)', ax=ax)
+        if not classification_type_df.empty:
+            if classification_type_df['CLASSIFICATION_CATEGORY'].iloc[0] == 'Mobile element':
+                complete_df = classification_type_df[classification_type_df['RECIPROCAL'] == 'Full']
+                fragment_df = classification_type_df[classification_type_df['RECIPROCAL'] == 'Partial']
+                sns.kdeplot(data=complete_df, x='log2_SV_len', fill=True, alpha=1, color=color, label=f'{classification_type} (Full)', ax=ax)
+                sns.kdeplot(data=fragment_df, x='log2_SV_len', fill=True, alpha=0.3, color=color, label=f'{classification_type} (Partial)', ax=ax)
             else:
-                sns.kdeplot(data=sv_type_df, x='log2_SV_len', fill=True, alpha=1, color=color, label=sv_type, ax=ax)
+                sns.kdeplot(data=classification_type_df, x='log2_SV_len', fill=True, alpha=1, color=color, label=classification_type, ax=ax)
 
             ax.set_yticks([0, 1])
             ax.set_yticklabels(['0', '1'])
