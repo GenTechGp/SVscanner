@@ -48,8 +48,9 @@ MAX_JOBS=48          # Max number of RepeatMasker process to run in parallel
 THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
 # Parameters (change if necessary)
-MIN_INTERSECT=0.05   # Min intersect between SV and repeat to be considered repetitive
-MIN_COVERAGE=0.5     # Min coverage of an SV by repeat(s) to be considered repetitive
+MIN_SV_COVERAGE=0.05 #The minimum intersection between a repeat element and SV (aka sv_coverage) e.g. 0.05 (5%) (0 < min_sv_coverage < 1)
+MIN_CLASS_SV_COVERAGE=0.25 #The minimum class sv coverage by repeat elements to be considered repetitive
+MIN_TOTAL_SV_COVERAGE=0.75 #The minimum total sv coverage by repeat elements to be considered repetitive
 INTERVAL=0.05
 DIAGRAM_LEN=100
 
@@ -68,8 +69,9 @@ usage() {
     echo "Optional arguments:"
     echo "  --str_bed FILE        Path to STR BED file (default: $STR_BED)"
     echo "  --species NAME        Species name for RepeatMasker (default: $SPECIES)"
-    echo "  --min_intersect VAL   Minimum intersect (default: $MIN_INTERSECT)"
-    echo "  --min_coverage VAL    Minimum coverage (default: $MIN_COVERAGE)"
+    echo "  --min_sv_coverage VAL   Minimum intersection between a repeat element and SV (aka sv_coverage) (default: $MIN_SV_COVERAGE)"
+    echo "  --min_class_sv_coverage VAL Minimum class sv coverage by repeat elements to be considered repetitive (default: $MIN_CLASS_SV_COVERAGE)"
+    echo "  --min_total_sv_coverage VAL Minimum total sv coverage by repeat elements to be considered repetitive (default: $MIN_TOTAL_SV_COVERAGE)"
     echo "  --interval VAL        Interval value (default: $INTERVAL)"
     echo "  --diagram_len VAL     Diagram length (default: $DIAGRAM_LEN)"
     echo "  --nsplit_files INT    Number of split files (default: $NSPLIT_FILES)"
@@ -92,10 +94,12 @@ parse_args() {
                 STR_BED=$(realpath "$2"); shift 2;;
             --species)
                 SPECIES="$2"; shift 2;;
-            --min_intersect)
-                MIN_INTERSECT="$2"; shift 2;;
-            --min_coverage)
-                MIN_COVERAGE="$2"; shift 2;;
+            --min_sv_coverage)
+                MIN_SV_COVERAGE="$2"; shift 2;;
+            --min_class_sv_coverage)
+                MIN_CLASS_SV_COVERAGE="$2"; shift 2;;
+            --min_total_sv_coverage)
+                MIN_TOTAL_SV_COVERAGE="$2"; shift 2;;
             --interval)
                 INTERVAL="$2"; shift 2;;
             --diagram_len)
@@ -241,8 +245,9 @@ annotation() {
         --info ${INFO_FILE}\
         --str ${STR_BED}\
         --out ${ANNOTATIONS_OUT}\
-        --minsec ${MIN_INTERSECT}\
-        --minrep ${MIN_COVERAGE}\
+        --min_sv_coverage ${MIN_SV_COVERAGE}\
+        --min_class_sv_coverage ${MIN_CLASS_SV_COVERAGE}\
+        --min_total_sv_coverage ${MIN_TOTAL_SV_COVERAGE}\
         --div ${INTERVAL}\
         --len ${DIAGRAM_LEN} || die "failed"
     

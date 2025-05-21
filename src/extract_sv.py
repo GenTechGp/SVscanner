@@ -323,7 +323,7 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     
     return svID, -1, seq_len, start_f, end_f
 
-def is_valid_vcf_record(record, args):
+def is_valid_vcf_record(record, args, warnings_dict):
     """
     Perform checks to validate a VCF record. Checks include:
     - Multi-allelic records
@@ -334,17 +334,23 @@ def is_valid_vcf_record(record, args):
     """
 
     # 1. Check if the record is multi-allelic (more than one ALT allele)
-    if record.alts is not None and len(record.alts) > 1:
-        print(f"Warning: Multi-allelic record at {record.chrom}:{record.pos}")
+    if record.alts is not None and len(record.alts) > 1 and warnings_dict["multi-allelic"] < args.warning_count:
+        print(f"Warning: Multi-allelic record at {record.chrom}:{record.pos} with {len(record.alts)} ALT alleles")
+        warnings_dict["multi-allelic"] += 1
         # print(f"Warning: Multi-allelic record at {record.chrom}:{record.pos} (REF: {record.ref}, ALTs: {record.alts})")
+        if warnings_dict["multi-allelic"] == args.warning_count:
+            print("Warning: Suppressing further multi-allelic warnings")
 
     # 2. Check if the record has multiple samples (more than one sample with genotype data)
     sample_count = len(record.samples)
-    if sample_count > 1:
+    if sample_count > 1 and warnings_dict["multi-sample"] < args.warning_count:
         print(f"Warning: Multi-sample record at {record.chrom}:{record.pos} with {sample_count} samples")
-    
+        warnings_dict["multi-sample"] += 1
+        if warnings_dict["multi-sample"] == args.warning_count:
+            print("Warning: Suppressing further multi-sample warnings")
+
     # Extract SVTYPE from INFO field
-    svtype = record.info.get("SVTYPE", None)
+    svtype = record.info.get("SVTYPE") if "SVTYPE" in record.info else None
 
     # 3. Check if the ALT allele is symbolic (e.g., "<INS>", "<DEL>")
     has_symbolic_alt = any(alt.startswith("<") and alt.endswith(">") for alt in record.alts) if record.alts else False
@@ -507,11 +513,13 @@ def process_vcf_records(args):
     vcf_summary = [0]*(NO_RETURN_CODES+1)
 
     record_stats_arr = []
+
+    warnings_dict = {"multi-allelic": 0, "multi-sample": 0}
     
     # Iterate over each variant in the VCF file
     for i, record in enumerate(vcf):
         # Perform error checks (you can add your custom checks here)
-        ret = is_valid_vcf_record(record, args)
+        ret = is_valid_vcf_record(record, args, warnings_dict)
         vcf_summary[ret] += 1
         if ret == 1:
             record_stats = handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i)
@@ -565,6 +573,7 @@ def argparser():
     optional_args.add_argument('--ffac', required=False, type=positive_int, default=10, help="Multiplication factor for SVLEN to determine the length of flanking sequences")
     optional_args.add_argument('-n', required=False, type=positive_int, default=1, help="Number of equal-sized output fasta files")
     optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
+    optional_args.add_argument('--warning_count', required=False, type=positive_int, default=10, help="The maximum warning count for each type of warning")
     optional_args.add_argument('-h', '--help', action='help', help="Show this help message and exit")
 
     return parser
