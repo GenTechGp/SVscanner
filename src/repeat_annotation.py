@@ -145,7 +145,9 @@ def read_rm(args, sv_info, rm_file, isVisualise):
 
     with open(rm_file, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
+        row_count = 0
         for row in reader:
+            row_count += 1
             sv_id = row[4]
             te_start = int(row[5])
             te_end = int(row[6])
@@ -173,11 +175,15 @@ def read_rm(args, sv_info, rm_file, isVisualise):
                     repeat_end = int(row[12].strip("()"))
                     repeat_left = int(row[11].strip("()"))
 
-                assert repeat_begin < repeat_end, f"Repeat begin {repeat_begin} should be less than repeat end {repeat_end} for strand {strand}."
+                sv = sv_info[sv_id]
+                # assert repeat_begin < repeat_end, f"row {row_count}: sv_id {sv_id} Repeat begin {repeat_begin} should be less than repeat end {repeat_end} for strand {strand}."
+                if not repeat_begin < repeat_end:
+                    intersection = calculate_intersection_length(te_start, te_end, sv['rel_start'], sv['rel_end'])
+                    sv_coverage = round(intersection / sv['sv_len'], 6)
+                    # print(f"{intersection},{sv_coverage} row {row_count}: sv_id {sv_id},{sv_info[sv_id]['callerID']} Repeat begin {repeat_begin} should be less than repeat end {repeat_end} for strand {strand}.")
+                    continue
 
                 # print("query's matching len:{}, repeat's matching len:{}".format(te_end-te_start,repeat_end-repeat_begin))
-
-                sv = sv_info[sv_id]
                 
                 # Add if the transposable element overlaps with the SV
                 intersection = calculate_intersection_length(te_start, te_end, sv['rel_start'], sv['rel_end'])
@@ -543,7 +549,7 @@ def print_results(title, repeat_count, total, output_total):
     print("-" * 35)
     for key, value in repeat_count.items():
         percentage = (value / total) * 100
-        print(f"{key:<15}: {value:>5}  ({percentage:>6.2f}%)")
+        print(f"{key:<15}: {value:>5}  {percentage:>6.2f}%")
     if output_total:
         print("-" * 20)
         print(f"{'Total':<15}: {total:>5}")
@@ -672,6 +678,7 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         # Find the repeat type with the highest total fraction
         max_repeat, max_fraction = max(fraction_sum.items(), key=lambda x: x[1])
         if max_fraction < args.min_class_sv_coverage:
+            # print(f"WARNING: {max_repeat} has a total fraction of {max_fraction} which is below the threshold of {args.min_class_sv_coverage}.")
             return 'NON_REPETITIVE'
         return max_repeat
     

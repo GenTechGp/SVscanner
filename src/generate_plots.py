@@ -6,6 +6,7 @@ import os
 from matplotlib.patches import Patch
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
+from pypdf import PdfReader, PdfWriter
 
 def read_cmd_args():
     """Parse command-line arguments."""
@@ -29,7 +30,7 @@ def create_hist_plot(df, output_pdf, sv_order):
     """
     # Define SV type groups and colors
     legend_labels = {
-        'Non-repetitive': ['Non-repetitive'],
+        'NON_REPETITIVE': ['NON_REPETITIVE'],
         'Tandem repeat': ['HOMO', 'STR', 'TR'],
         'Mobile element': ['LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
     }
@@ -39,7 +40,7 @@ def create_hist_plot(df, output_pdf, sv_order):
 
     # Set color map
     colors = {
-        'Non-repetitive': '#94d0c5',
+        'NON_REPETITIVE': '#94d0c5',
         'HOMO': '#beb9d8',
         'STR': '#eb8274',
         'TR': '#87b0d2',
@@ -95,7 +96,7 @@ def create_hist_plot(df, output_pdf, sv_order):
         pdf.savefig(fig, bbox_inches='tight')
     plt.close()
 
-def create_dist_plot(df, output_dir):
+def create_dist_plot(df, output_pdf):
     """
     Creates ordered vertical subplots of SV length distribution using plt.
 
@@ -119,16 +120,16 @@ def create_dist_plot(df, output_dir):
         elif sv_type in ['LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']:
             return 'Mobile element'
         else:
-            return 'Non-repetitive'
+            return 'NON_REPETITIVE'
 
     df['CLASSIFICATION_CATEGORY'] = df['CLASSIFICATION'].apply(categorize_sv_type)
 
     # Define the desired order of SV types
-    ordered_classification_types = ['Non-repetitive', 'HOMO', 'STR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
+    ordered_classification_types = ['NON_REPETITIVE', 'HOMO', 'STR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
 
     # Define colors based on the provided image
     colors = {
-        'Non-repetitive': '#94d0c5',
+        'NON_REPETITIVE': '#94d0c5',
         'HOMO': '#beb9d8',
         'STR': '#eb8274',
         'TR': '#87b0d2',
@@ -139,11 +140,9 @@ def create_dist_plot(df, output_dir):
         'DNA': '#f9f6b7'
     }
 
-    # Create the output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-
     num_subplots = len(ordered_classification_types)
     fig, axes = plt.subplots(num_subplots, 1, figsize=(5, 0.8 * num_subplots), sharex=True)
+    fig.suptitle("SV length distribution for each classification type", fontsize=14, fontweight='bold')
     if num_subplots == 1:
         axes = [axes]
 
@@ -153,19 +152,30 @@ def create_dist_plot(df, output_dir):
         ax = axes[i]
         classification_type_df = df[df['CLASSIFICATION'] == classification_type]
         color = colors.get(classification_type, 'gray')
-
+        kde_max_y = 1
         if not classification_type_df.empty:
             if classification_type_df['CLASSIFICATION_CATEGORY'].iloc[0] == 'Mobile element':
                 complete_df = classification_type_df[classification_type_df['RECIPROCAL'] == 'Full']
                 fragment_df = classification_type_df[classification_type_df['RECIPROCAL'] == 'Partial']
                 sns.kdeplot(data=complete_df, x='log2_SV_len', fill=True, alpha=1, color=color, label=f'{classification_type} (Full)', ax=ax)
-                sns.kdeplot(data=fragment_df, x='log2_SV_len', fill=True, alpha=0.3, color=color, label=f'{classification_type} (Partial)', ax=ax)
+                sns.kdeplot(data=fragment_df, x='log2_SV_len', fill=True, alpha=0.5, color=color, linewidth=0, label=f'{classification_type} (Partial)', ax=ax)
+                kde_max_y = max(ax.collections[0].get_paths()[0].vertices[:, 1])
+                print("{}: maximum y-value of KDE:{}".format(classification_type,kde_max_y))
             else:
                 sns.kdeplot(data=classification_type_df, x='log2_SV_len', fill=True, alpha=1, color=color, label=classification_type, ax=ax)
+                kde_max_y = max(ax.collections[0].get_paths()[0].vertices[:, 1])
+                print("{}: maximum y-value of KDE:{}".format(classification_type,kde_max_y))
 
-            ax.set_yticks([0, 1])
-            ax.set_yticklabels(['0', '1'])
-            ax.set_ylim(0, 1)
+            # Set y-limits and y-ticks dynamically if the peak exceeds 1
+            if kde_max_y > 1:
+                y_max = np.ceil(kde_max_y * 1.1)  # add 10% headroom
+                ax.set_ylim(0, y_max)
+                ax.set_yticks(np.linspace(0, y_max, 3))  # 3 ticks
+                ax.set_yticklabels([str(int(t)) for t in np.linspace(0, y_max, 3)])
+            else:
+                ax.set_ylim(0, 1)
+                ax.set_yticks([0, 1])
+                ax.set_yticklabels(['0', '1'])
             ax.set_xlim(4, df['log2_SV_len'].max())
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
@@ -176,19 +186,19 @@ def create_dist_plot(df, output_dir):
             ax.set_xticks([4, 8, 12, 16])
             ax.set_ylabel('') # Ensure no y-axis label is set
 
-        else:
-            ax.set_yticks([0, 1])
-            ax.set_yticklabels(['0', '1'])
-            ax.set_ylim(0, 1)
-            ax.set_xlim(4, df['log2_SV_len'].max())
-            ax.spines['top'].set_visible(False)
-            ax.spines['right'].set_visible(False)
-            ax.spines['left'].set_visible(True)
-            ax.set_xticks([4, 8, 12, 16])
-            ax.tick_params(axis='y', which='major', length=5)
-            ax.tick_params(axis='y', which='minor', length=2)
-            ax.yaxis.set_minor_locator(plt.FixedLocator([0.5]))
-            ax.spines['bottom'].set_visible(False)
+        # else:
+        #     ax.set_yticks([0, 1])
+        #     ax.set_yticklabels(['0', '1'])
+        #     ax.set_ylim(0, 1)
+        #     ax.set_xlim(4, df['log2_SV_len'].max())
+        #     ax.spines['top'].set_visible(False)
+        #     ax.spines['right'].set_visible(False)
+        #     ax.spines['left'].set_visible(True)
+        #     ax.set_xticks([4, 8, 12, 16])
+        #     ax.tick_params(axis='y', which='major', length=5)
+        #     ax.tick_params(axis='y', which='minor', length=2)
+        #     ax.yaxis.set_minor_locator(plt.FixedLocator([0.5]))
+        #     ax.spines['bottom'].set_visible(False)
             # ax.set_ylabel('') # Ensure no y-axis label is set
 
         if i < num_subplots - 1:
@@ -198,7 +208,7 @@ def create_dist_plot(df, output_dir):
 
     # Define SV type groups and colors for the legend
     legend_labels = {
-        'Non-repetitive': ['Non-repetitive'],
+        'NON_REPETITIVE': ['NON_REPETITIVE'],
         'Tandem repeat': ['HOMO', 'STR', 'TR'],
         'Mobile element': ['LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
     }
@@ -227,11 +237,21 @@ def create_dist_plot(df, output_dir):
         else:
             text.set_fontstyle('normal')
 
-
-    output_pdf = os.path.join(output_dir, 'distributions.pdf')
     with PdfPages(output_pdf) as pdf:
         pdf.savefig(fig, bbox_inches='tight')
     plt.close()
+
+def merge_pdfs(output_pdf, input_pdfs):
+    writer = PdfWriter()
+
+    for pdf_file in input_pdfs:
+        reader = PdfReader(pdf_file)
+        for page in reader.pages:
+            writer.add_page(page)
+
+    # Save the merged PDF
+    with open(output_pdf, "wb") as f_out:
+        writer.write(f_out)
 
 def main():
     # Read command-line arguments
@@ -242,15 +262,19 @@ def main():
     df = read_tsv(args.tsv)
 
     # Generate the plots using plt
-    create_dist_plot(df.copy(), args.out)
+    output_pdf_0 = os.path.join(args.out, 'distributions.pdf')
+    create_dist_plot(df.copy(), output_pdf_0)
     
     sv_order = ['INS', 'DEL']
-    output_pdf = os.path.join(args.out, 'histograms_INS_DEL.pdf')
-    create_hist_plot(df.copy(), output_pdf, sv_order)
+    output_pdf_1 = os.path.join(args.out, 'histograms_INS_DEL.pdf')
+    create_hist_plot(df.copy(), output_pdf_1, sv_order)
 
     sv_order = ['INV', 'DUP', 'BND']
-    output_pdf = os.path.join(args.out, 'histograms_INV_DUP_BND.pdf')
-    create_hist_plot(df.copy(), output_pdf, sv_order)
+    output_pdf_2 = os.path.join(args.out, 'histograms_INV_DUP_BND.pdf')
+    create_hist_plot(df.copy(), output_pdf_2, sv_order)
+
+    output_pdf = os.path.join(args.out, 'plots.pdf')
+    merge_pdfs(output_pdf, [output_pdf_0, output_pdf_1, output_pdf_2])
 
 if __name__ == "__main__":
     main()
