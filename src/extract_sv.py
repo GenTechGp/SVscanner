@@ -163,7 +163,7 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
     seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
 
     if svlen != len(seq):
-        print(f"Error: record at {record.chrom}:{record.pos} svlen ({svlen}) != len(ALT[0]) ({len(seq)})")
+        print(f"Error: record (at {record.chrom}:{record.pos}) svlen ({svlen}) != len(ALT[0]) ({len(seq)})")
 
     seq_consensus = seq_fl + seq + seq_fr
 
@@ -174,7 +174,7 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
             print(f"svlen ({get_svlen(record)}) != len(ALT[0]) ({len(seq)})")
             print(len(seq_fl))
             print(len(seq_fr))
-            print(f"Error: record at {record.chrom}:{record.pos} seq_consensus != seq_bcf")
+            print(f"Error: record (ID:{record.id}) seq_consensus != seq_bcf")
             print(">seq_consensus")
             print(seq_consensus)
             print(">seq_bcf")
@@ -335,7 +335,7 @@ def is_valid_vcf_record(record, args, warnings_dict):
 
     # 1. Check if the record is multi-allelic (more than one ALT allele)
     if record.alts is not None and len(record.alts) > 1 and warnings_dict["multi-allelic"] < args.warning_count:
-        print(f"Warning: Multi-allelic record at {record.chrom}:{record.pos} with {len(record.alts)} ALT alleles")
+        print(f"Warning: Multi-allelic record (ID:{record.id}) with {len(record.alts)} ALT alleles")
         warnings_dict["multi-allelic"] += 1
         # print(f"Warning: Multi-allelic record at {record.chrom}:{record.pos} (REF: {record.ref}, ALTs: {record.alts})")
         if warnings_dict["multi-allelic"] == args.warning_count:
@@ -344,7 +344,7 @@ def is_valid_vcf_record(record, args, warnings_dict):
     # 2. Check if the record has multiple samples (more than one sample with genotype data)
     sample_count = len(record.samples)
     if sample_count > 1 and warnings_dict["multi-sample"] < args.warning_count:
-        print(f"Warning: Multi-sample record at {record.chrom}:{record.pos} with {sample_count} samples")
+        print(f"Warning: Multi-sample record (ID:{record.id}) with {sample_count} samples")
         warnings_dict["multi-sample"] += 1
         if warnings_dict["multi-sample"] == args.warning_count:
             print("Warning: Suppressing further multi-sample warnings")
@@ -365,7 +365,7 @@ def is_valid_vcf_record(record, args, warnings_dict):
             return 13
     
     if svtype == "INS" and record.pos != record.stop:
-        print(f"Error: record at {record.chrom}:{record.pos} is an INS with end ({record.end}) not equal to pos")
+        print(f"Error: record (ID:{record.id}) is an INS with end ({record.end}) not equal to pos ({record.pos})")
         return 15
 
     # Categorize based on SVTYPE and symbolic alleles
@@ -533,7 +533,7 @@ def process_vcf_records(args):
         elif ret == 5:
             record_stats = handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i)
         else:
-            print(f"Skipped. vcf check failed (code: {ret}) for record at {record.chrom}:{record.pos}")
+            print(f"Skipped. vcf check failed (code: {ret}) for record (ID:{record.id})")
             continue
         write_to_id_file(args, vcf, record, record_stats)
         # if i == 100:
