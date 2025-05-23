@@ -38,6 +38,7 @@ ANNOTATE_COLS=["CHROM","POS","ID","REF","ALT","RM_CLASSIFICATION","RM_ELEMENTS_C
 PLOT_COLS=["SVTYPE","SVLEN","CLASSIFICATION","RECIPROCAL"]
 
 def read_sv_info(sv_file):
+    print(f"Info: Reading {args.info} file...")
     sv_info = {}
     with open(sv_file, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
@@ -97,13 +98,12 @@ def calculate_intersection_length(repeat_start, repeat_end, rel_start, rel_end):
     
     return intersection
 
-def read_rm(args, sv_info, rm_file, isVisualise):
+def read_rm(args, sv_info, isVisualise):
     """
     Processes RepeatMasker output (.out), adding relevant entries to sv_info
     
     Input:
     - sv_info (dict)            Dictionary containing the strucutral variants
-    - rm_file (str):            Path to RepeatMasker output file
     - isVisualise (bool):       True (visualisation)/ False (annotation)
 
     Output: 
@@ -143,7 +143,8 @@ def read_rm(args, sv_info, rm_file, isVisualise):
             # proportion = (repeat_end - repeat_left) / ((repeat_begin + repeat_end) - repeat_left)
             # element_coverage = intersection / ((repeat_begin + repeat_end) - repeat_left)
 
-    with open(rm_file, 'r') as file:
+    print(f"Info: Reading {args.rm} file with isVisualise:{isVisualise}...")
+    with open(args.rm, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
         row_count = 0
         for row in reader:
@@ -180,7 +181,7 @@ def read_rm(args, sv_info, rm_file, isVisualise):
                 if not repeat_begin < repeat_end:
                     intersection = calculate_intersection_length(te_start, te_end, sv['rel_start'], sv['rel_end'])
                     sv_coverage = round(intersection / sv['sv_len'], 6)
-                    # print(f"{intersection},{sv_coverage} row {row_count}: sv_id {sv_id},{sv_info[sv_id]['callerID']} Repeat begin {repeat_begin} should be less than repeat end {repeat_end} for strand {strand}.")
+                    print(f"{intersection},{sv_coverage} row {row_count}: sv_id {sv_id},{sv_info[sv_id]['callerID']} Repeat begin {repeat_begin} should be less than repeat end {repeat_end} for strand {strand}.")
                     continue
 
                 # print("query's matching len:{}, repeat's matching len:{}".format(te_end-te_start,repeat_end-repeat_begin))
@@ -217,13 +218,12 @@ def read_rm(args, sv_info, rm_file, isVisualise):
 
     return sv_info
 
-def read_trf(args, sv_info, trf_file):
+def read_trf(args, sv_info):
     """
     Processes Tandem Repeat Finder output (.dat), adding relevant entries to sv_info
     
     Input:
     - sv_info (dict)            Dictionary containing the strucutral variants
-    - trf_file (str):           Path to TRF output file
 
     Output: 
     - sv_info (dict):           Updated sv_info with TRF annotations
@@ -278,8 +278,8 @@ def read_trf(args, sv_info, trf_file):
     # 1040 1111 23 3.4 23 67 25 68 9 18 50 22 1.76 GAGGGCGTCTGGTCGTCCTGAGG GAGGGCGTCTGGTCGTCCTGAGGGAGGGCCGGTGTTGGTGAGGGCATCTGGTCGTCCTGAGGGAGGGGGTCT GGTGAGAGACGCTGCCGCAGAGCCGCCCGAGAGGGAGGGTCAGTGTTGGT TCTTCACATTCTCACCTCATTTCTTTTCACTCAGCAGGATTTTTTATTTT
     # 1020 1106 39 2.2 39 93 0 147 11 14 51 21 1.74 GAGGGAGGGCCAGTGTTGGTGAGGGCATCTGGTCGTCCT GAGGGAGGGTCAGTGTTGGTGAGGGCGTCTGGTCGTCCTGAGGGAGGGCCGGTGTTGGTGAGGGCATCTGGTCGTCCTGAGGGAGGG CACAGAGGGAAACAAGGGGAGGTGAGAGACGCTGCCGCAGAGCCGCCCGA GGTCTTCTTCACATTCTCACCTCATTTCTTTTCACTCAGCAGGATTTTTT
     # 1153 1200 5 9.8 5 95 4 89 18 0 0 81 0.70 TTTTA TTTTATTTTATTTTATTTTATTTTATTTTATTTTATTTTATTTATTTT AGGGGGTCTTCTTCACATTCTCACCTCATTTCTTTTCACTCAGCAGGATT GAAACGGAGTCTCACTCTTGCCTAGGCTGGAGTGCAATGGCGCAATCTCG
-    
-    with open(trf_file, 'r') as file:
+    print(f"Info: Reading {args.trf} file...")
+    with open(args.trf, 'r') as file:
         trf_text = file.read()
 
     # Split each SV into list
@@ -655,7 +655,7 @@ def get_annot_info(args, sv_info, sv_id, strchive):
 
         return str(round(total_length / sv_length, 2))
 
-    def highest_fraction(args, repeats, fractions):
+    def highest_fraction(args, repeats, fractions, reciprocal_map):
         """
         Initialize a dictionary to store the sum of fractions for each repeat type
         Calculates the total sum of fractions for each unique repeat type (e.g. SINE, LINE / STR, TR)
@@ -680,9 +680,17 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         if max_fraction < args.min_class_sv_coverage:
             # print(f"WARNING: {max_repeat} has a total fraction of {max_fraction} which is below the threshold of {args.min_class_sv_coverage}.")
             return 'NON_REPETITIVE'
-        return max_repeat
+        else:
+            if max_repeat in reciprocal_map:
+                transposition = reciprocal_map[max_repeat]
+                if transposition in ['Full', 'Partial']:
+                    return max_repeat
+                else:
+                    return 'NON_REPETITIVE'
+            else:
+                return max_repeat
     
-    def get_final_classification(args, trf_class, rm_class, total_trf_coverage, total_rm_coverage, trf_data, rm_data):
+    def get_final_classification(args, trf_class, rm_class, total_trf_coverage, total_rm_coverage, trf_data, rm_data, reciprocal_map):
         """
         Function that determines the final classification of the SV --> Tandem Repeat or Transposable element
         When multiple repeat types are present it compares the coverage and selects the repeat with the highest coverage fraction
@@ -704,16 +712,16 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         if (trf_class not in ['NA', 'NON_REPETITIVE']) and (rm_class not in ['NA', 'NON_REPETITIVE']):
             # TRF has higher coverage
             if total_trf_coverage > total_rm_coverage:
-                classification = highest_fraction(args, trf_classes, trf_coverages)
+                classification = highest_fraction(args, trf_classes, trf_coverages, reciprocal_map)
             # Mobile element from RepeatMasker has higher coverage
             else:
-                classification = highest_fraction(args, rm_classes, rm_coverages)
+                classification = highest_fraction(args, rm_classes, rm_coverages, reciprocal_map)
         # TRF (no repeatMasker)
         elif (trf_class not in ['NA', 'NON_REPETITIVE']) and (rm_class in ['NA', 'NON_REPETITIVE']):
-            classification = highest_fraction(args, trf_classes, trf_coverages)
+            classification = highest_fraction(args, trf_classes, trf_coverages, reciprocal_map)
         # RM (no TRF intersect)
         elif (trf_class in ['NA', 'NON_REPETITIVE']) and (rm_class not in ['NA', 'NON_REPETITIVE']):
-            classification = highest_fraction(args, rm_classes, rm_coverages)
+            classification = highest_fraction(args, rm_classes, rm_coverages, reciprocal_map)
         # None
         else: 
             classification = 'NON_REPETITIVE'
@@ -766,8 +774,8 @@ def get_annot_info(args, sv_info, sv_id, strchive):
     # Both TRF and RM
     trf_class = trf_data['TRF_CLASSIFICATION']
     rm_class = rm_data['RM_CLASSIFICATION']
-    final_classification = get_final_classification(args, trf_class, rm_class, total_trf_coverage, total_rm_coverage, trf_data, rm_data)
     reciprocal_map = sv_data['transposition'] if 'transposition' in sv_data else 'NA'
+    final_classification = get_final_classification(args, trf_class, rm_class, total_trf_coverage, total_rm_coverage, trf_data, rm_data, reciprocal_map)
     transposition = pick_reciprocal(final_classification, reciprocal_map)
 
     # Unpacks annotations
@@ -841,14 +849,13 @@ def output_annotations(args, strchive, sv_info):
     """
     # Initialise count for breakdown of repeat types
     sv_count = 0
-    repeat_count = {'HOMO' : 0, 'STR' : 0, 'TR' : 0, 'Full' : 0, 'Partial' : 0, 'Minimal' : 0, 'NON_REPETITIVE' : 0}
-    # repeat_count = {'HOMO' : 0, 'STR' : 0, 'TR' : 0, 'COMPLETE' : 0, 'FRAGMENT' : 0, 'NON_REPETITIVE' : 0}
+    repeat_count = {'HOMO' : 0, 'STR' : 0, 'TR' : 0, 'Full' : 0, 'Partial' : 0, 'NON_REPETITIVE' : 0}
     count_by_sv = {
-        'INS': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : 0, 'LINE' : 0, 'LTR' : 0, 'DNA' : 0, 'Retroposon' : 0, 'NON_REPETITIVE' : 0},
-        'DEL': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : 0, 'LINE' : 0, 'LTR' : 0, 'DNA' : 0, 'Retroposon' : 0, 'NON_REPETITIVE' : 0},
-        'DUP': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : 0, 'LINE' : 0, 'LTR' : 0, 'DNA' : 0, 'Retroposon' : 0, 'NON_REPETITIVE' : 0},
-        'INV': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : 0, 'LINE' : 0, 'LTR' : 0, 'DNA' : 0, 'Retroposon' : 0, 'NON_REPETITIVE' : 0},
-        'BND': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : 0, 'LINE' : 0, 'LTR' : 0, 'DNA' : 0, 'Retroposon' : 0, 'NON_REPETITIVE' : 0},
+        'INS': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'DEL': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'DUP': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'INV': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'BND': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
     }
 
     annotate_tsv_out = f"{args.out}/vcf_annotate.tsv"
@@ -862,7 +869,8 @@ def output_annotations(args, strchive, sv_info):
         f2.write("\t".join(PLOT_COLS))
         f2.write("\n")
 
-        # Process each structural variant and write to VCF 
+        # Process each structural variant and write to VCF
+        transposition_map = {"Full": 0, "Partial":1}
         for sv_id in sv_info:
             sv_type = sv_id.split('.')[0]
             sv_len = sv_info[sv_id]['sv_len']
@@ -879,7 +887,7 @@ def output_annotations(args, strchive, sv_info):
             # A repeat element 
             else: 
                 repeat_count[transposition] += 1
-                count_by_sv[sv_type][classification] += 1
+                count_by_sv[sv_type][classification][transposition_map[transposition]] += 1
             
             f2.write(f"{sv_type}\t{sv_len}\t{classification}\t{transposition}\n")
 
@@ -903,7 +911,7 @@ def output_annotations(args, strchive, sv_info):
             create_trf_tsv_record(sv_info, sv_id, tsv_trf_out)  # Write to trf file
 
     # Print results summary
-    print_results("Repeat Types", repeat_count, sv_count, True)
+    print_results("Classification summary", repeat_count, sv_count, True)
     # Print results summary by SV type 
     sv_type_df = pd.DataFrame(count_by_sv).T
         #     HOMO STR TR ...
@@ -1214,10 +1222,10 @@ if __name__ == "__main__":
 
     # Read in data
     sv_info = read_sv_info(args.info)
-    sv_info = read_trf(args, sv_info, args.trf)
+    sv_info = read_trf(args, sv_info)
     sv_info_vis = copy.deepcopy(sv_info)
-    sv_info_vis = read_rm(args, sv_info_vis, args.rm, True)
-    sv_info = read_rm(args, sv_info, args.rm, False)
+    sv_info_vis = read_rm(args, sv_info_vis, True)
+    sv_info = read_rm(args, sv_info, False)
 
     strchive = None
     if args.str:
