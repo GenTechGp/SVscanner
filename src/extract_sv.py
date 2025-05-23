@@ -132,7 +132,7 @@ def handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i, 
     os.remove(reference_fasta)
     os.remove(temp_fasta)
 
-    return svID, svlen, seq_len, seq, start, end
+    return [svID, svlen, seq_len, seq, start, end]
 
 #INS
 def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
@@ -187,7 +187,7 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
     with open(output_fasta, "w") as f:
         f.write(f">{svID}\n{seq_consensus}\n")
     
-    return svID, svlen, seq_len, start_fl, end_fr
+    return [svID, svlen, seq_len, start_fl, end_fr]
 
 #DEL
 def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
@@ -215,7 +215,7 @@ def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
     with open(output_fasta, "w") as f:
         f.write(f">{svID}\n{seq_consensus}\n")
     
-    return svID, svlen, seq_len, start_f, end_f
+    return [svID, svlen, seq_len, start_f, end_f]
 
 # https://github.com/samtools/bcftools/issues/1778
 # DUP
@@ -255,7 +255,7 @@ def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
     with open(output_fasta, "w") as f:
         f.write(f">{svID}\n{seq_consensus}\n")
     
-    return svID, svlen, seq_len, start_fl, end_fr
+    return [svID, svlen, seq_len, start_fl, end_fr]
 
 # INV
 def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
@@ -296,7 +296,7 @@ def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
     with open(output_fasta, "w") as f:
         f.write(f">{svID}\n{seq_consensus}\n")
     
-    return svID, svlen, seq_len, start_fl, end_fr
+    return [svID, svlen, seq_len, start_fl, end_fr]
 
 #BND
 def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
@@ -321,7 +321,7 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     with open(output_fasta, "w") as f:
         f.write(f">{svID}\n{seq_consensus}\n")
     
-    return svID, -1, seq_len, start_f, end_f
+    return [svID, -1, seq_len, start_f, end_f]
 
 def is_valid_vcf_record(record, args, warnings_dict):
     """
@@ -445,9 +445,9 @@ def print_record_stats(args, record_stats_arr, balanced_seq_bins):
         for i, b in enumerate(balanced_seq_bins):
             f.write(f"{i}.fa, {len(b)}, {sum(x[2] for x in b)}\n")
 
-        f.write(f"('SV_ID', svlen, consensus_seq_len)\n")
+        f.write(f"('SV_ID', svlen, consensus_seq_len, i.fa)\n")
         for record in record_stats_arr:
-            f.write(f"{record}\n")
+            f.write(f"{record[0]},{record[1]},{record[2]},{record[5]}\n")
 
 def balance_bins(items, n_bins):
     """
@@ -476,6 +476,7 @@ def balance_bins(items, n_bins):
         min_bin_index = bin_sums.index(min(bin_sums))
         bins[min_bin_index].append(item)
         bin_sums[min_bin_index] += item[2]  # Add value2 to bin sum
+        item.append(min_bin_index)  # Append bin index to item for tracking
 
     return bins
 
