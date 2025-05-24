@@ -19,7 +19,7 @@ which python
 #REF_FASTA=$(realpath "/g/data/te53/ontsv/references/hg38_reference_files/hg38.analysisSet.fa")
 #REF_FASTA="/g/data/te53/variantcall/referenceresource/genome/pipeface/chm13XX.fasta"
 #REF_FASTA=$(realpath "/genome/hg38.analysisSet.fa")
-STR_BED=$(realpath "test/STRchive-disease-loci.bed")
+STR_BED=$(realpath "test/databases/STRchive-disease-loci.bed")
 
 ##FOR SIMULATION AND TESTING
 # OUTPUT_DIR=$(realpath "test/output_sim_ref")
@@ -57,6 +57,7 @@ DIAGRAM_LEN=100
 # Python and bash scripts (keep as it is)
 EXTRACT_SV_FLANKINGS=$(realpath src/extract_sv.py)
 ANNOTATION=$(realpath src/repeat_annotation.py)
+PLOT=$(realpath src/generate_plots.py)
 
 # Function to show usage
 usage() {
@@ -269,8 +270,17 @@ sort_and_index_vcf() {
     info "done"
 }
 
+plot_classifications() {
+    info "4. Plotting..."
+    python3 ${PLOT} \
+        --out ${ANNOTATIONS_OUT}/plots\
+        --tsv ${ANNOTATIONS_OUT}/plot_annotate.tsv || die "failed"
+    info "done"
+}
+
 show_output_paths() {
     info "Annotation outputs dir: ${ANNOTATIONS_OUT}"
+    info "Plots dir: ${ANNOTATIONS_OUT}/plots"
     info "SV VCF with repeats annotated: ${ANNOTATED_VCF}"
 }
 
@@ -286,6 +296,7 @@ process_repeatmasker_output
 combine_split_files
 annotation
 sort_and_index_vcf
+plot_classifications
 show_output_paths
 
 T1=$(date +%s)

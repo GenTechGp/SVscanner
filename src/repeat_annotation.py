@@ -917,7 +917,7 @@ def output_annotations(args, strchive, sv_info):
         #     HOMO STR TR ...
         # INS
         # DEL
-    print(sv_type_df)
+    print(sv_type_df.to_string())
 
 def create_SV(args, sv_info):
     """
