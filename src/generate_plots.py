@@ -193,21 +193,25 @@ def create_dist_plot(df, output_pdf):
                 fragment_df = classification_type_df[classification_type_df['RECIPROCAL'] == 'Partial']
 
                 # KDE and normalization for "Full"
-                if not complete_df.empty:
+                if len(complete_df) > 1:
                     kde = stats.gaussian_kde(complete_df['log2_SV_len'])
                     y = kde(x_grid)
                     y /= y.max()  # Normalize peak to 1
                     ax.fill_between(x_grid, y, color=color, alpha=1, label=f'{classification_type} (Full)')
                     # Outline
                     ax.plot(x_grid, y, color='grey', linewidth=0.1)
-
+                else:
+                    print(f"Skipping {classification_type} (Full) due to insufficient data for KDE.")
+                
                 # KDE and normalization for "Partial"
-                if not fragment_df.empty:
+                if len(fragment_df) > 1:
                     kde = stats.gaussian_kde(fragment_df['log2_SV_len'])
                     y = kde(x_grid)
                     y /= y.max()
                     ax.fill_between(x_grid, y, color=color, alpha=0.5, label=f'{classification_type} (Partial)')
                     ax.plot(x_grid, y, color='grey', linewidth=0.1)
+                else:
+                    print(f"Skipping {classification_type} (Partial) due to insufficient data for KDE.")
 
             else:
                 kde = stats.gaussian_kde(classification_type_df['log2_SV_len'])

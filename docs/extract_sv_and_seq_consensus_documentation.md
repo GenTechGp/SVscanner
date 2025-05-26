@@ -34,7 +34,7 @@ This document summarizes the method used to construct the `seq_consensus` for ea
 - The deleted segment is included in the consensus.
 - Flanking regions are fetched and concatenated with the deleted region:
 
-  `seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")`  
+  `seq = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fr}")`  
   `seq_consensus = seq`
 
 ---

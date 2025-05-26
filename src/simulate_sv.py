@@ -68,14 +68,8 @@ def read_Rep_file(args):
 # ATR - approximate tandem repetition (insert a new approximate tandem repetition immediately after end). similar to PTR but with some error bases injected here and there
 # chr1	70999999	71000000	approximate tandem repetition	AT:30:3	0
 
-SV_TYPES_0 = ["deletion", "inversion", "tandem duplication", "inverted tandem duplication", "insertion"]
 
-SV_TYPES_1 = ["tandem repeat expansion", "tandem repeat contraction",
-             "perfect tandem repetition", "approximate tandem repetition"]
-
-SEQ_TYPE = ["mobile", "repeat"]
-
-def decide_sv_type(mob_seqs, rep_seqs):
+def decide_sv_type(mob_seqs, rep_seqs, sv_types):
     col_5 = random.randint(0, 10)
     col_6 = random.randint(0, 10)
     inject_to_ref = True
@@ -90,12 +84,14 @@ def decide_sv_type(mob_seqs, rep_seqs):
         sv_type = "approximate tandem repetition"
 
     if seq_type == "":
-        seq_type = random.choice(SEQ_TYPE)
+        # get keys of sv_types dict
+        # randomly choose one of the keys
+        seq_type = random.choice(list(sv_types.keys()))
     
     if seq_type == "mobile":
         
         if sv_type == "":
-            sv_type = random.choice(SV_TYPES_0)
+            sv_type = random.choice(sv_types["mobile"])
         inj_mob_seq = random.choice(mob_seqs)
         inj_seq = inj_mob_seq[1]
         inj_len = len(inj_seq)
@@ -128,7 +124,7 @@ def decide_sv_type(mob_seqs, rep_seqs):
     elif seq_type == "repeat":
         
         if sv_type == "":
-            sv_type = random.choice(SV_TYPES_1)
+            sv_type = random.choice(sv_types["repeat"])
         inj_rep_seq = random.choice(rep_seqs)
         rep_count = inj_rep_seq[0]
         motif = inj_rep_seq[1]
@@ -168,7 +164,7 @@ def decide_sv_type(mob_seqs, rep_seqs):
 def get_f_len(args, svlen):
     return min(args.flen, svlen * args.ffac)
 
-def create_ref(args):
+def create_ref(args, sv_types):
     mob_seqs, mob_count = read_Mob_file(args)
     rep_seqs, rep_count = read_Rep_file(args)
     print(f"Info: Filtered Mobile Elements count: {mob_count}")
@@ -183,7 +179,7 @@ def create_ref(args):
     sv_list = [] #(inject_to_ref, inj_seq, name, bed_record, sv_len)
     flen_array = []
     for i in range(0, sv_count):
-        sv_i = decide_sv_type(mob_seqs, rep_seqs)
+        sv_i = decide_sv_type(mob_seqs, rep_seqs, sv_types)
         sv_list.append(sv_i)
         sv_len = sv_i[4]
         f_len = args.flen # get_f_len(args, sv_len)
@@ -194,6 +190,8 @@ def create_ref(args):
     hack_bed_out = f"{args.out}/visor_hack.bed"
     
     with open(ref_tsv_out, "w") as f1, open(hack_bed_out, "w") as f2:
+        f1.write("CHROM\tPOINTER\tINJ_LEN\tNAME\tINJECT_TO_REF\tINJ_SEQ\tBED_RECORD\n")
+        
         for i in range(0, sv_count):
             f_len = flen_array[i]
             ran_len = random.randint(f_len, 1.5*f_len)
@@ -224,6 +222,12 @@ def create_ref(args):
     with open(ref_out, "w") as f:
         f.write(f">ref0\n")
         f.write(f"{ref}\n") 
+    
+    print(f"Info: Number of SVs simulated: {len(sv_list)}")
+    ref_length = len(ref)
+    print(f"Info: Reference length: {ref_length} bases")
+    print(f"Info: Reference file created: {ref_out}")
+    print(f"Info: Visor hack file created: {hack_bed_out}")
 
 def argparser():
     def positive_int(value):
@@ -252,6 +256,7 @@ def argparser():
     optional_args.add_argument('--max', required=False, type=positive_int, default=500, help="Maximum length of SV")
     optional_args.add_argument('--flen', required=False, type=positive_int, default=2000, help="The maximum detectable period size supported by TRF to determine the length of flanking sequences")
     optional_args.add_argument('--ffac', required=False, type=positive_int, default=10, help="Multiplication factor for SVLEN to determine the length of flanking sequences")
+    optional_args.add_argument('--svtypes', required=False, type=str, default="", help="File that contains the SV types to simulate. If not provided, all types will be used. Format: check docs/SV_simulation.md")
     optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
     optional_args.add_argument('-h', '--help', action='help', help="Show this help message and exit")
 
@@ -284,7 +289,33 @@ if __name__ == "__main__":
         print("Error: {} output dir already exists.".format(args.out))
         exit(1)
 
-    create_ref(args)
+    sv_types = {}
+    if args.svtypes:
+        # read the svtypes file and filter the SV types
+        print(f"Info: SV types file: {args.svtypes}")
+        with open(args.svtypes, "r") as f:
+            # read line split by : first. put first element as key and second as value
+            for line in f:
+                parts = line.strip().split(":")
+                if len(parts) > 1:
+                    result = [x for x in parts[1].split(",") if x]
+                    # result is not empty
+                    if result:
+                        sv_types[parts[0]] = result
+    else:
+        sv_types = {"mobile": ["deletion", "inversion", "tandem duplication", "inverted tandem duplication", "insertion"],
+                "repeat": ["tandem repeat expansion", "tandem repeat contraction", "perfect tandem repetition", "approximate tandem repetition"]}
+
+    #check if sv_types is empty
+    if sv_types == {}:
+        print("Error: No SV types provided")
+        exit(1)
+
+    #print the SV types
+    for sv_type in sv_types:
+        print(f"Info: SV types for {sv_type}: {sv_types[sv_type]}")
+        
+    create_ref(args, sv_types)
 
     end = time.time()
     print(f"Run time: {end - start:.3f} seconds")

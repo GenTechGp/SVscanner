@@ -22,4 +22,14 @@ The python script `src/simulate_sv.py` creates the [VISOR compatible SV details 
 |              | Perfect Tandem Repetition        | No sequence added to base ref; BED record instructs VISOR to insert a perfect tandem repeat            |
 |              | Approximate Tandem Repetition    | No sequence added to base ref; BED record instructs to insert an approximate tandem repeat        |
 
-Note - the sequence (either Mobile or Repeat) is randomly picked and either added to the base reference or written to the BED file depending on the SV type. Then VISOR will create the SV included reference using the base reference and the BED file.
+### Note
+* the sequence (either Mobile or Repeat) is randomly picked and either added to the base reference or written to the BED file depending on the SV type. Then VISOR will create the SV included reference using the base reference and the BED file.
+
+* The Mobile elements file is just a `.fasta` file (e.g. `test/databases/dfam-fasta-download.fasta`).
+* The Repeat information file is expected to have four columns as given in the example file: `test/databases/GRCh38.microsatellites.bed`. However, the current implementation only requires the information in the fourth column that has the `countxmotif`.
+
+* The argument `--svtypes` in  `scripts/sim_sv.sh` takes a file that has at most two lines (e.g., `test/databases/svtypes.txt`). The order of the two lines does not matter. If the user wants only `deletions`, `inversions` and `tandem repeat exapansions` then the file content should be like below,
+```
+mobile:deletion,inversion
+repeat:tandem repeat expansion
+```

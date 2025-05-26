@@ -13,7 +13,7 @@ OUTPUT_DIR=$(realpath "test/sim_ref")
 BASE_REF=${OUTPUT_DIR}/base_ref/base_ref.fa
 SV_TREATED_REF=${OUTPUT_DIR}/sv_treated_ref.fa
 
-SV_COUNT=20
+SV_COUNT=100
 
 READS="read_0.fasta"
 SIM_READS="${OUTPUT_DIR}/sim_reads.fq.gz"
@@ -34,20 +34,27 @@ SIM_REF="src/simulate_sv.py"
 PBSIM3="/data/install/pbsim3-3.0.5/src/pbsim"
 PBSIM3_DATA="/data/install/pbsim3-3.0.5/data"
 
+SV_CLASSIFIER="scripts/run_classifier.sh"
+
+TRF_BED="/genome/hg38.trf.bed"
+MOBILE_ELEMENTS="test/databases/dfam-fasta-download.fasta"
+REP_ELEMENTS="test/databases/trcatalog_bins.bed"
+
 create_output_dir() {
 	test -d "${OUTPUT_DIR}" && rm -r "${OUTPUT_DIR}"
     mkdir ${OUTPUT_DIR}
 }
 
-sim_ref() {
+create_visor_bed() {
     source "${SVTOOLS_VENV_PATH}/bin/activate"
-    python ${SIM_REF} -n ${SV_COUNT} --mob test/dfam-fasta-download.fasta --rep test/GRCh38.microsatellites.bed --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
+    python ${SIM_REF} -n ${SV_COUNT} --mob ${MOBILE_ELEMENTS} --rep ${REP_ELEMENTS} --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
     deactivate
+}
 
+simulate_sv_using_visor() {
     source "${VISOR_VENV_PATH}/bin/activate"
     VISOR HACk -b ${OUTPUT_DIR}/base_ref/visor_hack.bed -g ${BASE_REF} -o ${OUTPUT_DIR}/visor_hack || die "visor hack failed"
     awk '/^>/ {if (seq) print seq; print; seq=""; next} {seq=seq $0} END {if (seq) print seq}' ${OUTPUT_DIR}/visor_hack/h1.fa > ${SV_TREATED_REF} || die "awk after visor failed"
-    
     deactivate
 }
 
@@ -63,7 +70,7 @@ sim_ref() {
 #     mv ${OUTPUT_DIR}/simualted_reads*.fastq.gz ${SIM_READS}
 # }
 
-sim_reads_pacbio_hifi() {
+simulated_reads_pacbio_hifi() {
     ${PBSIM3} --strategy wgs \
       --method qshmm \
       --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
@@ -115,10 +122,9 @@ variant_call_sniffles() {
         echo "Error: Virtual environment not found at ${SNIFFLES_VENV_PATH}"
         exit 1
     fi
-    # Activate the virtual environment
     source "${SNIFFLES_VENV_PATH}/bin/activate"
-    sniffles --reference ${BASE_REF} --input ${BAM} --vcf ${VCF} --allow-overwrite --min-alignment-length 50 --minsupport 1 --minsvlen 20 --no-qc || die "sniffles failed"
-    # Deactivate the virtual environment
+    # sniffles --reference ${BASE_REF} --input ${BAM} --vcf ${VCF} --phase --minsvlen 50 --allow-overwrite  --no-qc || die "sniffles failed"
+    sniffles --reference ${BASE_REF} --input ${BAM} --vcf ${VCF} --minsvlen 50 --allow-overwrite  --no-qc || die "sniffles failed"
     deactivate
     rm -rf ${VCF}.gz && ${BGZIP} -c ${VCF} > ${VCF}.gz && ${TABIX} -p vcf ${VCF}.gz || die "bgzip and tabix failed"
 }
@@ -134,8 +140,16 @@ variant_call_sniffles() {
 #     ${SAMTOOLS} faidx ${OUTPUT_DIR}/with_variant_ref.fa || die "samtools faidx failed"
 # }
 
+run_svclassifier() {
+    source "${SVTOOLS_VENV_PATH}/bin/activate"
+    ${SV_CLASSIFIER} --output_dir ${OUTPUT_DIR}/svclassifier --sample simulated --sv_vcf ${VCF}.gz --ref_fasta ${BASE_REF} > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
+    deactivate
+}
+
 create_output_dir
-sim_ref
-sim_reads_pacbio_hifi
+create_visor_bed
+simulate_sv_using_visor
+simulated_reads_pacbio_hifi
 align_reads_pacbio_hifi
 variant_call_sniffles
+run_svclassifier

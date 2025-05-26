@@ -26,3 +26,5 @@ test/visor_test
 test/sim_ref
 test/check_sv_flanks
 test/1000ONT
+test/out_plots
+test/databases
