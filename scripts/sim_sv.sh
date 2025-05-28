@@ -13,7 +13,7 @@ OUTPUT_DIR=$(realpath "test/sim_ref")
 BASE_REF=${OUTPUT_DIR}/base_ref/base_ref.fa
 SV_TREATED_REF=${OUTPUT_DIR}/sv_treated_ref.fa
 
-SV_COUNT=4500
+SV_COUNT=1000
 
 READS="read_0.fasta"
 SIM_READS="${OUTPUT_DIR}/sim_reads.fq.gz"
@@ -146,10 +146,28 @@ run_svclassifier() {
     deactivate
 }
 
-create_output_dir
-create_visor_bed
-simulate_sv_using_visor
-simulated_reads_pacbio_hifi
-align_reads_pacbio_hifi
-variant_call_sniffles
-run_svclassifier
+run_func() {
+    local func_name="$1"
+    if ! declare -f "$func_name" > /dev/null; then
+        echo "Function '$func_name' not found"
+        return 1
+    fi
+
+    local start_time=$(date +%s.%N)
+    "$func_name"
+    local end_time=$(date +%s.%N)
+
+    local duration=$(echo "$end_time - $start_time" | bc)
+    echo "Function:$func_name took ${duration} seconds"
+}
+
+
+run_func create_output_dir
+run_func create_visor_bed
+run_func simulate_sv_using_visor
+run_func simulated_reads_pacbio_hifi
+run_func align_reads_pacbio_hifi
+run_func variant_call_sniffles
+run_func run_svclassifier
+
+info "success"
