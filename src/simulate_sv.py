@@ -178,7 +178,7 @@ def create_ref(args, sv_types):
 
     sv_list = [] #(inject_to_ref, inj_seq, name, bed_record, sv_len)
     flen_array = []
-    for i in range(0, sv_count):
+    for sv_i in range(0, sv_count):
         sv_i = decide_sv_type(mob_seqs, rep_seqs, sv_types)
         sv_list.append(sv_i)
         sv_len = sv_i[4]
@@ -188,18 +188,19 @@ def create_ref(args, sv_types):
     f_len = 0
     ref_tsv_out = f"{args.out}/ref_inj.tsv"
     hack_bed_out = f"{args.out}/visor_hack.bed"
-    
+    sv_i = 0
     with open(ref_tsv_out, "w") as f1, open(hack_bed_out, "w") as f2:
         f1.write("CHROM\tPOINTER\tINJ_LEN\tNAME\tINJECT_TO_REF\tINJ_SEQ\tBED_RECORD\n")
         
-        for i in range(0, sv_count):
-            f_len = flen_array[i]
+        while sv_i < sv_count:
+        # for i in range(0, sv_count):
+            f_len = flen_array[sv_i]
             ran_len = random.randint(f_len, 1.5*f_len)
             ran_seq = generate_random_dna(ran_len)
             ref = ref + ran_seq
             pointer += ran_len
             
-            inject_to_ref, inj_seq, name, bt, sv_len = sv_list[i][0], sv_list[i][1], sv_list[i][2], sv_list[i][3], sv_list[i][4]
+            inject_to_ref, inj_seq, name, bt, sv_len = sv_list[sv_i][0], sv_list[sv_i][1], sv_list[sv_i][2], sv_list[sv_i][3], sv_list[sv_i][4]
             inj_len = len(inj_seq)
             # (pointer+1, end, sv_type, "None", 0)
             bed_record = f"{chrom}\t{bt[0]+pointer}\t{bt[1]+pointer}\t{bt[2]}\t{bt[3]}\t{bt[4]}"
@@ -210,9 +211,10 @@ def create_ref(args, sv_types):
                 ref = ref + inj_seq
                 pointer += inj_len
             if pointer > args.len:
-                print(f"Warning: reference length reached {args.len} bases after simulating {i} SVs. Finishing simulation...")
+                print(f"Warning: reference length reached {args.len} bases after simulating {sv_i} SVs. Finishing simulation...")
                 break
-            
+            sv_i += 1
+
     ran_len = random.randint(f_len, 1.5*f_len)
     ran_seq = generate_random_dna(ran_len)
     ref = ref + ran_seq
@@ -223,7 +225,7 @@ def create_ref(args, sv_types):
         f.write(f">ref0\n")
         f.write(f"{ref}\n") 
     
-    print(f"Info: Number of SVs simulated: {len(sv_list)}")
+    print(f"Info: Number of SVs simulated: {sv_i}")
     ref_length = len(ref)
     print(f"Info: Reference length: {ref_length} bases")
     print(f"Info: Reference file created: {ref_out}")
@@ -250,10 +252,10 @@ def argparser():
     
     optional_args = parser.add_argument_group("optional arguments")
     optional_args.add_argument('--seed', required=False, type=positive_int, default=42, help="The seed for random generator")
-    optional_args.add_argument('--len', required=False, type=positive_int, default=1000000, help="The length of the simulated base reference (before editing with SVs)")
+    optional_args.add_argument('--len', required=False, type=positive_int, default=100000000, help="The length of the simulated base reference (before editing with SVs)")
     optional_args.add_argument('-n', required=False, type=positive_int, default=100, help="Number of SVs to simulate")
-    optional_args.add_argument('--min', required=False, type=positive_int, default=10, help="Minimum length of SV")
-    optional_args.add_argument('--max', required=False, type=positive_int, default=500, help="Maximum length of SV")
+    optional_args.add_argument('--min', required=False, type=positive_int, default=50, help="Minimum length of SV")
+    optional_args.add_argument('--max', required=False, type=positive_int, default=50000, help="Maximum length of SV")
     optional_args.add_argument('--flen', required=False, type=positive_int, default=2000, help="The maximum detectable period size supported by TRF to determine the length of flanking sequences")
     optional_args.add_argument('--ffac', required=False, type=positive_int, default=10, help="Multiplication factor for SVLEN to determine the length of flanking sequences")
     optional_args.add_argument('--svtypes', required=False, type=str, default="", help="File that contains the SV types to simulate. If not provided, all types will be used. Format: check docs/SV_simulation.md")
@@ -264,7 +266,6 @@ def argparser():
 
 if __name__ == "__main__":
     start = time.time()
-    
     parser = argparser()
     args = parser.parse_args()
     random.seed(args.seed)

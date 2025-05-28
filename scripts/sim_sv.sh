@@ -13,7 +13,7 @@ OUTPUT_DIR=$(realpath "test/sim_ref")
 BASE_REF=${OUTPUT_DIR}/base_ref/base_ref.fa
 SV_TREATED_REF=${OUTPUT_DIR}/sv_treated_ref.fa
 
-SV_COUNT=100
+SV_COUNT=4500
 
 READS="read_0.fasta"
 SIM_READS="${OUTPUT_DIR}/sim_reads.fq.gz"
