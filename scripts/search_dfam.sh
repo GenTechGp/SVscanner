@@ -19,7 +19,7 @@ create_output_dir() {
 
 print_lineage() {
     python ${RM_DIR}/famdb.py lineage ${TERM} -ad || die "could not fetch lineage tree"
-    python ${RM_DIR}/famdb.py lineage -ad --format totals ${TERM} || die "could not fetch the total number of records"
+    # python ${RM_DIR}/famdb.py lineage -ad --format totals ${TERM} || die "could not fetch the total number of records"
 }
 
 print_record_stats() {
@@ -31,10 +31,22 @@ print_record_stats() {
     cat ${OUTPUT_DIR}/stats
 }
 
-info "searching dfam database for term:${TERM}"
+# info "searching dfam database for term:${TERM}"
 
-info "9606 Homo sapiens(0) [52] means NCBI Taxonomy ID for Homo sapiens, Scientific name, Partition number in FamDB(0), [52] repeat families assigned specifically to Homo sapiens"
+# info "9606 Homo sapiens(0) [52] means NCBI Taxonomy ID for Homo sapiens, Scientific name, Partition number in FamDB(0), [52] repeat families assigned specifically to Homo sapiens"
 
-create_output_dir
-print_lineage
-print_record_stats
+
+fetch_fasta() {
+    # python ${RM_DIR}/famdb.py -i ${RM_DIR}/Libraries/famdb/ families -f fasta_acc --descendants "human" |
+    python ${RM_DIR}/famdb.py -i ${RM_DIR}/Libraries/famdb/ families --include-class-in-name -f fasta_acc human |
+    # python ${RM_DIR}/famdb.py -i ${RM_DIR}/Libraries/famdb/ families --include-class-in-name -f fasta_acc Mammalia |
+    # python ${RM_DIR}/famdb.py -i ${RM_DIR}/Libraries/famdb/ families --include-class-in-name -f fasta_acc Eutheria |
+    
+    awk '/^>/ {if (seq) print seq; print; seq=""; next} {seq = seq $0} END {if (seq) print seq}' > dfam_human.fasta || die "fasta fetch failed"
+
+}
+
+# create_output_dir
+# print_lineage
+# print_record_stats
+fetch_fasta

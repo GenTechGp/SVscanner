@@ -35,7 +35,7 @@ ANNOTATE_COLS=["CHROM","POS","ID","REF","ALT","RM_CLASSIFICATION","RM_ELEMENTS_C
                 "TRF_COPY_NUMBER","CONSENSUS_REPEAT","TRF_SV_COVERAGE","TRF_TOTAL_SV_COVERAGE","FINAL_CLASSIFICATION",\
                     "DISEASE_GENE","STRCHIVE_MOTIF","PATHOGENIC_MIN"]
 
-PLOT_COLS=["SVTYPE","SVLEN","CLASSIFICATION","RECIPROCAL"]
+PLOT_COLS=["ID","SVTYPE","SVLEN","CLASSIFICATION","RECIPROCAL"]
 
 def read_sv_info(sv_file):
     print(f"Info: Reading {args.info} file...")
@@ -43,7 +43,7 @@ def read_sv_info(sv_file):
     with open(sv_file, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
         for sv in reader:
-            # if sv[6] != "BND.1":
+            # if sv[6] != "INS.392":
             #     continue
             # Extract values from the columns
             chrom = sv[0]
@@ -128,10 +128,12 @@ def read_rm(args, sv_info, isVisualise):
         - fraction (sv only)
         
         """
-
+        intersection_rep_cords = repeat_end - repeat_begin
+        intersection_sv_cords = intersection
         repeat_length = repeat_end + repeat_left
-        element_proportion = (repeat_end - repeat_begin) / repeat_length
-        element_coverage = intersection / repeat_length
+        element_proportion = intersection_rep_cords / repeat_length
+        element_coverage = intersection_sv_cords / repeat_length
+        # print(f"repeat_length: {repeat_length}")
         return element_proportion, element_coverage
 
         # $12           #13         $14 
@@ -156,6 +158,9 @@ def read_rm(args, sv_info, isVisualise):
             repeat = row[9]
             family = row[10]
             te_id = row[14]
+
+            # if sv_info[sv_id]['callerID'] != "Sniffles2.INS.179S0":
+            #     continue
 
             # print("{}\t{}".format(repeat, family))
             assert te_start < te_end, f"TE start {te_start} should be less than TE end {te_end} for sv_id {sv_id}."
@@ -251,23 +256,21 @@ def read_trf(args, sv_info):
             repeat_end = int(trf_data[1])
             period_size = int(trf_data[2])
             copy_number = float(trf_data[3])
-            consensus_repeat = trf_data[13]
+            motif = trf_data[13]
             
             intersection = calculate_intersection_length(repeat_start, repeat_end, sv['rel_start'], sv['rel_end'])
             sv_coverage = round(intersection/ sv['sv_len'], 6)
 
-            repeat_info = {
-                'repeat_start': repeat_start,
-                'repeat_end': repeat_end,
-                'period_size': period_size,
-                'motif': consensus_repeat,
-
-                'copy_number': copy_number,
-                'key': get_TRF_classification(period_size),
-            }
-
             if sv_coverage and float(sv_coverage) > args.min_sv_coverage:
-                repeat_info.update({'sv_coverage' : sv_coverage})
+                repeat_info = {
+                    'repeat_start': repeat_start,
+                    'repeat_end': repeat_end,
+                    'period_size': period_size,
+                    'motif': motif,
+                    'copy_number': copy_number,
+                    'sv_coverage': sv_coverage,
+                    'key': get_TRF_classification(period_size),
+                }
                 tandem_repeats.append(repeat_info)
         
         return tandem_repeats
@@ -391,7 +394,10 @@ def filter_rm(sv_info):
     rm_elements = {}
     for sv_id in sv_info:
         rm_elements[sv_id] = sv_info[sv_id]
-        
+
+        # if sv_info[sv_id]['callerID'] != "Sniffles2.INS.179S0":
+        #     continue
+
         if 'RM' in sv_info[sv_id]:
             all_non_overlapping = []  # Flattened list for non-overlapping elements
             class_reciprocal_map = {}
@@ -454,9 +460,9 @@ def filter_trf(sv_info, interval_divisor):
     Output
         - trf_elements (dict): A dictionary containing the SV ID updated with the list of non-overlapping trfs in 'TRF' and total_fraction
     """
-    def sum_fractions(intersections):
+    def sum_fractions(non_overlapping):
         total_fraction = 0
-        for entry in intersections: 
+        for entry in non_overlapping: 
             total_fraction += entry['sv_coverage'] 
         return round(total_fraction,2)
     
@@ -464,6 +470,8 @@ def filter_trf(sv_info, interval_divisor):
         if 'TRF' in sv_info[sv_id]:
             trf_list = sv_info[sv_id]['TRF']
             
+            # print('{}: {}'.format(sv_id, [trf['key'] for trf in trf_list]))
+
             # Custom key function that groups intersections by 0.05 bins (5%)
             def custom_sort_key(trf):
                 # Prioritises largest intersection length in intervals
@@ -711,7 +719,7 @@ def get_annot_info(args, sv_info, sv_id, strchive):
 
         if (trf_class not in ['NA', 'NON_REPETITIVE']) and (rm_class not in ['NA', 'NON_REPETITIVE']):
             # TRF has higher coverage
-            if total_trf_coverage > total_rm_coverage:
+            if total_trf_coverage >= total_rm_coverage:
                 classification = highest_fraction(args, trf_classes, trf_coverages, reciprocal_map)
             # Mobile element from RepeatMasker has higher coverage
             else:
@@ -889,7 +897,7 @@ def output_annotations(args, strchive, sv_info):
                 repeat_count[transposition] += 1
                 count_by_sv[sv_type][classification][transposition_map[transposition]] += 1
             
-            f2.write(f"{sv_type}\t{sv_len}\t{classification}\t{transposition}\n")
+            f2.write(f"{sv_id}/{sv_info[sv_id]['callerID']}\t{sv_type}\t{sv_len}\t{classification}\t{transposition}\n")
 
     
     header_out = f"{args.out}/vcf_header.txt"
@@ -919,7 +927,7 @@ def output_annotations(args, strchive, sv_info):
         # DEL
     print(sv_type_df.to_string())
 
-def create_SV(args, sv_info):
+def draw_diagrams(args, sv_info):
     """
     Creates and writes structural variant (SV) and repeat diagrams to an output file.
 
@@ -1029,7 +1037,8 @@ def create_SV(args, sv_info):
                 # Process flanking region
                 rm_diagram_flanking = create_rm(rm_diagram_flanking, element, diagram_length, flanking_scale, start)
                 intersection = round(element['sv_coverage'] * 100, 2)
-                intersect_percentages.append(f'{intersection}%')
+                element_coverage = round(element['element_coverage'] * 100, 2)
+                intersect_percentages.append(f'{intersection}%[{element_coverage}%]')
 
                 # Process SV region
                 rm_diagram_sv = create_rm(rm_diagram_sv, element, diagram_length, sv_scale, sv_start)
@@ -1125,10 +1134,10 @@ def create_SV(args, sv_info):
             
             # Generate the SV w/ flanking diagram 
             # Don't generate the flanking diagram if sv ends after the flanking
+            flanking_diagram = None
             if sv_end > end and sv_end_scaled > 100:
                 id_str = id_str.replace('\t', ' ')
                 print(f"Unable to generate sv + flanking diagram for {id_str}")
-                flanking_diagram = None
             else:
                 flanking_diagram = create_diagram(diagram_length, sv_start_scaled, sv_end_scaled)
                 flanking_diagram = format_trf_info('SV & flanking', flanking_diagram, diagram_length)
@@ -1240,7 +1249,7 @@ if __name__ == "__main__":
     output_annotations(args, strchive, filtered_sv_info)
 
     # Diagrams
-    create_SV(args, sv_info_vis)
+    draw_diagrams(args, sv_info_vis)
 
     end = time.time()
     print(f"Run time: {end - start:.3f} seconds")

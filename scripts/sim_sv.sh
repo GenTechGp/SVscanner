@@ -37,7 +37,7 @@ PBSIM3_DATA="/data/install/pbsim3-3.0.5/data"
 SV_CLASSIFIER="scripts/run_classifier.sh"
 
 TRF_BED="/genome/hg38.trf.bed"
-MOBILE_ELEMENTS="test/databases/dfam-fasta-download.fasta"
+MOBILE_ELEMENTS="test/databases/dfam_selected_species.fasta"
 REP_ELEMENTS="test/databases/trcatalog_bins.bed"
 
 create_output_dir() {
