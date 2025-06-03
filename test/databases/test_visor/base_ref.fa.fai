@@ -1,0 +1,9 @@
+chr_del	9	9	9	10
+chr_inv	9	28	9	10
+chr_dup	9	47	9	10
+chr_inverted_dup	9	75	9	10
+chr_ins	9	94	9	10
+chr_tre	9	113	9	10
+chr_trc	12	132	12	13
+chr_ptr	9	154	9	10
+chr_atr	9	173	9	9

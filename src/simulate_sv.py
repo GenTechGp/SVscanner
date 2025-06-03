@@ -49,17 +49,17 @@ def read_Rep_file(args):
     return data, len(data)
 
 
-# DEL - deletion (delete from start to end)
+# DEL - deletion (delete [start,end])
 # chr1	10000000	11000000	deletion	None	0
-# INV - inversion (invert from start to end)
+# INV - inversion (invert [start,end])
 # chr1	20000000	21000000	inversion	None	0
-# TD - tandem duplication (duplicate from start to end) following e.g. the resulting ref will have 2 copies in total
+# TD - tandem duplication (duplicate [start,end]) following e.g. the resulting ref will have 2 copies in total
 # chr1	30000000	31000000	tandem duplication	2	0
-# ITD - inverted tandem duplication (duplicate from start to end and invert duplicated segment) following e.g. the resulting ref will have 2 copies in total where one is inverted
+# ITD - inverted tandem duplication (duplicate [start,end] and invert duplicated segment) following e.g. the resulting ref will have 2 copies in total where one is inverted
 # chr1	40000000	41000000	inverted tandem duplication	2	0
 # INS - insertion (insert sequence immediately after end)
 # chr1	50999999	51000000	insertion	TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT	0
-# TRE - tandem repeat expansion (expand a pre-existent microsatellite, with start and end coordinates (chr1	50481	50513	16xGT) following e.g. the resulting ref will have extra 200 TAs.
+# TRE - tandem repeat expansion (expand a pre-existent microsatellite, with start and end coordinates (chr1	50481	50513	16xGT) following e.g. the resulting ref will have extra 200 TAs. start position and the existing sequence do not matter.
 # chr1	503138	503172	tandem repeat expansion	TA:200	0
 # TRC - tandem repeat contraction (contract a pre-existent microsatellite, as above) (chr1	1773676	1773730	27xTG) following e.g. the resulting ref will remove 20 TGs.
 # chr1	1773676	1773730	tandem repeat contraction	TG:20	0
@@ -186,9 +186,15 @@ def create_ref(args, sv_types):
         flen_array.append(f_len)
 
     f_len = 0
-    ref_tsv_out = f"{args.out}/ref_inj.tsv"
+    ref_tsv_out = f"{args.out}/simulated_svtypes.tsv"
     hack_bed_out = f"{args.out}/visor_hack.bed"
     sv_i = 0
+    sv_dict = {}
+    #initialize sv_dict with all sv types
+    for sv_type in sv_types:
+        for sv_subtype in sv_types[sv_type]:
+            sv_dict[sv_subtype] = 0
+    # create a dict to store the frequency of each SV type
     with open(ref_tsv_out, "w") as f1, open(hack_bed_out, "w") as f2:
         f1.write("CHROM\tPOINTER\tINJ_LEN\tNAME\tINJECT_TO_REF\tINJ_SEQ\tBED_RECORD\n")
         
@@ -213,6 +219,8 @@ def create_ref(args, sv_types):
             if pointer > args.len:
                 print(f"Warning: reference length reached {args.len} bases after simulating {sv_i} SVs. Finishing simulation...")
                 break
+            sv_type_key = sv_list[sv_i][3][2]
+            sv_dict[sv_type_key] += 1
             sv_i += 1
 
     ran_len = random.randint(f_len, 1.5*f_len)
@@ -226,6 +234,7 @@ def create_ref(args, sv_types):
         f.write(f"{ref}\n") 
     
     print(f"Info: Number of SVs simulated: {sv_i}")
+    print(f"Info: SV types simulated: {sv_dict}")
     ref_length = len(ref)
     print(f"Info: Reference length: {ref_length} bases")
     print(f"Info: Reference file created: {ref_out}")

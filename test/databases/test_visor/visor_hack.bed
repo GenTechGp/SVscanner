@@ -1,0 +1,9 @@
+chr_del	4	6	deletion	None	0
+chr_inv	4	6	inversion	None	0
+chr_dup	4	6	tandem duplication	2	0
+chr_inverted_dup	4	6	inverted tandem duplication	2	0
+chr_ins	5	6	insertion	TTT	0
+chr_tre	2	3	tandem repeat expansion	AGG:3	0
+chr_trc	7	12	tandem repeat contraction	AGT:1	0
+chr_ptr	5	6	perfect tandem repetition	GC:10	0
+chr_atr	5	6	approximate tandem repetition	GC:10:2	0

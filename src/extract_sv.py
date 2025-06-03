@@ -162,6 +162,12 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
     seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
     seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
 
+    # print(len(seq_fl))
+    # print(len(seq_fr))
+    # print(seq_fl)
+    # print(seq)
+    # print(seq_fr)
+
     if svlen != len(seq):
         print(f"Error: record (at {record.chrom}:{record.pos}) svlen ({svlen}) != len(ALT[0]) ({len(seq)})")
 
@@ -519,6 +525,9 @@ def process_vcf_records(args):
     
     # Iterate over each variant in the VCF file
     for i, record in enumerate(vcf):
+        # if record.id != "Sniffles2.INS.BS0":
+        #     continue
+
         # Perform error checks (you can add your custom checks here)
         ret = is_valid_vcf_record(record, args, warnings_dict)
         vcf_summary[ret] += 1

@@ -43,7 +43,7 @@ def read_sv_info(sv_file):
     with open(sv_file, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
         for sv in reader:
-            # if sv[6] != "INS.392":
+            # if sv[6] != "INS.21":
             #     continue
             # Extract values from the columns
             chrom = sv[0]
