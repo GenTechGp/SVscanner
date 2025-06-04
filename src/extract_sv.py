@@ -159,9 +159,12 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
     end = record.stop+f_len-1 # End position of the REF allele
     end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
-    seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
-    seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
-
+    try:
+        seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
+        seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
+    except Exception as e:
+        print(f"Error fetching sequence for ({record.id}): {e}")
+        raise
     # print(len(seq_fl))
     # print(len(seq_fr))
     # print(seq_fl)
@@ -213,7 +216,11 @@ def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
     chrom_length = chrom_lengths.get(chrom, 0)
     end_f = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
-    seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
+    try:
+        seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
+    except Exception as e:
+        print(f"Error fetching sequence for ({record.id}): {e}")
+        raise    
     seq_consensus = seq
     seq_len = len(seq_consensus)
 
@@ -246,9 +253,13 @@ def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
     end = record.stop+f_len-1 # End position of the REF allele
     end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
-    seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
-    seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
-    seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop-1}")
+    try:
+        seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
+        seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
+        seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop-1}")
+    except Exception as e:
+        print(f"Error fetching sequence for ({record.id}): {e}")
+        raise
 
     # print(len(seq_fl))
     # print(len(seq_fr))
@@ -274,7 +285,6 @@ def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
     svtype = record.info.get("SVTYPE", None)
     svID = f'{svtype}.{i}'
 
-
     # Determine chrom:start-end values
     chrom = record.chrom
     start_fl = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
@@ -285,9 +295,13 @@ def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
     end = record.stop+f_len-1 # End position of the REF allele
     end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
-    seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
-    seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
-    seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop-1}")
+    try:
+        seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
+        seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
+        seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop-1}")
+    except Exception as e:
+        print(f"Error fetching sequence for ({record.id}): {e}")
+        raise
 
     # print(len(seq_fl))
     # print(len(seq_fr))
@@ -319,7 +333,12 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     chrom_length = chrom_lengths.get(chrom, 0)
     end_f = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
-    seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
+    try:
+        seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
+    except Exception as e:
+        print(f"Error fetching sequence for ({record.id}): {e}")
+        raise
+    
     seq_consensus = seq
     seq_len = len(seq_consensus)
 
@@ -329,7 +348,7 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     
     return [svID, -1, seq_len, start_f, end_f]
 
-def is_valid_vcf_record(record, args, warnings_dict):
+def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
     """
     Perform checks to validate a VCF record. Checks include:
     - Multi-allelic records
@@ -338,6 +357,11 @@ def is_valid_vcf_record(record, args, warnings_dict):
     Return 
     look at RETURN_CODE_DESCRIPTIONS
     """
+    chrom = record.chrom
+    chrom_length = chrom_lengths.get(chrom, 0)
+    if record.stop > chrom_length:
+        print(f"Error: record (ID:{record.id}) stop ({record.stop}) exceeds chromosome length ({chrom_length}) for {chrom}")
+        return 15
 
     # 1. Check if the record is multi-allelic (more than one ALT allele)
     if record.alts is not None and len(record.alts) > 1 and warnings_dict["multi-allelic"] < args.warning_count:
@@ -529,7 +553,7 @@ def process_vcf_records(args):
         #     continue
 
         # Perform error checks (you can add your custom checks here)
-        ret = is_valid_vcf_record(record, args, warnings_dict)
+        ret = is_valid_vcf_record(record, args, chrom_lengths, warnings_dict)
         vcf_summary[ret] += 1
         if ret == 1:
             record_stats = handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i)
