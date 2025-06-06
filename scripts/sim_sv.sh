@@ -8,7 +8,7 @@ info "$(date)"
 
 SEED=42
 
-OUTPUT_DIR=$(realpath "test/sim_ref")
+OUTPUT_DIR=$(realpath "test/sim_ref_run")
 
 BASE_REF=${OUTPUT_DIR}/base_ref/base_ref.fa
 SV_TREATED_REF=${OUTPUT_DIR}/sv_treated_ref.fa
@@ -23,7 +23,8 @@ VCF="${OUTPUT_DIR}/sniffles.vcf"
 
 SVTOOLS_VENV_PATH="/data/hiruna/SVtoolkit/svtools"
 SNIFFLES_VENV_PATH="/data/install/sniffles_260"
-VISOR_VENV_PATH="/data/hiruna/SVtoolkit/VISOR-1.1.2.1/visor"
+# VISOR_VENV_PATH="/data/hiruna/SVtoolkit/VISOR-1.1.2.1/visor"
+VISOR_VENV_PATH="/data/hiruna/VISOR/visor_dev"
 PACBIO_CCS="/data/install/ccs_v6.4.0/ccs"
 BCFTOOLS="bcftools-1.21/bcftools"
 SAMTOOLS="samtools-1.21/samtools"
@@ -40,6 +41,9 @@ TRF_BED="/genome/hg38.trf.bed"
 MOBILE_ELEMENTS="test/databases/dfam_selected_species.fasta"
 REP_ELEMENTS="test/databases/trcatalog_bins.bed"
 
+READ_DEPTH=30
+PASS_NUM=20
+
 create_output_dir() {
 	test -d "${OUTPUT_DIR}" && rm -r "${OUTPUT_DIR}"
     mkdir ${OUTPUT_DIR}
@@ -47,13 +51,13 @@ create_output_dir() {
 
 create_visor_bed() {
     source "${SVTOOLS_VENV_PATH}/bin/activate"
-    python ${SIM_REF} -n ${SV_COUNT} --mob ${MOBILE_ELEMENTS} --rep ${REP_ELEMENTS} --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
+    python ${SIM_REF} --frac --simple -n ${SV_COUNT} --mob ${MOBILE_ELEMENTS} --rep ${REP_ELEMENTS} --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
     deactivate
 }
 
 simulate_sv_using_visor() {
     source "${VISOR_VENV_PATH}/bin/activate"
-    VISOR HACk -b ${OUTPUT_DIR}/base_ref/visor_hack.bed -g ${BASE_REF} -o ${OUTPUT_DIR}/visor_hack || die "visor hack failed"
+    VISOR HACk --seed ${SEED} -b ${OUTPUT_DIR}/base_ref/visor_hack.bed -g ${BASE_REF} -o ${OUTPUT_DIR}/visor_hack || die "visor hack failed"
     awk '/^>/ {if (seq) print seq; print; seq=""; next} {seq=seq $0} END {if (seq) print seq}' ${OUTPUT_DIR}/visor_hack/h1.fa > ${SV_TREATED_REF} || die "awk after visor failed"
     deactivate
 }
@@ -62,7 +66,7 @@ simulate_sv_using_visor() {
 #     ${PBSIM3} --strategy wgs \
 #       --method qshmm \
 #       --qshmm ${PBSIM3_DATA}/QSHMM-ONT-HQ.model \
-#       --depth 20 \
+#       --depth ${READ_DEPTH} \
 #       --genome ${SV_TREATED_REF} \
 #       --seed ${SEED} \
 #       --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
@@ -74,10 +78,10 @@ simulated_reads_pacbio_hifi() {
     ${PBSIM3} --strategy wgs \
       --method qshmm \
       --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
-      --depth 20 \
+      --depth ${READ_DEPTH} \
       --genome ${BASE_REF} \
       --seed ${SEED} \
-      --pass-num 30 \
+      --pass-num ${PASS_NUM}} \
       --accuracy-mean 1 \
       --accuracy-min 1 \
       --difference-ratio 0:0:0 \
@@ -89,10 +93,10 @@ simulated_reads_pacbio_hifi() {
     ${PBSIM3} --strategy wgs \
       --method qshmm \
       --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
-      --depth 20 \
+      --depth ${READ_DEPTH} \
       --genome ${SV_TREATED_REF} \
       --seed ${SEED} \
-      --pass-num 30 \
+      --pass-num ${PASS_NUM}} \
       --accuracy-mean 1 \
       --accuracy-min 1 \
       --difference-ratio 0:0:0 \

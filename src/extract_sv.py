@@ -12,6 +12,8 @@ TABIX="./htslib-1.21/tabix"
 
 NO_RETURN_CODES=15
 
+INFO_COLS = ["chrom", "querystart", "queryend", "pos", "end", "svlen", "relativeID", "callerID", "ref", "alt"]
+
 def get_f_len(args, svlen) :
     return min(args.flen, svlen * args.ffac)
 
@@ -526,7 +528,7 @@ def concat_fasta(args, balanced_seq_bins):
 
 def write_to_id_file(args, vcf, record, record_stats):
     with open(args.info, "a") as f:
-        # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}"
+        # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}\t${ref}\t${alt}"
         info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, record_stats[1], record_stats[0], record.id, record.ref, record.alts[0])
         # print(info)
         f.write(f"{info}\n")
@@ -639,6 +641,9 @@ if __name__ == "__main__":
     else:
         print("Error: {} output dir already exists.".format(args.out))
         exit(1)
+    
+    with open(args.info, "w") as f:
+        f.write("\t".join(INFO_COLS) + "\n")
 
     process_vcf_records(args)
 

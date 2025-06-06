@@ -42,6 +42,7 @@ def read_sv_info(sv_file):
     sv_info = {}
     with open(sv_file, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
+        next(reader)  # Skip the header line
         for sv in reader:
             # if sv[6] != "INS.21":
             #     continue

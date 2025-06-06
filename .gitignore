@@ -28,3 +28,8 @@ test/check_sv_flanks
 test/1000ONT
 test/out_plots
 test/databases
+test/fetch_records*
+test/sim_ref_run*
+test/test_visor
+test/LongTR
+test/cutesv
