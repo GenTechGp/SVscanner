@@ -44,7 +44,7 @@ def read_sv_info(sv_file):
         reader = csv.reader(file, delimiter='\t')
         next(reader)  # Skip the header line
         for sv in reader:
-            # if sv[6] != "DEL.4":
+            # if sv[6] != "INV.34":
             #     continue
             # Extract values from the columns
             chrom = sv[0]
@@ -1200,12 +1200,13 @@ def draw_diagrams(args, sv_info):
 
             genomic_trf_start, genomic_trf_end = find_genomic_cords(q_pos, sv_type, trf_start, trf_end)
 
-            trf_boundary = f"{q_chr}:{genomic_trf_start}-{genomic_trf_end}"
-            f_tsv.write(f"{e_id}\t{id_str}{repeat['period_size']}\t{intersect}%\t{trf_boundary}\n")
-            trf_output_flanking.append(f'{trf_diagram_flanking}\t{intersect}%\t{trf_boundary}\t{e_id}\n')
-
             # Process SV region
             motif = repeat['motif']
+
+            trf_boundary = f"{q_chr}:{genomic_trf_start}-{genomic_trf_end}"
+            f_tsv.write(f"{e_id}\t{id_str}{repeat['period_size']}\t{intersect}%\t{trf_boundary}\t{motif}\n")
+            trf_output_flanking.append(f'{trf_diagram_flanking}\t{intersect}%\t{trf_boundary}\t{e_id}\n')
+
             if len(motif) > motif_length:
                 motif = f'*{motif_length}plus'
 
@@ -1248,7 +1249,7 @@ def draw_diagrams(args, sv_info):
     output_file = f"{args.out}/diagram.txt"
     output_trf_diagram_file = f"{args.out}/trf_diagram.tsv"
     output_rm_diagram_file = f"{args.out}/rm_diagram.tsv"
-    trf_diagram_cols = ['ID', 'CallerID', 'query', 'sv', 'SVLEN', 'Period', 'SV_Coverage', 'TRF_genomic_region']
+    trf_diagram_cols = ['ID', 'CallerID', 'query', 'sv', 'SVLEN', 'Period', 'SV_Coverage', 'TRF_genomic_region', 'Motif']
     rm_diagram_cols = ['ID', 'CallerID', 'query', 'sv', 'SVLEN', 'Classification', 'SV_Coverage', 'RM_genomic_region']
     diagram_length = args.len
     with open(output_file, 'w') as f, open(output_trf_diagram_file, 'w') as f_trf, open(output_rm_diagram_file, 'w') as f_rm:  # Open the file for writing
