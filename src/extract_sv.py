@@ -289,36 +289,25 @@ def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
 
     # Determine chrom:start-end values
     chrom = record.chrom
-    start_fl = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
-    end_fl = record.pos-1 # End position of the REF allele
-
-    start_fr = record.stop
-    chrom_length = chrom_lengths.get(chrom, 0)
+    start_f = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
     end = record.stop+f_len-1 # End position of the REF allele
-    end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
+    chrom_length = chrom_lengths.get(chrom, 0)
+    end_f = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
     try:
-        seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
-        seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
-        seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop-1}")
+        seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
     except Exception as e:
         print(f"Error fetching sequence for ({record.id}): {e}")
         raise
 
-    # print(len(seq_fl))
-    # print(len(seq_fr))
-    assert len(seq) == svlen
-
-    seq_rc = Seq(seq).reverse_complement()
-
-    seq_consensus = seq_fl + seq_rc + seq_fr
+    seq_consensus = seq
     seq_len = len(seq_consensus)
 
     output_fasta = f"{output_dir}/{svID}.fa"
     with open(output_fasta, "w") as f:
         f.write(f">{svID}\n{seq_consensus}\n")
     
-    return [svID, svlen, seq_len, start_fl, end_fr]
+    return [svID, svlen, seq_len, start_f, end_f]
 
 #BND
 def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
