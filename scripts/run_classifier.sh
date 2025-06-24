@@ -8,8 +8,8 @@ info "$(date)"
 
 # Input/Output (change)
 #OUTPUT_DIR=""
-# SV_VCF=$(realpath "test/${SAMPLE}/${SAMPLE}.vcf.gz")
-#SV_VCF=""
+# VCF=$(realpath "test/${SAMPLE}/${SAMPLE}.vcf.gz")
+#VCF=""
 echo "Path"
 echo $PATH
 echo "Pythonpath"
@@ -23,7 +23,7 @@ STR_BED=$(realpath "test/databases/STRchive-disease-loci.bed")
 ##FOR SIMULATION AND TESTING
 # OUTPUT_DIR=$(realpath "test/output_sim_ref")
 # REF_FASTA=$(realpath "test/sim_ref/base_ref/base_ref.fa")
-# SV_VCF=$(realpath "test/sim_ref/sniffles.vcf.gz")
+# VCF=$(realpath "test/sim_ref/sniffles.vcf.gz")
 
 # Repeat Masker species (change)
 # SPECIES="mammalia"
@@ -62,10 +62,10 @@ PLOT=$(realpath src/generate_plots.py)
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --output_dir DIR --sv_vcf FILE --ref_fasta FILE [options]"
+    echo "Usage: $0 --output_dir DIR --vcf FILE --ref_fasta FILE [options]"
     echo "Required arguments:"
     echo "  --output_dir DIR      Path to output directory"
-    echo "  --sv_vcf FILE         Path to SV VCF file"
+    echo "  --vcf FILE         Path to SV VCF file"
     echo "  --ref_fasta FILE      Path to reference FASTA file"
     echo "Optional arguments:"
     echo "  --str_bed FILE        Path to STR BED file (default: $STR_BED)"
@@ -87,8 +87,8 @@ parse_args() {
         case "$1" in
             --output_dir)
                 OUTPUT_DIR=$(realpath "$2"); shift 2;;
-            --sv_vcf)
-                SV_VCF=$(realpath "$2"); shift 2;;
+            --vcf)
+                VCF=$(realpath "$2"); shift 2;;
             --ref_fasta)
                 REF_FASTA=$(realpath "$2"); shift 2;;
             --str_bed)
@@ -119,8 +119,8 @@ parse_args() {
     done
 
     # Check required arguments
-    if [[ -z "$OUTPUT_DIR" || -z "$SV_VCF" || -z "$REF_FASTA" ]]; then
-        echo "Error: --output_dir, --sv_vcf and --ref_fasta are required."
+    if [[ -z "$OUTPUT_DIR" || -z "$VCF" || -z "$REF_FASTA" ]]; then
+        echo "Error: --output_dir, --vcf and --ref_fasta are required."
         usage
     fi
 
@@ -145,12 +145,12 @@ check_required() {
     [ -n "$VIRTUAL_ENV" ] && info "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
     [ -z "$OUTPUT_DIR" ] && die "OUTPUT_DIR is not set"
     [ -z "$REF_FASTA" ] && die "REF_FASTA is not set"
-    [ -z "$SV_VCF" ] && die "SV_VCF is not set"
+    [ -z "$VCF" ] && die "VCF is not set"
     [ -z "$STR_BED" ] && die "STR_BED is not set"
 
     info "Output dir: ${OUTPUT_DIR}"
     info "Reference: ${REF_FASTA}"
-    info "Input SV VCF: ${SV_VCF}"
+    info "Input SV VCF: ${VCF}"
     info "Input BED: ${STR_BED}"
 
     info "NTHREADS: ${NTHREADS}"
@@ -172,7 +172,7 @@ create_output_dir() {
 extract_flanking_regions() {
     # 1) Extract sequence and flanking regions for variants
     info "1. Extracting structural variant sequences from VCF..."
-    python3 ${EXTRACT_SV_FLANKINGS} --vcf ${SV_VCF} --ref ${REF_FASTA} --out ${EXTRACT_SV_FLANKS_OUT} --min 10 -n ${NSPLIT_FILES} --info ${INFO_FILE} || die "failed"
+    python3 ${EXTRACT_SV_FLANKINGS} --vcf ${VCF} --ref ${REF_FASTA} --out ${EXTRACT_SV_FLANKS_OUT} --min 10 -n ${NSPLIT_FILES} --info ${INFO_FILE} || die "failed"
     info "done"
 }
 
@@ -244,7 +244,7 @@ annotation() {
     info "4. Annotating..."
     test -d "${ANNOTATIONS_OUT}" && rm -r "${ANNOTATIONS_OUT}"
     python3 ${ANNOTATION} \
-        --vcf ${SV_VCF}\
+        --vcf ${VCF}\
         --rm ${RM_FILE}\
         --trf ${TRF_FILE}\
         --info ${INFO_FILE}\
@@ -260,7 +260,7 @@ annotation() {
     COL_LIST=$(head -n 1 ${ANNOTATIONS_OUT}/vcf_annotate.tsv | cut -c2- | tr '\t' ',')
     ${BGZIP} ${ANNOTATIONS_OUT}/vcf_annotate.tsv -c > ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "${BGZIP} failed"
     ${TABIX} -s1 -b2 -e2 ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "${TABIX} failed"
-    ${BCFTOOLS} annotate -a ${ANNOTATIONS_OUT}/vcf_annotate.gz -c ${COL_LIST} -h ${ANNOTATIONS_OUT}/vcf_header.txt ${SV_VCF} -o ${ANNOTATED_VCF} || die "${BCFTOOLS} annotate failed"
+    ${BCFTOOLS} annotate -a ${ANNOTATIONS_OUT}/vcf_annotate.gz -c ${COL_LIST} -h ${ANNOTATIONS_OUT}/vcf_header.txt ${VCF} -o ${ANNOTATED_VCF} || die "${BCFTOOLS} annotate failed"
 
     info "done"
 
