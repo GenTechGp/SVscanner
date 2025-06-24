@@ -15,14 +15,14 @@ echo $PATH
 echo "Pythonpath"
 echo $PYTHONPATH
 which python
-#REF_FASTA=$(realpath "/g/data/te53/ontsv/references/hg38_reference_files/hg38.analysisSet.fa")
-#REF_FASTA="/g/data/te53/variantcall/referenceresource/genome/pipeface/chm13XX.fasta"
-#REF_FASTA=$(realpath "/genome/hg38.analysisSet.fa")
+#REF=$(realpath "/g/data/te53/ontsv/references/hg38_reference_files/hg38.analysisSet.fa")
+#REF="/g/data/te53/variantcall/referenceresource/genome/pipeface/chm13XX.fasta"
+#REF=$(realpath "/genome/hg38.analysisSet.fa")
 STR_BED=$(realpath "test/databases/STRchive-disease-loci.bed")
 
 ##FOR SIMULATION AND TESTING
 # OUTPUT_DIR=$(realpath "test/output_sim_ref")
-# REF_FASTA=$(realpath "test/sim_ref/base_ref/base_ref.fa")
+# REF=$(realpath "test/sim_ref/base_ref/base_ref.fa")
 # VCF=$(realpath "test/sim_ref/sniffles.vcf.gz")
 
 # Repeat Masker species (change)
@@ -62,11 +62,11 @@ PLOT=$(realpath src/generate_plots.py)
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --output_dir DIR --vcf FILE --ref_fasta FILE [options]"
+    echo "Usage: $0 --out DIR --vcf FILE --ref FILE [options]"
     echo "Required arguments:"
-    echo "  --output_dir DIR      Path to output directory"
+    echo "  --out DIR      Path to output directory"
     echo "  --vcf FILE         Path to SV VCF file"
-    echo "  --ref_fasta FILE      Path to reference FASTA file"
+    echo "  --ref FILE      Path to reference FASTA file"
     echo "Optional arguments:"
     echo "  --str_bed FILE        Path to STR BED file (default: $STR_BED)"
     echo "  --species NAME        Species name for RepeatMasker (default: $SPECIES)"
@@ -85,12 +85,12 @@ usage() {
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --output_dir)
+            --out)
                 OUTPUT_DIR=$(realpath "$2"); shift 2;;
             --vcf)
                 VCF=$(realpath "$2"); shift 2;;
-            --ref_fasta)
-                REF_FASTA=$(realpath "$2"); shift 2;;
+            --ref)
+                REF=$(realpath "$2"); shift 2;;
             --str_bed)
                 STR_BED=$(realpath "$2"); shift 2;;
             --species)
@@ -119,8 +119,8 @@ parse_args() {
     done
 
     # Check required arguments
-    if [[ -z "$OUTPUT_DIR" || -z "$VCF" || -z "$REF_FASTA" ]]; then
-        echo "Error: --output_dir, --vcf and --ref_fasta are required."
+    if [[ -z "$OUTPUT_DIR" || -z "$VCF" || -z "$REF" ]]; then
+        echo "Error: --out, --vcf and --ref are required."
         usage
     fi
 
@@ -144,12 +144,12 @@ check_required() {
 
     [ -n "$VIRTUAL_ENV" ] && info "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
     [ -z "$OUTPUT_DIR" ] && die "OUTPUT_DIR is not set"
-    [ -z "$REF_FASTA" ] && die "REF_FASTA is not set"
+    [ -z "$REF" ] && die "REF is not set"
     [ -z "$VCF" ] && die "VCF is not set"
     [ -z "$STR_BED" ] && die "STR_BED is not set"
 
     info "Output dir: ${OUTPUT_DIR}"
-    info "Reference: ${REF_FASTA}"
+    info "Reference: ${REF}"
     info "Input SV VCF: ${VCF}"
     info "Input BED: ${STR_BED}"
 
@@ -172,7 +172,7 @@ create_output_dir() {
 extract_flanking_regions() {
     # 1) Extract sequence and flanking regions for variants
     info "1. Extracting structural variant sequences from VCF..."
-    python3 ${EXTRACT_SV_FLANKINGS} --vcf ${VCF} --ref ${REF_FASTA} --out ${EXTRACT_SV_FLANKS_OUT} --min 10 -n ${NSPLIT_FILES} --info ${INFO_FILE} || die "failed"
+    python3 ${EXTRACT_SV_FLANKINGS} --vcf ${VCF} --ref ${REF} --out ${EXTRACT_SV_FLANKS_OUT} --min 10 -n ${NSPLIT_FILES} --info ${INFO_FILE} || die "failed"
     info "done"
 }
 
