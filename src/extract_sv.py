@@ -5,6 +5,7 @@ import argparse
 import os
 from Bio.Seq import Seq
 import time
+import re
 
 SAMTOOLS="./samtools-1.21/samtools"
 BCFTOOLS="./bcftools-1.21/bcftools"
@@ -309,35 +310,63 @@ def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
     
     return [svID, svlen, seq_len, start_f, end_f]
 
+def extract_bnd_target(alt):
+    # Match formats like ]chr20:12345], [X:999999[
+    match = re.search(r'[\[\]]([\w\.]+:\d+)[\[\]]', alt)
+    return match.group(1) if match else None
+
 #BND
 def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     f_len = args.flen
     output_dir = args.out
     
     svtype = record.info.get("SVTYPE", None)
-    svID = f'{svtype}.{i}'
+    svID_0 = f'{svtype}.{i}.0'
+    svID_1 = f'{svtype}.{i}.1'
 
-    # Determine chrom:start-end values
-    chrom = record.chrom
-    start_f = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
-    end = record.pos+f_len-1 # End position of the REF allele
-    chrom_length = chrom_lengths.get(chrom, 0)
-    end_f = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
-
+    # BND records have two parts, one for each end of the breakend
+    # The first part is the reference sequence for the first end of the breakend
+    chrom_0 = record.chrom
+    start_f_0 = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
+    end_0 = record.pos+f_len-1 # End position of the REF allele
+    chrom_length = chrom_lengths.get(chrom_0, 0)
+    end_f_0 = min(end_0, chrom_length)  # Ensure end doesn't exceed chromosome length
+    seq_consensus_0 = ""
     try:
-        seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
+        seq_consensus_0 = fasta.fetch(region=f"{chrom_0}:{start_f_0}-{end_f_0}")
     except Exception as e:
         print(f"Error fetching sequence for ({record.id}): {e}")
         raise
-    
-    seq_consensus = seq
-    seq_len = len(seq_consensus)
+    seq_len_0 = len(seq_consensus_0)
 
-    output_fasta = f"{output_dir}/{svID}.fa"
+    # The second part is the reference sequence for the second end of the breakend
+    chrom_1 = extract_bnd_target(record.alts[0])  # Extract the chromosome from the ALT allele
+    if chrom_1 is None:
+        print(f"Error: Unable to extract target chromosome from ALT allele {record.alts[0]} in record {record.id}")
+        exit(1)
+    # print(f"chrom_1: {chrom_1}")
+    chrom_1, pos_1 = chrom_1.split(":")
+    pos_1 = int(pos_1)  # Convert position to integer
+    start_f_1 = max(pos_1-f_len, 1) # Ensure start is >= 1 (1-based)
+    end_1 = pos_1+f_len-1 # End position of the REF allele
+    chrom_length = chrom_lengths.get(chrom_1, 0)
+    end_f_1 = min(end_1, chrom_length)  # Ensure end doesn't exceed chromosome length
+    seq_consensus_1 = ""
+    try:
+        seq_consensus_1 = fasta.fetch(region=f"{chrom_1}:{start_f_1}-{end_f_1}")
+    except Exception as e:
+        print(f"Error fetching sequence for ({record.id}): {e}")
+        raise
+    seq_len_1 = len(seq_consensus_1)
+
+    output_fasta = f"{output_dir}/{svID_0}.fa"
     with open(output_fasta, "w") as f:
-        f.write(f">{svID}\n{seq_consensus}\n")
-    
-    return [svID, -1, seq_len, start_f, end_f]
+        f.write(f">{svID_0}\n{seq_consensus_0}\n")
+    output_fasta = f"{output_dir}/{svID_1}.fa"
+    with open(output_fasta, "w") as f:
+        f.write(f">{svID_1}\n{seq_consensus_1}\n")
+
+    return [svID_0, -1, seq_len_0, start_f_0, end_f_0], [svID_1, -1, seq_len_1, start_f_1, end_f_1, chrom_1, pos_1, end_1]
 
 def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
     """
@@ -555,7 +584,12 @@ def process_vcf_records(args):
         elif ret == 4:
             record_stats = handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i)
         elif ret == 5:
-            record_stats = handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i)
+            record_stats, second = handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i)
+            with open(args.info, "a") as f:
+                # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}\t${ref}\t${alt}"
+                info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(second[5], second[3], second[3]+second[2], second[6], second[7], second[1], second[0], record.id, record.ref, record.alts[0])
+                f.write(f"{info}\n")
+            record_stats_arr.append(second)
         else:
             print(f"Skipped. vcf check failed (code: {ret}) for record (ID:{record.id})")
             continue

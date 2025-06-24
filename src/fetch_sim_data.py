@@ -172,10 +172,10 @@ def fetch_for_id(args, output_path):
         outfile.write(f"## {input_path}\n")
         outfile.write(f"{record}\n")
         
-        input_path = os.path.join(args.input_dir, "svclassifier/simulated_annotated.vcf.gz")
-        record = get_sniffles_record(sniffles_id, input_path)
-        outfile.write(f"## {input_path}\n")
-        outfile.write(f"{record}\n")
+        # input_path = os.path.join(args.input_dir, "svclassifier/simulated_annotated.vcf.gz")
+        # record = get_sniffles_record(sniffles_id, input_path)
+        # outfile.write(f"## {input_path}\n")
+        # outfile.write(f"{record}\n")
         
         input_path = os.path.join(args.input_dir, "svclassifier/annotations_out/diagram.txt")
         record = get_diagram_record(sniffles_id, input_path)

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -x
+set -x
 RED='\033[0;31m' ; GREEN='\033[0;32m' ; NC='\033[0m' # No Color
 die() { echo -e "${RED}$1${NC}" >&2 ; echo ; exit 1 ; } # terminate script
 info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
@@ -11,7 +11,7 @@ SEED=42
 OUTPUT_DIR=$(realpath "test/sim_ref_run")
 
 BASE_REF=${OUTPUT_DIR}/base_ref/base_ref.fa
-SV_TREATED_REF=${OUTPUT_DIR}/sv_treated_ref.fa
+BOTH_REF=${OUTPUT_DIR}/both_ref.fa
 
 SV_COUNT=1000
 
@@ -31,7 +31,7 @@ SAMTOOLS="samtools-1.21/samtools"
 TABIX="htslib-1.21/tabix"
 BGZIP="htslib-1.21/bgzip"
 
-SIM_REF="src/simulate_sv.py"
+SIMULATE_SV="src/simulate_sv.py"
 PBSIM3="/data/install/pbsim3-3.0.5/src/pbsim"
 PBSIM3_DATA="/data/install/pbsim3-3.0.5/data"
 
@@ -50,17 +50,94 @@ create_output_dir() {
 }
 
 create_visor_bed() {
+    split=$1
     source "${SVTOOLS_VENV_PATH}/bin/activate"
-    python ${SIM_REF} --frac --simple -n ${SV_COUNT} --mob ${MOBILE_ELEMENTS} --rep ${REP_ELEMENTS} --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
+    python ${SIMULATE_SV} --split ${split} --frac --simple -n ${SV_COUNT} --mob ${MOBILE_ELEMENTS} --rep ${REP_ELEMENTS} --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
     deactivate
 }
 
+# b_ref, sv_ref, bed_file, ref_name
 simulate_sv_using_visor() {
+    base_ref=$1
+    sv_ref=$2
+    bed_file=$3
+    ref_name=$4
     source "${VISOR_VENV_PATH}/bin/activate"
-    VISOR HACk --seed ${SEED} -b ${OUTPUT_DIR}/base_ref/visor_hack.bed -g ${BASE_REF} -o ${OUTPUT_DIR}/visor_hack || die "visor hack failed"
-    awk '/^>/ {if (seq) print seq; print; seq=""; next} {seq=seq $0} END {if (seq) print seq}' ${OUTPUT_DIR}/visor_hack/h1.fa > ${SV_TREATED_REF} || die "awk after visor failed"
+    rm -rf ${OUTPUT_DIR}/visor_hack 
+    VISOR HACk --seed ${SEED} -b ${bed_file} -g ${base_ref} -o ${OUTPUT_DIR}/visor_hack || die "visor hack failed"
+    deactivate
+    awk '/^>/ {if (seq) print seq; print; seq=""; next} {seq=seq $0} END {if (seq) print seq}' ${OUTPUT_DIR}/visor_hack/h1.fa > ${sv_ref} || die "awk after visor failed"
+    sed -i "1s/^>ref0$/>${ref_name}/" ${sv_ref} || die "renaming ref failed"
+}
+
+simulated_reads_pacbio_hifi() {
+    ref_0=$1
+    ref_1=$2
+    
+    cat ${ref_0} ${ref_1} > ${BOTH_REF}
+
+    ${PBSIM3} --strategy wgs \
+      --method qshmm \
+      --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
+      --depth ${READ_DEPTH} \
+      --genome ${BOTH_REF} \
+      --seed ${SEED} \
+      --pass-num ${PASS_NUM}} \
+      --accuracy-mean 1 \
+      --accuracy-min 1 \
+      --difference-ratio 0:0:0 \
+      --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
+
+    samtools merge ${OUTPUT_DIR}/simulated_reads_*.bam -o ${OUTPUT_DIR}/merged_sim_reads.bam || die "samtools merge failed"
+    rm ${OUTPUT_DIR}/simulated_reads_*.bam*
+
+    ${PACBIO_CCS} ${OUTPUT_DIR}/merged_sim_reads.bam ${SIM_READS} || die "pacbio ccs failed"
+    rm ${OUTPUT_DIR}/merged_sim_reads.bam
+}
+
+align_reads_pacbio_hifi() {
+    base_ref=$1
+    ref2=$2
+    # minimap2 -cx map-hifi ${ref2} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
+    # minimap2 -cx map-hifi ${base_ref} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
+    minimap2 -ax map-hifi -Y ${base_ref} -t32 --secondary=no ${SIM_READS} > ${SAM} || die "minimap2 failed"
+    samtools sort ${SAM} -o ${BAM} && samtools index ${BAM} || die "samtools sort and index failed"
+    # samtools view -h -F 0x800 ${SAM} | sed -E 's/\tSA:Z:[^\t]+//g' | samtools sort -o ${BAM} && samtools index ${BAM} || die "samtools sort and index failed"
+}
+
+variant_call_sniffles() {
+    base_ref=$1
+    # Check if the virtual environment exists
+    if [ ! -d "${SNIFFLES_VENV_PATH}" ]; then
+        echo "Error: Virtual environment not found at ${SNIFFLES_VENV_PATH}"
+        exit 1
+    fi
+    source "${SNIFFLES_VENV_PATH}/bin/activate"
+    # sniffles --reference ${base_ref} --input ${BAM} --vcf ${VCF} --phase --minsvlen 50 --allow-overwrite  --no-qc || die "sniffles failed"
+    sniffles --reference ${base_ref} --input ${BAM} --vcf ${VCF} --minsvlen 50 --allow-overwrite  --output-rnames || die "sniffles failed"
+    deactivate
+    rm -rf ${VCF}.gz && ${BGZIP} -c ${VCF} > ${VCF}.gz && ${TABIX} -p vcf ${VCF}.gz || die "bgzip and tabix failed"
+}
+
+run_svclassifier() {
+    base_ref=$1
+    vcf=$2
+
+    source "${SVTOOLS_VENV_PATH}/bin/activate"
+    ${SV_CLASSIFIER} --output_dir ${OUTPUT_DIR}/svclassifier --sv_vcf ${vcf} --ref_fasta ${base_ref} > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
     deactivate
 }
+
+create_output_dir
+create_visor_bed 2
+simulate_sv_using_visor ${BASE_REF} ${OUTPUT_DIR}/base_ref/ref_0.fa ${OUTPUT_DIR}/base_ref/visor_hack_0.bed ref_0
+simulate_sv_using_visor ${BASE_REF} ${OUTPUT_DIR}/base_ref/ref_1.fa ${OUTPUT_DIR}/base_ref/visor_hack_1.bed ref_1
+simulated_reads_pacbio_hifi ${OUTPUT_DIR}/base_ref/ref_0.fa ${OUTPUT_DIR}/base_ref/ref_1.fa
+align_reads_pacbio_hifi ${BASE_REF}
+variant_call_sniffles ${BASE_REF}
+run_svclassifier ${BASE_REF} ${OUTPUT_DIR}/sniffles.vcf.gz
+
+info "success"
 
 # sim_reads_ont() {
 #     ${PBSIM3} --strategy wgs \
@@ -74,64 +151,44 @@ simulate_sv_using_visor() {
 #     mv ${OUTPUT_DIR}/simualted_reads*.fastq.gz ${SIM_READS}
 # }
 
-simulated_reads_pacbio_hifi() {
-    ${PBSIM3} --strategy wgs \
-      --method qshmm \
-      --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
-      --depth ${READ_DEPTH} \
-      --genome ${BASE_REF} \
-      --seed ${SEED} \
-      --pass-num ${PASS_NUM}} \
-      --accuracy-mean 1 \
-      --accuracy-min 1 \
-      --difference-ratio 0:0:0 \
-      --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
+# simulated_reads_pacbio_hifi() {
+#     ${PBSIM3} --strategy wgs \
+#       --method qshmm \
+#       --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
+#       --depth ${READ_DEPTH} \
+#       --genome ${BASE_REF} \
+#       --seed ${SEED} \
+#       --pass-num ${PASS_NUM}} \
+#       --accuracy-mean 1 \
+#       --accuracy-min 1 \
+#       --difference-ratio 0:0:0 \
+#       --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
 
-    ${PACBIO_CCS} ${OUTPUT_DIR}/simulated_reads_0001.bam ${OUTPUT_DIR}/base_reads.fq.gz || die "pacbio ccs failed"
-    rm ${OUTPUT_DIR}/simulated_reads_0001.bam*
+#     ${PACBIO_CCS} ${OUTPUT_DIR}/simulated_reads_0001.bam ${OUTPUT_DIR}/base_reads.fq.gz || die "pacbio ccs failed"
+#     rm ${OUTPUT_DIR}/simulated_reads_0001.bam*
 
-    ${PBSIM3} --strategy wgs \
-      --method qshmm \
-      --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
-      --depth ${READ_DEPTH} \
-      --genome ${SV_TREATED_REF} \
-      --seed ${SEED} \
-      --pass-num ${PASS_NUM}} \
-      --accuracy-mean 1 \
-      --accuracy-min 1 \
-      --difference-ratio 0:0:0 \
-      --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
+#     ${PBSIM3} --strategy wgs \
+#       --method qshmm \
+#       --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
+#       --depth ${READ_DEPTH} \
+#       --genome ${SV_TREATED_REF} \
+#       --seed ${SEED} \
+#       --pass-num ${PASS_NUM}} \
+#       --accuracy-mean 1 \
+#       --accuracy-min 1 \
+#       --difference-ratio 0:0:0 \
+#       --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
 
-    ${PACBIO_CCS} ${OUTPUT_DIR}/simulated_reads_0001.bam ${OUTPUT_DIR}/sv_reads.fq.gz || die "pacbio ccs failed"
+#     ${PACBIO_CCS} ${OUTPUT_DIR}/simulated_reads_0001.bam ${OUTPUT_DIR}/sv_reads.fq.gz || die "pacbio ccs failed"
 
-    zcat ${OUTPUT_DIR}/base_reads.fq.gz ${OUTPUT_DIR}/sv_reads.fq.gz | gzip > ${SIM_READS} || die "zcat failed"
-}
+#     zcat ${OUTPUT_DIR}/base_reads.fq.gz ${OUTPUT_DIR}/sv_reads.fq.gz | gzip > ${SIM_READS} || die "zcat failed"
+# }
 
 # align_reads_ont() {
 #     minimap2 -cx map-ont ${BASE_REF} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
 #     minimap2 -ax map-ont ${BASE_REF} -t32 --secondary=no ${SIM_READS} > ${SAM} || die "minimap2 failed"
 #     samtools sort ${SAM} -o ${BAM} && samtools index ${BAM} || die "samtools sort and index failed"
 # }
-
-align_reads_pacbio_hifi() {
-    minimap2 -cx map-hifi ${SV_TREATED_REF} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
-    minimap2 -cx map-hifi ${BASE_REF} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
-    minimap2 -ax map-hifi ${BASE_REF} -t32 --secondary=no ${SIM_READS} > ${SAM} || die "minimap2 failed"
-    samtools sort ${SAM} -o ${BAM} && samtools index ${BAM} || die "samtools sort and index failed"
-}
-
-variant_call_sniffles() {
-    # Check if the virtual environment exists
-    if [ ! -d "${SNIFFLES_VENV_PATH}" ]; then
-        echo "Error: Virtual environment not found at ${SNIFFLES_VENV_PATH}"
-        exit 1
-    fi
-    source "${SNIFFLES_VENV_PATH}/bin/activate"
-    # sniffles --reference ${BASE_REF} --input ${BAM} --vcf ${VCF} --phase --minsvlen 50 --allow-overwrite  --no-qc || die "sniffles failed"
-    sniffles --reference ${BASE_REF} --input ${BAM} --vcf ${VCF} --minsvlen 50 --allow-overwrite  --no-qc || die "sniffles failed"
-    deactivate
-    rm -rf ${VCF}.gz && ${BGZIP} -c ${VCF} > ${VCF}.gz && ${TABIX} -p vcf ${VCF}.gz || die "bgzip and tabix failed"
-}
 
 # variant_call_bcftools() {
 #     ${BCFTOOLS} mpileup -f ${BASE_REF} ${BAM} | ${BCFTOOLS} call -mv -Ov -o ${OUTPUT_DIR}/bcftools_mpileup.vcf
@@ -143,35 +200,3 @@ variant_call_sniffles() {
 #     ${BCFTOOLS} consensus -f ${BASE_REF} ${OUTPUT_DIR}/sym_filtered.vcf.gz -o ${OUTPUT_DIR}/with_variant_ref.fa 2>${OUTPUT_DIR}/bcftools.stderr || die "bcftools failed"
 #     ${SAMTOOLS} faidx ${OUTPUT_DIR}/with_variant_ref.fa || die "samtools faidx failed"
 # }
-
-run_svclassifier() {
-    source "${SVTOOLS_VENV_PATH}/bin/activate"
-    ${SV_CLASSIFIER} --output_dir ${OUTPUT_DIR}/svclassifier --sample simulated --sv_vcf ${VCF}.gz --ref_fasta ${BASE_REF} > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
-    deactivate
-}
-
-run_func() {
-    local func_name="$1"
-    if ! declare -f "$func_name" > /dev/null; then
-        echo "Function '$func_name' not found"
-        return 1
-    fi
-
-    local start_time=$(date +%s.%N)
-    "$func_name"
-    local end_time=$(date +%s.%N)
-
-    local duration=$(echo "$end_time - $start_time" | bc)
-    echo "Function:$func_name took ${duration} seconds"
-}
-
-
-run_func create_output_dir
-run_func create_visor_bed
-run_func simulate_sv_using_visor
-run_func simulated_reads_pacbio_hifi
-run_func align_reads_pacbio_hifi
-run_func variant_call_sniffles
-run_func run_svclassifier
-
-info "success"

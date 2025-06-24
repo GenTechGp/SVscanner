@@ -11,6 +11,45 @@ def generate_random_dna(length):
     """Generate a random DNA sequence of given length with a fixed seed."""
     return ''.join(random.choices('ACGT', k=length))
 
+def divide_list(lst, n):
+    total = len(lst)
+    k, r = divmod(total, n)  # k = size of each chunk, r = remainder
+    sublists = []
+    start = 0
+    for i in range(4):
+        end = start + k + (1 if i < r else 0)  # distribute the remainder
+        sublists.append(lst[start:end])
+        start = end
+    return sublists
+
+def process_mob_data(data):
+    long_data = []
+    other_data = []
+    random_data = []
+    for e in data:
+        name = e[0]
+        len = e[2]
+        if not "DF#Random_" in name and len > 999:
+            long_data.append(e)
+        elif "DF#Random" in name:
+            random_data.append(e)
+        else:
+            other_data.append(e)
+    
+    random.shuffle(long_data)
+    random.shuffle(other_data)
+
+    sublists_long = divide_list(long_data, n=4)
+    sublists_random = divide_list(random_data, n=4)
+    sublists_other = divide_list(other_data, n=2)
+
+    mob_dict = {"INS":sublists_long[0]+sublists_random[0]+sublists_other[0], 
+                "DEL":sublists_long[1]+sublists_random[1]+sublists_other[1], 
+                "INV":sublists_long[2]+sublists_random[2], 
+                "DUP":sublists_long[3]+sublists_random[3]}
+
+    return mob_dict
+
 def read_Mob_file(args):
     data = []
     with open(args.mob, "r") as file:
@@ -23,7 +62,7 @@ def read_Mob_file(args):
                     seq = "".join(sequence)
                     seq_len = len(seq)
                     # if seq_len > args.min and seq_len < args.max:
-                    data.append((name, seq))
+                    data.append((name, seq, seq_len))
                 name = line[1:].strip().replace(" ", "_")  
                 # name = line.split()[0][1:]  # Extract name (without '>')
                 sequence = []
@@ -32,19 +71,24 @@ def read_Mob_file(args):
         seq = "".join(sequence)
         seq_len = len(seq)
         # if seq_len > args.min and seq_len < args.max:
-        data.append((name, seq))
+        data.append((name, seq, seq_len))
     
-    return data, len(data)
+    mob_dict = process_mob_data(data)
+
+    return mob_dict, len(data)
 
 def read_Rep_file(args):
     data = []
     with open(args.rep) as file:
         for line in file:
             parts = line.strip().split("\t")
-            count, sequence = parts[3].split("x")
-            seq_len = int(count) * len(sequence)
-            if seq_len > args.min and seq_len < args.max:
-                data.append((int(count), sequence))
+            count, motif = parts[3].split("x")
+            # seq_len = int(count) * len(sequence)
+            # if seq_len > args.min and seq_len < args.max:
+            #     data.append((int(count), sequence))
+            max_rep_count = args.read_len/len(motif)
+            if max_rep_count > 50:
+                data.append((int(count), motif))
     
     return data, len(data)
 
@@ -68,10 +112,10 @@ def read_Rep_file(args):
 # ATR - approximate tandem repetition (insert a new approximate tandem repetition immediately after end). similar to PTR but with some error bases injected here and there
 # chr1	70999999	71000000	approximate tandem repetition	AT:30:3	0
 
+sv_type_map = {"insertion":"INS", "deletion":"DEL", "inversion":"INV", "tandem duplication":"DUP", "inverted tandem duplication":"DUP"}
+
 
 def decide_sv_type(args, mob_seqs, rep_seqs, sv_types):
-    col_5 = random.randint(2, 10)
-    # col_6 = random.randint(0, 10)
     inject_to_ref = True
     sv_len = 0
     pointer = 0
@@ -83,14 +127,6 @@ def decide_sv_type(args, mob_seqs, rep_seqs, sv_types):
         seq_type = "repeat"
         sv_type = "approximate tandem repetition"
 
-    if mob_seqs == [] and rep_seqs != []:
-        seq_type = "repeat"
-    elif mob_seqs != [] and rep_seqs == []:
-        seq_type = "mobile"
-    elif mob_seqs == [] and rep_seqs == []:
-        print("Error: No mobile elements or repeats left to simulate SVs. Stopping simulation.")
-        exit(1)
-    
     if seq_type == "":
         # get keys of sv_types dict
         # randomly choose one of the keys
@@ -101,10 +137,17 @@ def decide_sv_type(args, mob_seqs, rep_seqs, sv_types):
                
         if sv_type == "":
             sv_type = random.choice(sv_types["mobile"])
-        inj_mob_seq = random.choice(mob_seqs)
-        if args.simple:
-            mob_seqs.remove(inj_mob_seq)
+        
+
+        sv_type_id = sv_type_map[sv_type]
+        if mob_seqs[sv_type_id] == []:
+            return None, -1
+
+        inj_mob_seq = random.choice(mob_seqs[sv_type_id])
+        if args.simple: 
+            mob_seqs[sv_type_id].remove(inj_mob_seq)
         base_inj_seq = inj_mob_seq[1]
+
         base_inj_seq_len = len(base_inj_seq)
         name = f"{inj_mob_seq[0]}"
 
@@ -122,11 +165,13 @@ def decide_sv_type(args, mob_seqs, rep_seqs, sv_types):
             sv_len = base_inj_seq_len
             bed_tuple = (pointer+1, end, sv_type, "None", 0)
         elif sv_type == "tandem duplication":
-            sv_len = base_inj_seq_len*(col_5-1)
-            bed_tuple = (pointer+1, end, sv_type, str(col_5), 0)
+            dup_count = 2
+            sv_len = base_inj_seq_len*(dup_count-1)
+            bed_tuple = (pointer+1, end, sv_type, str(dup_count), 0)
         elif sv_type == "inverted tandem duplication":
-            sv_len = base_inj_seq_len*(col_5-1)
-            bed_tuple = (pointer+1, end, sv_type, str(col_5), 0)
+            dup_count = 2
+            sv_len = base_inj_seq_len*(dup_count-1)
+            bed_tuple = (pointer+1, end, sv_type, str(dup_count), 0)
         elif sv_type == "insertion":
             if args.frac:
                 frac = random.choice([0.25, 0.5, 0.75, 1.0])
@@ -141,61 +186,123 @@ def decide_sv_type(args, mob_seqs, rep_seqs, sv_types):
             print(f"Error: incorrect seq_type ({seq_type}) and sv_type ({sv_type}) combination")
             exit()
         
-        return (inject_to_ref, base_inj_seq, name, bed_tuple, sv_len, frac)
+        return (inject_to_ref, base_inj_seq, name, bed_tuple, sv_len, frac), 0
 
     elif seq_type == "repeat":
         
         if sv_type == "":
             sv_type = random.choice(sv_types["repeat"])
+
+        if rep_seqs == []:
+            return None, -1
         inj_rep_seq = random.choice(rep_seqs)
+        motif = inj_rep_seq[1]
+        max_rep_count = args.read_len/len(motif)
+        rep_count = random.randint(50, int(max_rep_count))
+
         if args.simple:
             rep_seqs.remove(inj_rep_seq)
-        rep_count = inj_rep_seq[0]
-
-        if sv_type == "tandem repeat contraction":
-            rep_count = random.randint(100, 200)
-
-        motif = inj_rep_seq[1]
-        base_inj_seq = motif*rep_count
-        base_inj_seq_len = len(base_inj_seq)
-        name = f"{motif}:{rep_count}"
-
-        end = pointer + base_inj_seq_len
+        base_inj_seq = ""
 
         if sv_type == "tandem repeat expansion":
-            max_rep_count = min(base_inj_seq_len*2, args.max)/len(motif)
-            rep_count = random.randint(rep_count+1, int(max_rep_count))
-            TRE = f"{motif}:{rep_count}"
-            bed_tuple = (pointer, end, sv_type, TRE, 0)
-            sv_len = len(motif)*rep_count
-        elif sv_type == "tandem repeat contraction":
-            # delete minimum 20% of the motif repetitions, maximum 50% of the motif repetitions
             min_rep_count = max(1, int(rep_count*0.2))
-            max_rep_count = max(1, int(rep_count*0.5))
-            rep_count = random.randint(min_rep_count, max_rep_count)
-            TRC = f"{motif}:{rep_count}"        
+            max_rep_count = max(1, int(rep_count*0.7))
+            base_rep_count = random.randint(min_rep_count, max_rep_count)
+            sv_rep_count = rep_count - base_rep_count
+
+            base_inj_seq = motif*base_rep_count
+            base_inj_seq_len = len(base_inj_seq)
+            name = f"{motif}:{base_rep_count}"
+            end = pointer + base_inj_seq_len
+
+            TRE = f"{motif}:{sv_rep_count}"
+            bed_tuple = (pointer, end, sv_type, TRE, 0)
+            sv_len = len(motif)*sv_rep_count
+        elif sv_type == "tandem repeat contraction":
+            base_rep_count = rep_count
+            base_inj_seq = motif*base_rep_count
+            base_inj_seq_len = len(base_inj_seq)
+            name = f"{motif}:{base_rep_count}"
+            end = pointer + base_inj_seq_len
+
+            # delete minimum 20% of the motif repetitions, maximum 50% of the motif repetitions
+            min_rep_count = max(1, int(base_rep_count*0.2))
+            max_rep_count = max(1, int(base_rep_count*0.5))
+            sv_rep_count = random.randint(min_rep_count, max_rep_count)
+            TRC = f"{motif}:{sv_rep_count}"        
             bed_tuple = (pointer, end, sv_type, TRC, 0)
-            sv_len = len(motif)*rep_count
+            sv_len = len(motif)*sv_rep_count
         elif sv_type == "perfect tandem repetition":
             inject_to_ref = False
-            PTR = f"{motif}:{rep_count}"
+            base_rep_count = 0
+            sv_rep_count = rep_count
+            name = f"{motif}:{base_rep_count}"
+            PTR = f"{motif}:{sv_rep_count}"
             bed_tuple = (pointer-1, pointer, sv_type, PTR, 0)
-            sv_len = base_inj_seq_len
+            sv_len = len(motif)*sv_rep_count
         elif sv_type == "approximate tandem repetition": #base_inj_seq is incorrect in this case and only at VISOR HACk stage we know the base_inj_seq
             inject_to_ref = False
+            base_rep_count = 0
+            sv_rep_count = rep_count
+            name = f"{motif}:{base_rep_count}"
             # error count maximum is 20% of the rep_count*len(motif)
-            sv_len = len(motif)*rep_count #not correct. there can be SNPs or indels as errors
+            sv_len = len(motif)*sv_rep_count #not correct. there can be SNPs or indels as errors
             error_count = max(1, int(sv_len*0.2))
             error = random.randint(1, error_count)
-            ATR = f"{motif}:{rep_count}:{error}"
+            ATR = f"{motif}:{sv_rep_count}:{error}"
             bed_tuple = (pointer-1, pointer, sv_type, ATR, 0)
         else:
             print(f"Error: incorrect seq_type ({seq_type}) and sv_type ({sv_type}) combination")
             exit()
-        return (inject_to_ref, base_inj_seq, name, bed_tuple, sv_len, None)
+        return (inject_to_ref, base_inj_seq, name, bed_tuple, sv_len, None), 0
 
 def get_f_len(args, svlen):
     return min(args.flen, svlen * args.ffac)
+
+
+def split_bed(args, file_path):
+    n = args.split
+    # Read all lines from the input file
+    with open(file_path, 'r') as f:
+        lines = f.readlines()
+
+    # Get directory and base name
+    dir_name = os.path.dirname(file_path)
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+
+    # Prepare output files and counters
+    file_handles = []
+    line_counts = []
+
+    for i in range(n):
+        output_file = os.path.join(dir_name, f"{base_name}_{i}.bed")
+        fh = open(output_file, 'w')
+        file_handles.append((output_file, fh))
+        line_counts.append(0)
+
+    # Randomly assign lines
+    # for line in lines:
+    #     index = random.randint(0, n - 1)
+    #     filename, fh = file_handles[index]
+    #     fh.write(line)
+    #     line_counts[index] += 1
+    
+    # Alternate
+    index = 0
+    for line in lines:
+        filename, fh = file_handles[index]
+        fh.write(line)
+        line_counts[index] += 1
+        index = not index
+
+    # Close and print results
+    for _, fh in file_handles:
+        fh.close()
+
+    # Print results
+    print(f"Info: Bed records distributed randomly into {n} files:")
+    for i, (filename, _) in enumerate(file_handles):
+        print(f"Info: {filename}: {line_counts[i]} records")
 
 def create_ref(args, sv_types):
     mob_seqs, mob_count = read_Mob_file(args)
@@ -211,13 +318,22 @@ def create_ref(args, sv_types):
 
     sv_list = [] #(inject_to_ref, base_inj_seq, name, bed_record, sv_len)
     flen_array = []
-    for sv_idx in range(0, sv_count):
-        sv = decide_sv_type(args, mob_seqs, rep_seqs, sv_types)
+
+    sv_idx = 0
+    sv = None
+    while 1:
+        while 1:
+            sv, ret = decide_sv_type(args, mob_seqs, rep_seqs, sv_types)
+            if ret == 0:
+                break
+        sv_idx += 1
         sv_list.append(sv)
         sv_len = sv[4]
         f_len = args.flen # get_f_len(args, sv_len)
         flen_array.append(f_len)
-        if args.simple and mob_seqs == [] and rep_seqs == []:
+        if sv_idx == sv_count:
+            break
+        if args.simple and mob_seqs["INS"] == [] and mob_seqs["DEL"] == [] and mob_seqs["INV"] == [] and mob_seqs["DUP"] == [] and rep_seqs == []:
             print("Warning: No more mobile elements or repeats left to simulate SVs. Stopping simulation.")
             sv_count = sv_idx
             break
@@ -233,7 +349,7 @@ def create_ref(args, sv_types):
             sv_dict[sv_subtype] = 0
     # create a dict to store the frequency of each SV type
     with open(ref_tsv_out, "w") as f1, open(hack_bed_out, "w") as f2:
-        SIM_COLS = ["SIM_ID", "CHROM", "POINTER", "INJ_LEN", "NAME", "INJECT_TO_REF", "INJ_SEQ", "SVLEN", "FRAC", "BED_RECORD"]
+        SIM_COLS = ["SIM_ID", "CHROM", "POINTER", "INJ_LEN", "NAME", "INJECT_TO_REF", "INJ_SEQ", "SVLEN", "FRAC", "BED_RECORD_COL1", "COL2", "COL3", "COL4", "COL5", "COL6"]
         f1.write("\t".join(SIM_COLS) + "\n")
         
         while sv_i < sv_count:
@@ -279,6 +395,9 @@ def create_ref(args, sv_types):
     print(f"Info: Reference file created: {ref_out}")
     print(f"Info: Visor hack file created: {hack_bed_out}")
 
+    if args.split > 1:
+        split_bed(args, hack_bed_out)
+
 def argparser():
     def positive_int(value):
         ivalue = int(value)
@@ -303,12 +422,15 @@ def argparser():
     optional_args.add_argument('--len', required=False, type=positive_int, default=100000000, help="The length of the simulated base reference (before editing with SVs)")
     optional_args.add_argument('-n', required=False, type=positive_int, default=100, help="Number of SVs to simulate")
     optional_args.add_argument('--min', required=False, type=positive_int, default=50, help="Minimum length of SV")
-    optional_args.add_argument('--max', required=False, type=positive_int, default=50000, help="Maximum length of SV")
+    optional_args.add_argument('--max', required=False, type=positive_int, default=50000, help="Maximum length of SV. Not applicable to TRE and TRC. see --read_len")
     optional_args.add_argument('--flen', required=False, type=positive_int, default=2000, help="The maximum detectable period size supported by TRF to determine the length of flanking sequences")
+    optional_args.add_argument('--read_len', required=False, type=positive_int, default=4000, help="Useful to simulate TRE and TRCs that can be correctly read mapped")
+    # optional_args.add_argument('--min_inv_len', required=False, type=positive_int, default=1000, help="Useful to simulate INVs that can be correctly read mapped")
     # optional_args.add_argument('--ffac', required=False, type=positive_int, default=10, help="Multiplication factor for SVLEN to determine the length of flanking sequences")
     optional_args.add_argument('--svtypes', required=False, type=str, default="", help="File that contains the SV types to simulate. If not provided, all types will be used. Format: check docs/SV_simulation.md")
     optional_args.add_argument('--frac', required=False, action='store_true', help="Simulate SVs with fractional lengths (0.25, 0.5, 0.75) of the mobile element")
     optional_args.add_argument('--simple', required=False, action='store_true', help="Random pick without replacement of mobile elements and repeats")
+    optional_args.add_argument('--split', required=False, type=positive_int, default=1, help="distribute the bed records to n files")
     optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
     optional_args.add_argument('-h', '--help', action='help', help="Show this help message and exit")
 
@@ -326,8 +448,11 @@ if __name__ == "__main__":
     print(f"info: seed: {args.seed}")
     print(f"info: base reference length: {args.len}")
     print(f"info: number of SVs to simulate: {args.n}")
+    print(f"info: Average read length to consider: {args.read_len}")
     print(f"info: base reference length (not gauranteed, fewer SVs result in a shorter length): {args.len}")
     print(f"info: Output Directory: {args.out}")
+    if args.split > 1:
+        print(f"info: Number of split bed files: {args.split}")
     # print(f"Info: Max SV Length (not gauranteed, e.g. duplications, expansions can exceed this limit): {args.max}")
     # print(f"Info: Min SV Length: {args.min}")
     if args.frac:

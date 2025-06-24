@@ -18,7 +18,7 @@ ANNOTATE_NEW_TAGS_HEADER="\
 ##INFO=<ID=RM_RECIPROCAL,Number=1,Type=String,Description=\"Type of transposition [Full/Partial/Minimal]\">\n\
 ##INFO=<ID=RM_SV_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the SV by the transposable element\">\n\
 ##INFO=<ID=RM_TOTAL_SV_COVERAGE,Number=1,Type=String,Description=\"Total coverage of the SV covered by transposable elements\">\n\
-##INFO=<ID=TRF_CLASSIFICATION,Number=1,Type=String,Description=\"Classification(s) of tandem repeat class covering the SV [HOMO,STR,TR or NON-REPETITIVE]\">\n\
+##INFO=<ID=TRF_CLASSIFICATION,Number=1,Type=String,Description=\"Classification(s) of tandem repeat class covering the SV [HOMO,STR,VNTR,TR or NON-REPETITIVE]\">\n\
 ##INFO=<ID=TRF_SV_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the SV by the tandem repeat(s)\">\n\
 ##INFO=<ID=TRF_TOTAL_SV_COVERAGE,Number=1,Type=String,Description=\"Total coverage of the SV covered by tandem repeats\">\n\
 ##INFO=<ID=TRF_PERIOD_SIZE,Number=1,Type=String,Description=\"Period size of the repeat(s)\">\n\
@@ -44,7 +44,7 @@ def read_sv_info(sv_file):
         reader = csv.reader(file, delimiter='\t')
         next(reader)  # Skip the header line
         for sv in reader:
-            # if sv[6] != "INV.34":
+            # if sv[6] != "DEL.0":
             #     continue
             # Extract values from the columns
             chrom = sv[0]
@@ -197,8 +197,8 @@ def read_rm(args, sv_info):
                 # Add if the intersection is > min_intersect (e.g. 5%)
                 if sv_coverage and sv_coverage > args.min_sv_coverage:
                     element = {
-                        'te_start': te_start,
-                        'te_end': te_end,
+                        'repeat_start': te_start,
+                        'repeat_end': te_end,
                         'family': family,
                         'repeat': repeat,
                         'element_coverage' : element_coverage,
@@ -221,6 +221,19 @@ def read_rm(args, sv_info):
 
     return sv_info
 
+
+def get_TRF_classification(period_size):
+        # Classify as HOMO, STR, VNTR, or TR based on period size 
+        if period_size == 1: 
+            key = 'HOMO'
+        elif period_size >= 2 and period_size <= 6:
+            key = 'STR'
+        elif period_size >= 7 and period_size <= 100:
+            key = 'VNTR'
+        elif period_size > 100:
+            key = 'TR'
+        return key 
+
 def read_trf(args, sv_info):
     """
     Processes Tandem Repeat Finder output (.dat), adding relevant entries to sv_info
@@ -231,15 +244,6 @@ def read_trf(args, sv_info):
     Output: 
     - sv_info (dict):           Updated sv_info with TRF annotations
     """
-    def get_TRF_classification(period_size):
-        # Classify as HOMO, STR, or TR based on period size 
-        if period_size == 1: 
-            key = 'HOMO'
-        elif period_size >= 2 and period_size <= 12:
-            key = 'STR'
-        elif period_size > 12:
-            key = 'TR'
-        return key 
     
     def parse_TRF_lines(args, lines, sv, row_count):
         """
@@ -267,7 +271,8 @@ def read_trf(args, sv_info):
                     'motif': motif,
                     'copy_number': copy_number,
                     'sv_coverage': sv_coverage,
-                    'key': get_TRF_classification(period_size),
+                    # 'key': get_TRF_classification(period_size),
+                    'key': 'TR',
                     'e_id': e_id
                 }
                 tandem_repeats.append(repeat_info)
@@ -382,6 +387,50 @@ def calculate_divisor(bucket_percentage):
     divisor = int(1/bucket_percentage)
     return divisor
 
+def calculate_total_coverage(sv_start, sv_end, element_list):
+        """
+        Determines the total coverage of the SV by tranposable elements
+        The function computes the proportion of the SV length that is covered by non-overlapping 
+        RepeatMasker entries. Overlapping TEs are handled to ensure no double-counting 
+        of coverage.
+        Input:
+            - sv_start (int):   The start position of the SV.
+            - sv_end (int):     The end position of the SV.
+            - trf_list (list of dict) list of filtered repeatMasker entries, where each dict contains
+                    - 'repeat_start' (int): Start position of the repeat
+                    - 'repeat_end' (int):   End position of the repeat
+        Output
+            - str: A string representation of the total coverage as a proportion (rounded to 2 decimal places).
+        """
+        sv_length = sv_end - sv_start
+        total_length = 0
+    
+        # Initialize the end of the last repeat to track overlaps
+        current_end = 0
+        element_list = sorted(element_list, key=lambda x: x['repeat_start'])
+
+        for element in element_list:
+            repeat_start = element['repeat_start']
+            repeat_end = element['repeat_end']
+
+            if repeat_start < sv_start:
+                repeat_start = sv_start
+            if repeat_end > sv_end:
+                repeat_end = sv_end
+
+            # If the repeat starts after the current_end, add the full length
+            if repeat_start > current_end:
+                total_length += repeat_end - repeat_start
+            # If the repeat overlaps with the previous one, only add the non-overlapping part
+            else:
+                if repeat_end > current_end:
+                    total_length += repeat_end - current_end
+
+            # Update current_end to the maximum of the current repeat's end and previous end
+            current_end = max(current_end, repeat_end)
+
+        return str(round(total_length / sv_length, 2))
+
 def filter_rm(sv_info):
     """
     Determines non-overlapping transposable elements within each element type e.g. SINE
@@ -419,9 +468,9 @@ def filter_rm(sv_info):
 
                 # Function to check overlap
                 def is_overlapping(te1, te2):
-                    assert te1['te_start'] < te1['te_end'], "Invalid interval for te1"
-                    assert te2['te_start'] < te2['te_end'], "Invalid interval for te2"
-                    return not (te1['te_end'] <= te2['te_start'] or te2['te_end'] <= te1['te_start'])
+                    assert te1['repeat_start'] < te1['repeat_end'], "Invalid interval for te1"
+                    assert te2['repeat_start'] < te2['repeat_end'], "Invalid interval for te2"
+                    return not (te1['repeat_end'] <= te2['repeat_start'] or te2['repeat_end'] <= te1['repeat_start'])
 
                 # 4. Iterate through sorted TEs and select non-overlapping ones
                 for te in sorted_elements:
@@ -446,15 +495,19 @@ def filter_rm(sv_info):
                 class_reciprocal_map[classification] = transposition
             
             # 5. Order by start position 
-            all_non_overlapping = sorted(all_non_overlapping, key=lambda x: x['te_start'])
+            all_non_overlapping = sorted(all_non_overlapping, key=lambda x: x['repeat_start'])
 
             # Assign non-overlapping list back to the new dictionary
             rm_elements[sv_id].update({'RM_FILTERED': all_non_overlapping})
             rm_elements[sv_id].update({'transposition' : class_reciprocal_map})
 
+            tcrm =  calculate_total_coverage(sv_info[sv_id]['rel_start'], sv_info[sv_id]['rel_end'], all_non_overlapping)
+            rm_elements[sv_id].update({'total_rm_nonoverlap_coverage' : tcrm})
+
+
     return rm_elements
 
-def filter_trf(sv_info, interval_divisor):
+def filter_trf(args, sv_info, interval_divisor):
     """
     Determines non-overlapping tandem repeats (based on intersection and period size)
     Input:
@@ -469,11 +522,34 @@ def filter_trf(sv_info, interval_divisor):
             total_fraction += entry['sv_coverage'] 
         return round(total_fraction,2)
     
+    # def calculate_separate(sv_start, sv_end, element_list):
+    #     classes = {}
+    #     for trf in element_list:
+    #         key = trf['key']
+    #         if key not in classes:
+    #             classes[key] = [trf]
+    #         else:
+    #             classes[key].append(trf)
+    #     class_coverage = ""
+    #     for key in classes:
+    #         total_coverage = calculate_total_coverage(sv_start, sv_end, classes[key])
+    #         class_coverage += f"{key}:{total_coverage},"
+    #     return class_coverage.rstrip(',')        
+
     for sv_id in sv_info:
+        # the classification STR,VNTR,TR is arbitrary and we want to we want to filter redundancy in general hence not iterating through classifications separately
+
         if 'TRF' in sv_info[sv_id]:
             trf_list = sv_info[sv_id]['TRF']
+
+            tctrf = calculate_total_coverage(sv_info[sv_id]['rel_start'], sv_info[sv_id]['rel_end'], trf_list)
+            # print(f"Total TRF coverage for {sv_id}: {tctrf}")
+            sv_info[sv_id]['total_trf_coverage'] = str(tctrf)
             
             # print('{}: {}'.format(sv_id, [trf['key'] for trf in trf_list]))
+            # ctrf = calculate_separate(sv_info[sv_id]['rel_start'], sv_info[sv_id]['rel_end'], trf_list)
+            # sv_info[sv_id]['total_trf_class_coverage'] = str(ctrf)
+
 
             # Custom key function that groups intersections by 0.05 bins (5%)
             def custom_sort_key(trf):
@@ -492,9 +568,25 @@ def filter_trf(sv_info, interval_divisor):
             def is_overlapping(trf1, trf2):
                 return not (trf1['repeat_end'] <= trf2['repeat_start'] or trf2['repeat_end'] <= trf1['repeat_start'])
 
+            def fractional_overlap(trf1, trf2):
+                start = max(trf1['repeat_start'], trf2['repeat_start'])
+                end = min(trf1['repeat_end'], trf2['repeat_end'])
+                overlap = max(0, end - start)
+
+                trf1_len = trf1['repeat_end'] - trf1['repeat_start']
+                trf2_len = trf2['repeat_end'] - trf2['repeat_start']
+                frac1 = overlap / trf1_len
+                frac2 = overlap / trf2_len
+                return max(frac1, frac2)
+
+            def is_significantly_overlapping(trf1, trf2, threshold=args.max_trf_overlap):
+                return fractional_overlap(trf1, trf2) > threshold
+            
             # 4: Iterate through sorted TRFs and select non-overlapping ones
             for trf in sorted_trfs:
-                if all(not is_overlapping(trf, existing_trf) for existing_trf in non_overlapping):
+                # if all(not is_overlapping(trf, existing_trf) for existing_trf in non_overlapping):
+                #     non_overlapping.append(trf)
+                if all(not is_significantly_overlapping(trf, existing_trf) for existing_trf in non_overlapping):
                     non_overlapping.append(trf)
 
             # 5. Sort by start position 
@@ -502,8 +594,9 @@ def filter_trf(sv_info, interval_divisor):
 
             sv_info[sv_id]['TRF_FILTERED'] = non_overlapping
     
-            total_fraction = sum_fractions(non_overlapping)
-            sv_info[sv_id]['total_fraction'] = str(total_fraction)
+            # total_fraction = sum_fractions(non_overlapping)
+            total_trf_nonoverlap_coverage = calculate_total_coverage(sv_info[sv_id]['rel_start'], sv_info[sv_id]['rel_end'], non_overlapping)
+            sv_info[sv_id]['total_trf_nonoverlap_coverage'] = str(total_trf_nonoverlap_coverage)
 
     return sv_info
 
@@ -554,12 +647,15 @@ def create_trf_tsv_record(sv_info, sv_id, tsv_out):
 
 def print_results(title, repeat_count, total, output_total):
     """    
-    Prints a formatted summary of the number of repeats (HOMO, STR, TR, SINE, LINE, LTR, DNA, Retroposon, Non-repetitive)
+    Prints a formatted summary of the number of repeats (HOMO, STR, VNTR, TR, SINE, LINE, LTR, DNA, Retroposon, Non-repetitive)
     """
     print(f"\n{title}:")
     print("-" * 35)
     for key, value in repeat_count.items():
-        percentage = (value / total) * 100
+        if total == 0:
+            percentage = 0.0
+        else:
+            percentage = (value / total) * 100
         print(f"{key:<15}: {value:>5}  {percentage:>6.2f}%")
     if output_total:
         print("-" * 20)
@@ -631,48 +727,6 @@ def get_annot_info(args, sv_info, sv_id, strchive):
             'e_id': ','.join(e_id) if e_id else 'NA'
         }
 
-    def calculate_total_coverage(sv_start, sv_end, rm_data):
-        """
-        Determines the total coverage of the SV by tranposable elements
-        The function computes the proportion of the SV length that is covered by non-overlapping 
-        RepeatMasker entries. Overlapping TEs are handled to ensure no double-counting 
-        of coverage.
-        Input:
-            - sv_start (int):   The start position of the SV.
-            - sv_end (int):     The end position of the SV.
-            - rm_data (list of dict) list of filtered repeatMasker entries, where each dict contains
-                    - 'te_start' (int): Start position of the repeat
-                    - 'te_end' (int):   End position of the repeat
-        Output
-            - str: A string representation of the total coverage as a proportion (rounded to 2 decimal places).
-        """
-        sv_length = sv_end - sv_start
-        total_length = 0
-    
-        # Initialize the end of the last repeat to track overlaps
-        current_end = 0
-
-        for element in rm_data:
-            te_start = element['te_start']
-            te_end = element['te_end']
-
-            if te_start < sv_start:
-                te_start = sv_start
-            if te_end > sv_end:
-                te_end = sv_end
-            
-            # If the te starts after the current_end, add the full length
-            if te_start > current_end:
-                total_length += te_end - te_start
-            # If the te overlaps with the previous one, only add the non-overlapping part
-            else:
-                total_length += te_end - current_end
-            
-            # Update current_end to the maximum of the current te's end and previous end
-            current_end = max(current_end, te_end)
-
-        return str(round(total_length / sv_length, 2))
-
     def highest_fraction(args, repeats, fractions, reciprocal_map):
         """
         Initialize a dictionary to store the sum of fractions for each repeat type
@@ -728,12 +782,17 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         rm_coverages = rm_data['RM_SV_COVERAGE'].split(',')
 
         if (trf_class not in ['NA', 'NON_REPETITIVE']) and (rm_class not in ['NA', 'NON_REPETITIVE']):
-            # TRF has higher coverage
-            if total_trf_coverage >= total_rm_coverage:
-                classification = highest_fraction(args, trf_classes, trf_coverages, reciprocal_map)
-            # Mobile element from RepeatMasker has higher coverage
+            trf_classification = highest_fraction(args, trf_classes, trf_coverages, reciprocal_map)
+            rm_classification = highest_fraction(args, rm_classes, rm_coverages, reciprocal_map)
+            if trf_classification != 'NON_REPETITIVE' and  rm_classification != 'NON_REPETITIVE':
+                if total_trf_coverage >= total_rm_coverage:
+                    classification = trf_classification
+                else:
+                    classification = rm_classification
+            elif trf_classification != 'NON_REPETITIVE' and rm_classification == 'NON_REPETITIVE':
+                classification = trf_classification
             else:
-                classification = highest_fraction(args, rm_classes, rm_coverages, reciprocal_map)
+                classification = rm_classification
         # TRF (no repeatMasker)
         elif (trf_class not in ['NA', 'NON_REPETITIVE']) and (rm_class in ['NA', 'NON_REPETITIVE']):
             classification = highest_fraction(args, trf_classes, trf_coverages, reciprocal_map)
@@ -795,7 +854,7 @@ def get_annot_info(args, sv_info, sv_id, strchive):
     # --> Replaces any <50% as non-repetitive
 
     # RepeatMasker
-    total_rm_coverage = calculate_total_coverage(sv_data['rel_start'], sv_data['rel_end'], sv_data['RM_FILTERED']) if 'RM_FILTERED' in sv_data else 'NA'
+    total_rm_coverage = sv_data.get('total_rm_nonoverlap_coverage', 'NA')
     if total_rm_coverage != 'NA' and float(total_rm_coverage) < args.min_total_sv_coverage:
         for key in rm_data:
             rm_data[key] = 'NA'
@@ -803,7 +862,7 @@ def get_annot_info(args, sv_info, sv_id, strchive):
     rm_data['RM_TOTAL_SV_COVERAGE'] = total_rm_coverage
 
     # TRF
-    total_trf_coverage = sv_data.get('total_fraction', 'NA')
+    total_trf_coverage = sv_data.get('total_trf_nonoverlap_coverage', 'NA')
     if total_trf_coverage != 'NA' and float(total_trf_coverage) < args.min_total_sv_coverage:
         for key in trf_data:
             trf_data[key] = 'NA'
@@ -821,6 +880,17 @@ def get_annot_info(args, sv_info, sv_id, strchive):
 
     sv_data['RM_PICKED_E_IDS'] = rm_picked_e_ids
     sv_data['TRF_PICKED_E_IDS'] = trf_picked_e_ids
+    sv_data['FINAL_CLASSIFICATION'] = final_classification
+    sv_data['RM_RECIPROCAL'] = transposition
+
+    if final_classification == 'TR':
+        trf_period_size = trf_data['TRF_PERIOD_SIZE'].split(',')
+        trf_class = []
+        for period_size in trf_period_size:
+            trf_class.append(get_TRF_classification(int(period_size)))
+        trf_data['TRF_CLASSIFICATION'] = ','.join(trf_class)
+        max_trf_coverage, index = max((float(x), i) for i, x in enumerate(trf_data['TRF_SV_COVERAGE'].split(',')) if x != 'NA')
+        final_classification = trf_class[index]
 
     # Unpacks annotations
     info = {
@@ -893,13 +963,13 @@ def output_annotations(args, strchive, sv_info):
     """
     # Initialise count for breakdown of repeat types
     sv_count = 0
-    repeat_count = {'HOMO' : 0, 'STR' : 0, 'TR' : 0, 'Full' : 0, 'Partial' : 0, 'NON_REPETITIVE' : 0}
+    repeat_count = {'HOMO' : 0, 'STR' : 0, 'VNTR' : 0, 'TR' : 0, 'Full' : 0, 'Partial' : 0, 'NON_REPETITIVE' : 0}
     count_by_sv = {
-        'INS': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
-        'DEL': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
-        'DUP': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
-        'INV': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
-        'BND': {'HOMO': 0, 'STR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'INS': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'DEL': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'DUP': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'INV': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'BND': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
     }
 
     annotate_tsv_out = f"{args.out}/vcf_annotate.tsv"
@@ -921,8 +991,10 @@ def output_annotations(args, strchive, sv_info):
             sv_count += 1
             info = get_annot_info(args, sv_info, sv_id, strchive)
             # print("\t".join(str(info[key]) for key in ANNOTATE_COLS))
-            f.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
-            f.write("\n")
+            # todo: remove temp fix
+            if "BND" not in sv_id:
+                f.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
+                f.write("\n")
 
             classification, transposition = info['FINAL_CLASSIFICATION'], info['RM_RECIPROCAL']
             if classification in repeat_count:
@@ -1008,8 +1080,8 @@ def draw_diagrams(args, sv_info):
         """
         Creates the diagram for a RepeatMasker entry
         """
-        element_start = element['te_start']
-        element_end = element['te_end']
+        element_start = element['repeat_start']
+        element_end = element['repeat_end']
         
         element_start_scale = int((element_start - start) * scale)
         element_end_scale = int((element_end - start) * scale)
@@ -1106,8 +1178,8 @@ def draw_diagrams(args, sv_info):
                 if e_id in picked_elements:
                     e_id = f"{e_id}*"
 
-                rm_start = element['te_start']
-                rm_end = element['te_end']
+                rm_start = element['repeat_start']
+                rm_end = element['repeat_end']
 
                 genomic_trf_start, genomic_trf_end = find_genomic_cords(q_pos, sv_type, rm_start, rm_end)
                 
@@ -1150,8 +1222,8 @@ def draw_diagrams(args, sv_info):
         #             e_id = f"{e_id}*"
         #         e_ids.append(e_id)
 
-        #         rm_start = element['te_start']
-        #         rm_end = element['te_end']
+        #         rm_start = element['repeat_start']
+        #         rm_end = element['repeat_end']
 
         #         genomic_trf_start, genomic_trf_end = find_genomic_cords(q_pos, sv_type, rm_start, rm_end)
                 
@@ -1249,13 +1321,16 @@ def draw_diagrams(args, sv_info):
     output_file = f"{args.out}/diagram.txt"
     output_trf_diagram_file = f"{args.out}/trf_diagram.tsv"
     output_rm_diagram_file = f"{args.out}/rm_diagram.tsv"
+    output_debug= f"{args.out}/tmp_debug.tsv"
     trf_diagram_cols = ['ID', 'CallerID', 'query', 'sv', 'SVLEN', 'Period', 'SV_Coverage', 'TRF_genomic_region', 'Motif']
     rm_diagram_cols = ['ID', 'CallerID', 'query', 'sv', 'SVLEN', 'Classification', 'SV_Coverage', 'RM_genomic_region']
+    debug_cols = ['ID', 'FINAL_CLASSIFICATION', 'TRF_ELEMENT_COUNT', 'TOTAL_TRF_COVERAGE', 'TOTAL_TRF_NONOVERLAP_COVERAGE']
     diagram_length = args.len
-    with open(output_file, 'w') as f, open(output_trf_diagram_file, 'w') as f_trf, open(output_rm_diagram_file, 'w') as f_rm:  # Open the file for writing
+    with open(output_file, 'w') as f, open(output_trf_diagram_file, 'w') as f_trf, open(output_rm_diagram_file, 'w') as f_rm, open(output_debug, 'w') as f_debug:  # Open the file for writing
         # Write the header for the TSV file
         f_trf.write('\t'.join(trf_diagram_cols) + '\n')
         f_rm.write('\t'.join(rm_diagram_cols) + '\n')
+        f_debug.write('\t'.join(debug_cols) + '\n')
         for sv_id in sv_info:
             sv_data = sv_info[sv_id]
 
@@ -1263,6 +1338,9 @@ def draw_diagrams(args, sv_info):
             rm = get_repeat_info(sv_data, 'RM')
             trf = get_repeat_info(sv_data, 'TRF')
 
+            if len(trf) > 0 and get_repeat_info(sv_data, 'FINAL_CLASSIFICATION') == 'NON_REPETITIVE' and float(get_repeat_info(sv_data, 'total_trf_coverage')) > args.min_total_sv_coverage:
+                assert get_repeat_info(sv_data, 'total_trf_coverage') >= get_repeat_info(sv_data, 'total_trf_nonoverlap_coverage')
+                f_debug.write(f"{sv_id}\t{get_repeat_info(sv_data, 'FINAL_CLASSIFICATION')}\t{len(trf)}\t{get_repeat_info(sv_data, 'total_trf_coverage')}\t{get_repeat_info(sv_data, 'total_trf_nonoverlap_coverage')}\n")
 
             picked_elements = get_repeat_info(sv_data, 'RM_PICKED_E_IDS')
             picked_elements += get_repeat_info(sv_data, 'TRF_PICKED_E_IDS')
@@ -1309,7 +1387,7 @@ def draw_diagrams(args, sv_info):
 
             # Output the diagrams
             if rm_output_flanking != [] or trf_output_flanking != [] or rm_output != [] or trf_output != []:
-                f.write(f"{id_str}\n")
+                f.write(f">{id_str}\n")
                 if flanking_diagram:
                     write_flanking(f, flanking_diagram, rm_output_flanking, trf_output_flanking)
                 
@@ -1347,6 +1425,7 @@ def argparser():
     optional_args.add_argument('--min_sv_coverage', required=False, type=positive_float, default=0.05, help="The minimum intersection between a repeat element and SV (aka sv_coverage) e.g. 0.05 (5%) (0 < min_sv_coverage < 1)")
     optional_args.add_argument('--min_class_sv_coverage', required=False, type=positive_float, default=0.25, help="The minimum class sv coverage by repeat elements to be considered repetitive")
     optional_args.add_argument('--min_total_sv_coverage', required=False, type=positive_float, default=0.75, help="The minimum total sv coverage by repeat elements to be considered repetitive")
+    optional_args.add_argument('--max_trf_overlap', required=False, type=positive_float, default=0.1, help="The maximum TRF element overlap to be considered non-overlapping (0 < max_trf_overlap < 1)")
     optional_args.add_argument('--div', required=False, type=positive_float, default=0.05, help="The chosen intervals to prioritise period size over intersection (0 < divisor < 1)")
     optional_args.add_argument('-l', '--len', required=False, type=positive_int, default=100, help="Diagram length")
     optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
@@ -1368,6 +1447,7 @@ if __name__ == "__main__":
     print(f"Info: min_sv_coverage: {args.min_sv_coverage}")
     print(f"Info: min_total_sv_coverage: {args.min_total_sv_coverage}")
     print(f"Info: min_class_sv_coverage: {args.min_class_sv_coverage}")
+    print(f"Info: max_trf_overlap: {args.max_trf_overlap}")
     print(f"Info: divisor: {args.div}")
     print(f"info: Output Directory: {args.out}")
     print(f"info: Output vcf header file: {args.out}/vcf_header.txt")
@@ -1398,7 +1478,7 @@ if __name__ == "__main__":
     # Filter overlaps
     divisor = calculate_divisor(args.div)
     sv_info = filter_rm(sv_info)
-    sv_info = filter_trf(sv_info, divisor)
+    sv_info = filter_trf(args, sv_info, divisor)
 
     # Write to files 
     output_annotations(args, strchive, sv_info)

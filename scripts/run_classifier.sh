@@ -8,7 +8,6 @@ info "$(date)"
 
 # Input/Output (change)
 #OUTPUT_DIR=""
-#SAMPLE=""
 # SV_VCF=$(realpath "test/${SAMPLE}/${SAMPLE}.vcf.gz")
 #SV_VCF=""
 echo "Path"
@@ -23,7 +22,6 @@ STR_BED=$(realpath "test/databases/STRchive-disease-loci.bed")
 
 ##FOR SIMULATION AND TESTING
 # OUTPUT_DIR=$(realpath "test/output_sim_ref")
-# SAMPLE="sim_ref"
 # REF_FASTA=$(realpath "test/sim_ref/base_ref/base_ref.fa")
 # SV_VCF=$(realpath "test/sim_ref/sniffles.vcf.gz")
 
@@ -51,8 +49,11 @@ THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each R
 MIN_SV_COVERAGE=0.05 #The minimum intersection between a repeat element and SV (aka sv_coverage) e.g. 0.05 (5%) (0 < min_sv_coverage < 1)
 MIN_CLASS_SV_COVERAGE=0.25 #The minimum class sv coverage by repeat elements to be considered repetitive
 MIN_TOTAL_SV_COVERAGE=0.75 #The minimum total sv coverage by repeat elements to be considered repetitive
+MAX_TRF_OVERLAP=0.1 #The maximum TRF element overlap to be considered non-overlapping (0 < max_trf_overlap < 1)
 INTERVAL=0.05
 DIAGRAM_LEN=100
+
+FLAG_DELETE_TMP_FILES=1 # Flag to delete temporary files (1 = yes, 0 = no)
 
 # Python and bash scripts (keep as it is)
 EXTRACT_SV_FLANKINGS=$(realpath src/extract_sv.py)
@@ -61,10 +62,9 @@ PLOT=$(realpath src/generate_plots.py)
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --output_dir DIR --sample SAMPLE --sv_vcf FILE --ref_fasta FILE [options]"
+    echo "Usage: $0 --output_dir DIR --sv_vcf FILE --ref_fasta FILE [options]"
     echo "Required arguments:"
     echo "  --output_dir DIR      Path to output directory"
-    echo "  --sample SAMPLE       Sample name"
     echo "  --sv_vcf FILE         Path to SV VCF file"
     echo "  --ref_fasta FILE      Path to reference FASTA file"
     echo "Optional arguments:"
@@ -73,9 +73,11 @@ usage() {
     echo "  --min_sv_coverage VAL   Minimum intersection between a repeat element and SV (aka sv_coverage) (default: $MIN_SV_COVERAGE)"
     echo "  --min_class_sv_coverage VAL Minimum class sv coverage by repeat elements to be considered repetitive (default: $MIN_CLASS_SV_COVERAGE)"
     echo "  --min_total_sv_coverage VAL Minimum total sv coverage by repeat elements to be considered repetitive (default: $MIN_TOTAL_SV_COVERAGE)"
+    echo "  --max_trf_overlap VAL Maximum TRF element overlap to be considered non-overlapping (default: $MAX_TRF_OVERLAP)"
     echo "  --interval VAL        Interval value (default: $INTERVAL)"
     echo "  --diagram_len VAL     Diagram length (default: $DIAGRAM_LEN)"
     echo "  --nsplit_files INT    Number of split files (default: $NSPLIT_FILES)"
+    echo "  --keep_tmp_files      Keep temporary files (default: delete)"
     exit 1
 }
 
@@ -85,8 +87,6 @@ parse_args() {
         case "$1" in
             --output_dir)
                 OUTPUT_DIR=$(realpath "$2"); shift 2;;
-            --sample)
-                SAMPLE="$2"; shift 2;;
             --sv_vcf)
                 SV_VCF=$(realpath "$2"); shift 2;;
             --ref_fasta)
@@ -101,12 +101,16 @@ parse_args() {
                 MIN_CLASS_SV_COVERAGE="$2"; shift 2;;
             --min_total_sv_coverage)
                 MIN_TOTAL_SV_COVERAGE="$2"; shift 2;;
+            --max_trf_overlap)
+                MAX_TRF_OVERLAP="$2"; shift 2;;
             --interval)
                 INTERVAL="$2"; shift 2;;
             --diagram_len)
                 DIAGRAM_LEN="$2"; shift 2;;
-	    --nsplit_files)
+            --nsplit_files)
                 NSPLIT_FILES="$2"; shift 2;;
+            --keep_tmp_files)
+                FLAG_DELETE_TMP_FILES=0; shift;;
             --help)
                 usage;;
             *)
@@ -115,8 +119,8 @@ parse_args() {
     done
 
     # Check required arguments
-    if [[ -z "$OUTPUT_DIR" || -z "$SAMPLE" || -z "$SV_VCF" || -z "$REF_FASTA" ]]; then
-        echo "Error: --output_dir, --sample, --sv_vcf and --ref_fasta are required."
+    if [[ -z "$OUTPUT_DIR" || -z "$SV_VCF" || -z "$REF_FASTA" ]]; then
+        echo "Error: --output_dir, --sv_vcf and --ref_fasta are required."
         usage
     fi
 
@@ -125,15 +129,15 @@ parse_args() {
     ANNOTATIONS_OUT=${OUTPUT_DIR}/annotations_out
     RM_TMP=${OUTPUT_DIR}/RMtmp
     # File Intermediates (keep as it is)
-    INFO_FILE=${OUTPUT_DIR}/${SAMPLE}_info.tab
-    RM_FILE=${OUTPUT_DIR}/${SAMPLE}_rm.tab
-    TRF_FILE=${OUTPUT_DIR}/${SAMPLE}_trf.tab
+    INFO_FILE=${OUTPUT_DIR}/info.tab
+    RM_FILE=${OUTPUT_DIR}/rm.tab
+    TRF_FILE=${OUTPUT_DIR}/trf.tab
 
     # Final Outputs (change if necessary)
-    VIS_OUTPUT=${OUTPUT_DIR}/${SAMPLE}_diagrams.txt
-    ANNOTATED_VCF=${OUTPUT_DIR}/${SAMPLE}_annotated.vcf
-    RM_TSV=${OUTPUT_DIR}/${SAMPLE}_annotatedRM.tsv
-    TRF_TSV=${OUTPUT_DIR}/${SAMPLE}_annotatedTRF.tsv
+    VIS_OUTPUT=${OUTPUT_DIR}/diagrams.txt
+    ANNOTATED_VCF=${OUTPUT_DIR}/annotated.vcf
+    RM_TSV=${OUTPUT_DIR}/annotatedRM.tsv
+    TRF_TSV=${OUTPUT_DIR}/annotatedTRF.tsv
 }
 
 check_required() {
@@ -249,6 +253,7 @@ annotation() {
         --min_sv_coverage ${MIN_SV_COVERAGE}\
         --min_class_sv_coverage ${MIN_CLASS_SV_COVERAGE}\
         --min_total_sv_coverage ${MIN_TOTAL_SV_COVERAGE}\
+        --max_trf_overlap ${MAX_TRF_OVERLAP}\
         --div ${INTERVAL}\
         --len ${DIAGRAM_LEN} || die "failed"
     
@@ -279,10 +284,31 @@ plot_classifications() {
 }
 
 show_output_paths() {
-    info "Annotation outputs dir: ${ANNOTATIONS_OUT}"
-    info "Plots dir: ${ANNOTATIONS_OUT}/plots"
-    info "SV VCF with repeats annotated: ${ANNOTATED_VCF}"
+
+    if [[ ${FLAG_DELETE_TMP_FILES} -eq 1 ]]; then
+        info "Deleting temporary files..."
+        mv ${ANNOTATIONS_OUT}/plots ${OUTPUT_DIR} || die "failed to move plots to ${OUTPUT_DIR}"
+        mv ${ANNOTATIONS_OUT}/diagram.txt ${OUTPUT_DIR} || die "failed to move diagram.txt to ${OUTPUT_DIR}"
+        mv ${ANNOTATIONS_OUT}/rm_diagram.tsv ${OUTPUT_DIR} || die "failed to move rm_diagram.tsv to ${OUTPUT_DIR}"
+        mv ${ANNOTATIONS_OUT}/trf_diagram.tsv ${OUTPUT_DIR} || die "failed to move trf_diagram.tsv to ${OUTPUT_DIR}"
+
+        rm -rf ${ANNOTATIONS_OUT} || die "failed to remove ${ANNOTATIONS_OUT}"
+        rm -rf ${EXTRACT_SV_FLANKS_OUT} || die "failed to remove ${EXTRACT_SV_FLANKS_OUT}"
+        # rm -f ${INFO_FILE} || die "failed to remove ${INFO_FILE}"
+        # rm -f ${RM_FILE} || die "failed to remove ${RM_FILE}"
+        # rm -f ${TRF_FILE} || die "failed to remove ${TRF_FILE}"
+        info "Annotation outputs dir: ${OUTPUT_DIR}"
+        info "Plots dir: ${OUTPUT_DIR}/plots"
+        info "SV VCF with repeats annotated: ${ANNOTATED_VCF}.gz"
+    else
+        info "Annotation outputs dir: ${ANNOTATIONS_OUT}"
+        info "Plots dir: ${ANNOTATIONS_OUT}/plots"
+        info "SV VCF with repeats annotated: ${ANNOTATED_VCF}"
+    fi
+
 }
+
+
 
 T0=$(date +%s)
 

@@ -33,3 +33,6 @@ test/sim_ref_run*
 test/test_visor
 test/LongTR
 test/cutesv
+test/VN049_sniffles_jasmine
+test/hgmini
+test/out_plots
