@@ -78,7 +78,7 @@ usage() {
     echo "  --diagram_len VAL       Diagram length (default: $DIAGRAM_LEN)"
     echo "  --nsplit_files INT      Number of split files (default: $NSPLIT_FILES)"
     echo "  --keep_tmp_files        Keep temporary files (default: delete)"
-    exit 1
+    exit 0
 }
 
 # Function to parse arguments
