@@ -28,6 +28,7 @@ STR_BED=$(realpath "test/databases/STRchive-disease-loci.bed")
 # Repeat Masker species (change)
 # SPECIES="mammalia"
 SPECIES="human"
+PREFIX=""
 
 # Repeat Masker and TRF, bcftools, bgzip, tabix  programs (change if necessary)
 TRF_BINARY=$(realpath "trf409.linux64")
@@ -68,6 +69,7 @@ usage() {
     echo "  --vcf FILE     Path to SV VCF file"
     echo "  --ref FILE     Path to reference FASTA file"
     echo "Optional arguments:"
+    echo "  --prefix NAME           Prefix for output files (default: None)"
     echo "  --str_bed FILE          Path to STR BED file (default: $STR_BED)"
     echo "  --species NAME          Species name for RepeatMasker (default: $SPECIES)"
     echo "  --min_sv_coverage VAL   Minimum intersection between a repeat element and SV (aka sv_coverage) (default: $MIN_SV_COVERAGE)"
@@ -91,6 +93,8 @@ parse_args() {
                 VCF=$(realpath "$2"); shift 2;;
             --ref)
                 REF=$(realpath "$2"); shift 2;;
+            --prefix)
+                PREFIX="$2_"; shift 2;;
             --str_bed)
                 STR_BED=$(realpath "$2"); shift 2;;
             --species)
@@ -125,19 +129,16 @@ parse_args() {
     fi
 
     # Internal directories (keep as it is)
-    EXTRACT_SV_FLANKS_OUT=${OUTPUT_DIR}/extract_sv_flanks_out
-    ANNOTATIONS_OUT=${OUTPUT_DIR}/annotations_out
+    EXTRACT_SV_FLANKS_OUT=${OUTPUT_DIR}/${PREFIX}extract_sv_flanks_out
+    ANNOTATIONS_OUT=${OUTPUT_DIR}/${PREFIX}annotations_out
     RM_TMP=${OUTPUT_DIR}/RMtmp
     # File Intermediates (keep as it is)
-    INFO_FILE=${OUTPUT_DIR}/info.tab
-    RM_FILE=${OUTPUT_DIR}/rm.tab
-    TRF_FILE=${OUTPUT_DIR}/trf.tab
+    INFO_FILE=${OUTPUT_DIR}/${PREFIX}info.tab
+    RM_FILE=${OUTPUT_DIR}/${PREFIX}rm.tab
+    TRF_FILE=${OUTPUT_DIR}/${PREFIX}trf.tab
 
     # Final Outputs (change if necessary)
-    VIS_OUTPUT=${OUTPUT_DIR}/diagrams.txt
-    ANNOTATED_VCF=${OUTPUT_DIR}/annotated.vcf
-    RM_TSV=${OUTPUT_DIR}/annotatedRM.tsv
-    TRF_TSV=${OUTPUT_DIR}/annotatedTRF.tsv
+    ANNOTATED_VCF=${OUTPUT_DIR}/${PREFIX}annotated.vcf
 }
 
 check_required() {
@@ -166,6 +167,10 @@ check_required() {
 
 create_output_dir() {
 	#test -d "${OUTPUT_DIR}" && rm -r "${OUTPUT_DIR}"
+    # error if output directory already exists
+    if [[ -d "${OUTPUT_DIR}" ]]; then
+        die "Output directory ${OUTPUT_DIR} already exists. Please choose a different output directory or delete the existing one."
+    fi
 	mkdir -p "${OUTPUT_DIR}" || die "Failed creating ${OUTPUT_DIR}"
 }
 
@@ -287,10 +292,10 @@ show_output_paths() {
 
     if [[ ${FLAG_DELETE_TMP_FILES} -eq 1 ]]; then
         info "Deleting temporary files..."
-        mv ${ANNOTATIONS_OUT}/plots ${OUTPUT_DIR} || die "failed to move plots to ${OUTPUT_DIR}"
-        mv ${ANNOTATIONS_OUT}/diagram.txt ${OUTPUT_DIR} || die "failed to move diagram.txt to ${OUTPUT_DIR}"
-        mv ${ANNOTATIONS_OUT}/rm_diagram.tsv ${OUTPUT_DIR} || die "failed to move rm_diagram.tsv to ${OUTPUT_DIR}"
-        mv ${ANNOTATIONS_OUT}/trf_diagram.tsv ${OUTPUT_DIR} || die "failed to move trf_diagram.tsv to ${OUTPUT_DIR}"
+        mv ${ANNOTATIONS_OUT}/plots/plots.pdf ${OUTPUT_DIR}/${PREFIX}plots.pdf || die "failed to move plots to ${OUTPUT_DIR}"
+        mv ${ANNOTATIONS_OUT}/diagram.txt ${OUTPUT_DIR}/${PREFIX}diagram.txt || die "failed to move diagram.txt to ${OUTPUT_DIR}"
+        mv ${ANNOTATIONS_OUT}/rm_diagram.tsv ${OUTPUT_DIR}/${PREFIX}rm_diagram.tsv || die "failed to move rm_diagram.tsv to ${OUTPUT_DIR}"
+        mv ${ANNOTATIONS_OUT}/trf_diagram.tsv ${OUTPUT_DIR}/${PREFIX}trf_diagram.tsv || die "failed to move trf_diagram.tsv to ${OUTPUT_DIR}"
 
         rm -rf ${ANNOTATIONS_OUT} || die "failed to remove ${ANNOTATIONS_OUT}"
         rm -rf ${EXTRACT_SV_FLANKS_OUT} || die "failed to remove ${EXTRACT_SV_FLANKS_OUT}"

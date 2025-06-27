@@ -426,22 +426,22 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
             return 1
         else:
             return 8
-    elif svtype in {"DEL"}:
+    elif svtype == "DEL":
         if "SVLEN" in record.info:
             return 2
         else:
             return 9
-    elif svtype in {"DUP"}:
+    elif svtype == "DUP":
         if "SVLEN" in record.info:
             return 3
         else:
             return 10
-    elif svtype in {"INV"}:
+    elif svtype == "INV":
         if "SVLEN" in record.info:
             return 4
         else:
             return 11
-    elif svtype == "BND":
+    elif svtype in {"BND", "TRA"}:
         return 5
     else:
         # print(f"Warning: unknown SVTYPE ({svtype}) record at {record.chrom}:{record.pos}")
