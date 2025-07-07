@@ -313,7 +313,12 @@ def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
 def extract_bnd_target(alt):
     # Match formats like ]chr20:12345], [X:999999[
     match = re.search(r'[\[\]]([\w\.]+:\d+)[\[\]]', alt)
-    return match.group(1) if match else None
+    if match:
+        chrom = match.group(1).split(":")[0]  # Extract the chromosome part
+        pos = match.group(1).split(":")[1]  # Extract the position part
+        return chrom, pos
+    else:
+        return None, None
 
 #BND
 def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
@@ -340,12 +345,13 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     seq_len_0 = len(seq_consensus_0)
 
     # The second part is the reference sequence for the second end of the breakend
-    chrom_1 = extract_bnd_target(record.alts[0])  # Extract the chromosome from the ALT allele
-    if chrom_1 is None:
-        print(f"Error: Unable to extract target chromosome from ALT allele {record.alts[0]} in record {record.id}")
+    chrom_1, pos_1 = extract_bnd_target(record.alts[0])  # Extract the chromosome from the ALT allele
+    if chrom_1 is None or pos_1 is None:
+        chrom_1 = record.info.get("CHR2", None)
+        pos_1 = record.stop
+    if chrom_1 is None or pos_1 is None:
+        print(f"Error: Unable to extract target chromosome from ALT allele {record.alts[0]} or INFO tags in record {record.id}")
         exit(1)
-    # print(f"chrom_1: {chrom_1}")
-    chrom_1, pos_1 = chrom_1.split(":")
     pos_1 = int(pos_1)  # Convert position to integer
     start_f_1 = max(pos_1-f_len, 1) # Ensure start is >= 1 (1-based)
     end_1 = pos_1+f_len-1 # End position of the REF allele
@@ -370,20 +376,14 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
 
 def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
     """
-    Perform checks to validate a VCF record. Checks include:
-    - Multi-allelic records
-    - Multi-sample records
+    Perform checks to validate a VCF record.
 
     Return 
     look at RETURN_CODE_DESCRIPTIONS
     """
-    chrom = record.chrom
-    chrom_length = chrom_lengths.get(chrom, 0)
-    if record.stop > chrom_length:
-        print(f"Error: record (ID:{record.id}) stop ({record.stop}) exceeds chromosome length ({chrom_length}) for {chrom}")
-        return 15
 
-    # 1. Check if the record is multi-allelic (more than one ALT allele)
+
+    # Check if the record is multi-allelic (more than one ALT allele)
     if record.alts is not None and len(record.alts) > 1 and warnings_dict["multi-allelic"] < args.warning_count:
         print(f"Warning: Multi-allelic record (ID:{record.id}) with {len(record.alts)} ALT alleles")
         warnings_dict["multi-allelic"] += 1
@@ -391,20 +391,30 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
         if warnings_dict["multi-allelic"] == args.warning_count:
             print("Warning: Suppressing further multi-allelic warnings")
 
-    # 2. Check if the record has multiple samples (more than one sample with genotype data)
+    # Check if the record has multiple samples (more than one sample with genotype data)
     sample_count = len(record.samples)
     if sample_count > 1 and warnings_dict["multi-sample"] < args.warning_count:
         print(f"Warning: Multi-sample record (ID:{record.id}) with {sample_count} samples")
         warnings_dict["multi-sample"] += 1
         if warnings_dict["multi-sample"] == args.warning_count:
             print("Warning: Suppressing further multi-sample warnings")
+        
+    chrom = record.chrom
+    chrom_1 = record.info.get("CHR2", None)
+    if chrom_1 is not None:
+        chrom = chrom_1
+    chrom_length = chrom_lengths.get(chrom, 0)
+    if record.stop > chrom_length:
+        print(f"Error: record (ID:{record.id}) stop ({record.stop}) exceeds chromosome length ({chrom_length}) for {chrom}")
+        return 15
 
     # Extract SVTYPE from INFO field
     svtype = record.info.get("SVTYPE") if "SVTYPE" in record.info else None
-
-    # 3. Check if the ALT allele is symbolic (e.g., "<INS>", "<DEL>")
-    has_symbolic_alt = any(alt.startswith("<") and alt.endswith(">") for alt in record.alts) if record.alts else False
-
+    
+    # Jasmine introduces SVLEN=0 for BND
+    if svtype in {"BND", "TRA"}:
+        return 5
+    
     if "SVLEN" in record.info:
         svlen = abs(get_svlen(record))
         if svlen < args.min:
@@ -417,6 +427,9 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
     if svtype == "INS" and record.pos != record.stop:
         print(f"Error: record (ID:{record.id}) is an INS with end ({record.end}) not equal to pos ({record.pos})")
         return 15
+
+    # Check if the ALT allele is symbolic (e.g., "<INS>", "<DEL>")
+    has_symbolic_alt = any(alt.startswith("<") and alt.endswith(">") for alt in record.alts) if record.alts else False
 
     # Categorize based on SVTYPE and symbolic alleles
     if svtype == "INS":
@@ -589,7 +602,7 @@ def process_vcf_records(args):
                 # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}\t${ref}\t${alt}"
                 info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(second[5], second[3], second[3]+second[2], second[6], second[7], second[1], second[0], record.id, record.ref, record.alts[0])
                 f.write(f"{info}\n")
-            record_stats_arr.append(second)
+            record_stats_arr.append(second[:5])
         else:
             print(f"Skipped. vcf check failed (code: {ret}) for record (ID:{record.id})")
             continue
