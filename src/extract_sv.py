@@ -326,6 +326,8 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     output_dir = args.out
     
     svtype = record.info.get("SVTYPE", None)
+    assert svtype in {"BND", "TRA"}, f"Error: SVTYPE {svtype} is not supported for BND processing"
+    svtype = "BND"
     svID_0 = f'{svtype}.{i}.0'
     svID_1 = f'{svtype}.{i}.1'
 
