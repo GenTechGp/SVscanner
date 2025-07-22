@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # set -x
-RED='\033[0;31m' ; GREEN='\033[0;32m' ; NC='\033[0m' # No Color
-die() { echo -e "${RED}$1${NC}" >&2 ; echo ; exit 1 ; } # terminate script
-info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
+die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
+info() {  echo -e "$1" >&2 ; }
 info "$(date)"
 
 # Input/Output (change)

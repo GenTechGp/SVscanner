@@ -85,7 +85,7 @@ This document summarizes the method used to construct the `seq_consensus` for ea
 
 ---
 
-### BND (Breakend)
+### BND (Breakend)/ TRA (Translocation)
 
 **Description**: A complex breakpoint (translocation, etc.).
 
@@ -93,11 +93,12 @@ This document summarizes the method used to construct the `seq_consensus` for ea
 `seq_consensus = flanking_sequence_around_breakpoint`
 
 **Code Behavior**:  
-- Only a single flanking sequence is extracted (no insertion or rearranged sequence).
-- Used for visualization or investigation purposes:
+- Two flanking sequences are extracted (no insertion or rearranged sequence) for each genomic position described in the vcf record.
 
-  `seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")`  
-  `seq_consensus = seq`
+  `seq1 = fasta.fetch(region=f"{chrom1}:{start_f}-{end_f}")`  
+  `seq2 = fasta.fetch(region=f"{chrom2}:{start_f}-{end_f}")`  
+  `seq_consensus1 = seq1`
+  `seq_consensus2 = seq2`
 
 ---
 

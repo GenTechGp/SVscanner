@@ -349,7 +349,7 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     # The second part is the reference sequence for the second end of the breakend
     chrom_1, pos_1 = extract_bnd_target(record.alts[0])  # Extract the chromosome from the ALT allele
     if chrom_1 is None or pos_1 is None:
-        chrom_1 = record.info.get("CHR2", None)
+        chrom_1 = record.info.get("CHR2") if "CHR2" in record.info else None 
         pos_1 = record.stop
     if chrom_1 is None or pos_1 is None:
         print(f"Error: Unable to extract target chromosome from ALT allele {record.alts[0]} or INFO tags in record {record.id}")
@@ -401,8 +401,12 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
         if warnings_dict["multi-sample"] == args.warning_count:
             print("Warning: Suppressing further multi-sample warnings")
         
+    if not record.info:
+        print(f"Error: record (ID:{record.id}) does not have any INFO keys. Please check the VCF file header")
+        return 15
+
     chrom = record.chrom
-    chrom_1 = record.info.get("CHR2", None)
+    chrom_1 = record.info.get("CHR2") if "CHR2" in record.info else None 
     if chrom_1 is not None:
         chrom = chrom_1
     chrom_length = chrom_lengths.get(chrom, 0)
