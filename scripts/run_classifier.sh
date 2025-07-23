@@ -6,28 +6,14 @@ info() {  echo -e "$1" >&2 ; }
 info "$(date)"
 
 # Input/Output (change)
-#OUTPUT_DIR=""
-# VCF=$(realpath "test/${SAMPLE}/${SAMPLE}.vcf.gz")
-#VCF=""
-echo "Path"
-echo $PATH
-echo "Pythonpath"
-echo $PYTHONPATH
-which python
 #REF=$(realpath "/g/data/te53/ontsv/references/hg38_reference_files/hg38.analysisSet.fa")
 #REF="/g/data/te53/variantcall/referenceresource/genome/pipeface/chm13XX.fasta"
 #REF=$(realpath "/genome/hg38.analysisSet.fa")
 STR_BED=$(realpath "test/databases/STRchive-disease-loci.bed")
 
-##FOR SIMULATION AND TESTING
-# OUTPUT_DIR=$(realpath "test/output_sim_ref")
-# REF=$(realpath "test/sim_ref/base_ref/base_ref.fa")
-# VCF=$(realpath "test/sim_ref/sniffles.vcf.gz")
-
 # Repeat Masker species (change)
 # SPECIES="mammalia"
 SPECIES="human"
-PREFIX=""
 
 # Repeat Masker and TRF, bcftools, bgzip, tabix  programs (change if necessary)
 TRF_BINARY=$(realpath "trf409.linux64")
@@ -54,6 +40,7 @@ INTERVAL=0.05
 DIAGRAM_LEN=100
 
 FLAG_DELETE_TMP_FILES=1 # Flag to delete temporary files (1 = yes, 0 = no)
+PREFIX="" # Prefix for output files (default: None)
 
 # Python and bash scripts (keep as it is)
 EXTRACT_SV_FLANKINGS=$(realpath src/extract_sv.py)
@@ -196,25 +183,13 @@ run_repeatmasker() {
     info "3. Running RepeatMasker..."
     T2=$(date +%s)
     cd ${RM_TMP}
-    # set -x
-    # find "${EXTRACT_SV_FLANKS_OUT}" -name "${SAMPLE}.*.fa" | parallel -j "$MAX_JOBS" "RepeatMasker {} -pa $THREADS_PER_JOB -html -gff -dir '${EXTRACT_SV_FLANKS_OUT}'"
-    # find "../" -name "${SAMPLE}.*.fa" | parallel -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir '../'" || die "failed"
-    # find "../" -name "${SAMPLE}.*.fa" | xargs -I {} taskset -c 0-9 "${REPEAT_MASKER}" {}  -html -gff -dir '../'
-    # ls *.fasta | parallel --load 75% -j $(( $(nproc) / 4 )) repeatmasker -engine nhmmer -pa 2 {}
 
-    # nhmmer search engine takes 2 cpus per job. hence -pa 2 means 2x2=4 cpus are used. Only runs new jobs if system load is below 75%.
-    # find "../" -name "${SAMPLE}.*.fa" | parallel --load 75% -j $(( $(nproc) / 4 )) ${REPEAT_MASKER} {} -pa 2 -html -gff -dir "../" || die "failed"
-    # find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa"
-    #find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | xargs -I {} "${REPEAT_MASKER}" {} -pa $(( $(nproc) / 2 )) -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} -species ${SPECIES}
-    #find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | parallel -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} -species ${SPECIES}"
-    # Check if any .fa files exist first
     shopt -s nullglob
     fa_files=(${EXTRACT_SV_FLANKS_OUT}/*.fa)
     (( ${#fa_files[@]} == 0 )) && die "No FASTA files found in ${EXTRACT_SV_FLANKS_OUT}"
     shopt -u nullglob
 
     # Run RepeatMasker in parallel with error sensitivity
-    #find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | parallel --halt now,fail=1 -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} -species ${SPECIES}" || die "RepeatMasker failed"
     find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | parallel --halt now,fail=1 -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} -species ${SPECIES} > {}.log 2>&1" || die "RepeatMasker failed"
 
     cd - || die "cd - failed"
