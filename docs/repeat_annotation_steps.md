@@ -69,6 +69,8 @@ For **Tandem Repeat Finder (TRF)**, entries are determined by prioritising maxim
 
 
 ## Step 1 (RM)
+For **RepeatMasker (RM)**, entries are determined by prioritising those with maximal intersection between the SV and repeat entry. Entries are grouped into their repeat class (e.g. SINE, LINE) and in order of priority non-overlapping entries are selected within each class. Based on the element coverage and SV coverage, the SV is classified as a Full/Partial RECIPROCAL or Minimal.
+
 1. Go through each row (element) of the `SAMPLE_rm.tab` file.
 
 2. Obtain the element's classification (also known as repeat class), e.g., SINE, LINE, LTR, DNA, Retroposon.
