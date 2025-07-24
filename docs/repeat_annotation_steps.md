@@ -1,6 +1,19 @@
-## Repeat Annotation Steps
+# Repeat Annotation Steps
 
 The steps followed in annotating the vcf records using TRF and RM information are given below.
+
+## SV/Repeat overlap calculations
+
+![Illustration](/images/annotation_tag_illustration.png)
+
+Note - `ri_l` is not necessarily equal to `ri_sv_l`. It can be less than, equal or greater than `ri_sv_l`.
+
+* RM\_ELEMENTS\_COVERAGE = `ri_sv_l/ri_L` e.g. [`r1_sv_l/r1_L`, `r2_sv_l/r2_L`]
+* RM\_ELEMENT\_PROPORTION = `ri_l/ri_L` e.g. [`r1_l/r1_L`, `r2_l/r2_L`]
+* RM\_SV\_COVERAGE = `ri_sv_l/sv_L` e.g. [`r1_sv_l/sv_L`, `r2_sv_l/sv_L`]
+  - TRF_SV_COVERAGE is also calculated similarly.
+* RM\_TOTAL\_SV\_COVERAGE = `sum(ri_sv_l)/sv_L` e.g. `(r1_sv_l+r2_sv_l)/sv_L`
+   - TRF_TOTAL_SV_COVERAGE is also calculated similarly.
 
 ## Important parameters with default values
 
@@ -13,6 +26,11 @@ args.max_trf_overlap = 0.1
 ````
 
 ## Step 1 (TRF)
+
+For **Tandem Repeat Finder (TRF)**, entries are determined by prioritising maximal intersection between SV and repeat and minimal period size in intervals (e.g. 0.05). Non-overlapping entries are selected in order of priority.
+
+![Illustration](/images/TRF_workflow.png)
+
 1. Parse `sample_trf.tab` file:
    - The file can have multiple lines (elements) per `sv_id`.
    - For each line, save the element under the corresponding `sv_id`.
