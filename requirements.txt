@@ -1,6 +1,10 @@
-pysam
 numpy
-pandas
-tqdm
-h5py
+pysam
 biopython
+pandas
+matplotlib
+seaborn
+pypdf
+h5py
+tqdm
+scipy

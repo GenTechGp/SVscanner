@@ -1,0 +1,211 @@
+usage: sniffles --input SORTED_INPUT.bam [--vcf OUTPUT.vcf] [--snf MERGEABLE_OUTPUT.snf] [--threads 4] [--mosaic]
+
+Sniffles2: A fast structural variant (SV) caller for long-read sequencing data
+ Version 2.6.2
+ Contact: sniffles@romanek.at
+
+ Usage example A - Call SVs for a single sample:
+       sniffles --input sorted_indexed_alignments.bam --vcf output.vcf
+
+       ... OR, with CRAM input and bgzipped+tabix indexed VCF output:
+         sniffles --input sample.cram --vcf output.vcf.gz
+
+       ... OR, producing only a SNF file with SV candidates for later multi-sample calling:
+         sniffles --input sample1.bam --snf sample1.snf
+
+       ... OR, simultaneously producing a single-sample VCF and SNF file for later multi-sample calling:
+         sniffles --input sample1.bam --vcf sample1.vcf.gz --snf sample1.snf
+
+       ... OR, with additional options to specify tandem repeat annotations (for improved call accuracy), reference (for DEL sequences) and mosaic mode for detecting rare SVs:
+         sniffles --input sample1.bam --vcf sample1.vcf.gz --tandem-repeats tandem_repeats.bed --reference genome.fa --mosaic
+
+    Usage example B - Multi-sample calling:
+       Step 1. Create .snf for each sample: sniffles --input sample1.bam --snf sample1.snf
+       Step 2. Combined calling: sniffles --input sample1.snf sample2.snf ... sampleN.snf --vcf multisample.vcf
+
+       ... OR, using a .tsv file containing a list of .snf files, and custom sample ids in an optional second column (one sample per line):
+       Step 2. Combined calling: sniffles --input snf_files_list.tsv --vcf multisample.vcf
+
+    Usage example C - Determine genotypes for a set of known SVs (force calling):
+       sniffles --input sample.bam --genotype-vcf input_known_svs.vcf --vcf output_genotypes.vcf
+       
+
+ Use --help for full parameter/usage information
+ 
+
+options:
+  -h, --help                                                       show this help message and exit
+  --version                                                        show program's version number and exit
+
+Common parameters:
+  -i IN [IN ...], --input IN [IN ...]                              For single-sample calling: A coordinate-sorted and indexed .bam/.cram (BAM/CRAM
+                                                                   format) file containing aligned reads. - OR - For multi-sample calling: Multiple
+                                                                   .snf files (generated before by running Sniffles2 for individual samples with
+                                                                   --snf) (default: None)
+  -v OUT.vcf, --vcf OUT.vcf                                        VCF output filename to write the called and refined SVs to. If the given filename
+                                                                   ends with .gz, the VCF file will be automatically bgzipped and a .tbi index built
+                                                                   for it. (default: None)
+  --snf OUT.snf                                                    Sniffles2 file (.snf) output filename to store candidates for later multi-sample
+                                                                   calling (default: None)
+  --reference reference.fasta                                      (Optional) Reference sequence the reads were aligned against. To enable output of
+                                                                   deletion SV sequences, this parameter must be set. (default: None)
+  --tandem-repeats IN.bed                                          (Optional) Input .bed file containing tandem repeat annotations for the reference
+                                                                   genome. (default: None)
+  --phase                                                          Determine phase for SV calls (requires the input alignments to be phased) (default:
+                                                                   False)
+  -t N, --threads N                                                Number of parallel threads to use (speed-up for multi-core CPUs) (default: 4)
+  -c CONTIG, --contig CONTIG                                       (Optional) Only process the specified contigs. May be given more than once.
+                                                                   (default: None)
+  --regions REGIONS.bed                                            (Optional) Only process the specified regions. (default: None)
+  --tmp-dir TMP_DIR                                                (Optional) Directory where temporary files are written, must exist. If it doesn't,
+                                                                   default path is used (default: )
+
+SV Filtering parameters:
+  --minsupport auto                                                Minimum number of supporting reads for a SV to be reported (default: automatically
+                                                                   choose based on coverage) (default: auto)
+  --minsupport-auto-mult 0.1/0.025                                 Coverage based minimum support multiplier for germline mode (only for auto
+                                                                   minsupport) (default: None)
+  --minsvlen N                                                     Minimum SV length (in bp) (default: 50)
+  --minsvlen-screen-ratio N                                        Minimum length for SV candidates (as fraction of --minsvlen) (default: 0.9)
+  --mapq N                                                         Alignments with mapping quality lower than this value will be ignored
+  --no-qc, --qc-output-all                                         Output all SV candidates, disregarding quality control steps. (default: False)
+  --qc-stdev True                                                  Apply filtering based on SV start position and length standard deviation (default:
+                                                                   True)
+  --qc-stdev-abs-max N                                             Maximum standard deviation for SV length and size (in bp) (default: 500)
+  --qc-strand False                                                Apply filtering based on strand support of SV calls (default: False)
+  --qc-coverage N                                                  Minimum surrounding region coverage of SV calls (default: 1)
+  --long-ins-length 2500                                           Insertion SVs longer than this value are considered as hard to detect based on the
+                                                                   aligner and read length and subjected to more sensitive filtering. (default: 2500)
+  --long-del-length 50000                                          Deletion SVs longer than this value are subjected to central coverage drop-based
+                                                                   filtering (Not applicable for --mosaic) (default: 50000)
+  --long-inv-length 10000                                          Inversion SVs longer than this value are not subjected to central coverage drop-
+                                                                   based filtering (default: 10000)
+  --long-del-coverage 0.66                                         Long deletions with central coverage (in relation to upstream/downstream coverage)
+                                                                   higher than this value will be filtered (Not applicable for --mosaic) (default:
+                                                                   0.66)
+  --long-dup-length 50000                                          Duplication SVs longer than this value are subjected to central coverage increase-
+                                                                   based filtering (Not applicable for --mosaic) (default: 50000)
+  --qc-bnd-filter-strand QC_BND_FILTER_STRAND                      Filter breakends that do not have support for both strands (default: True)
+  --bnd-min-split-length BND_MIN_SPLIT_LENGTH                      Minimum length of read splits to be considered for breakends (default: 1000)
+  --long-dup-coverage 1.33                                         Long duplications with central coverage (in relation to upstream/downstream
+                                                                   coverage) lower than this value will be filtered (Not applicable for --mosaic)
+                                                                   (default: 1.33)
+  --max-splits-kb N                                                Additional number of splits per kilobase read sequence allowed before reads are
+                                                                   ignored (default: 0.1)
+  --max-splits-base N                                              Base number of splits allowed before reads are ignored (in addition to --max-
+                                                                   splits-kb) (default: 3)
+  --min-alignment-length N                                         Reads with alignments shorter than this length (in bp) will be ignored
+  --phase-conflict-threshold F                                     Maximum fraction of conflicting reads permitted for SV phase information to be
+                                                                   labelled as PASS (only for --phase) (default: 0.1)
+  --detect-large-ins True                                          Infer insertions that are longer than most reads and therefore are spanned by few
+                                                                   alignments only. (default: True)
+  --max-unknown-pct 0.5                                            Maximum percentage of N for an SV to be emitted. (default: 0.5)
+  --large-coverage-sample-interval 5000                            Sampling interval for coverage calculation for large SVs (default: 5000)
+
+SV Clustering parameters:
+  --cluster-binsize N                                              Initial screening bin size in bp (default: 100)
+  --cluster-r R                                                    Multiplier for SV start position standard deviation criterion in cluster merging
+                                                                   (default: 2.5)
+  --cluster-repeat-h H                                             Multiplier for mean SV length criterion for tandem repeat cluster merging (default:
+                                                                   1.5)
+  --cluster-repeat-h-max N                                         Max. merging distance based on SV length criterion for tandem repeat cluster
+                                                                   merging (default: 1000)
+  --cluster-merge-pos N                                            Max. merging distance for insertions and deletions on the same read and cluster in
+                                                                   non-repeat regions (default: 150)
+  --cluster-merge-len F                                            Max. size difference for merging SVs as fraction of SV length (default: 0.33)
+  --cluster-merge-bnd N                                            Max. merging distance for breakend SV candidates. (default: 1000)
+
+SV Genotyping parameters:
+  --genotype-ploidy N                                              Sample ploidy (currently fixed at value 2) (default: 2)
+  --genotype-error N                                               Estimated false positive rate for leads (relating to total coverage) (default:
+                                                                   0.05)
+  --sample-id SAMPLE_ID                                            Custom ID for this sample, used for later multi-sample calling (stored in .snf)
+                                                                   (default: None)
+  --genotype-vcf IN.vcf                                            Determine the genotypes for all SVs in the given input .vcf file (forced calling).
+                                                                   Re-genotyped .vcf will be written to the output file specified with --vcf.
+                                                                   (default: None)
+
+Multi-Sample Calling / Combine parameters:
+  --combine-high-confidence F                                      Minimum fraction of samples in which a SV needs to have individually passed QC for
+                                                                   it to be reported in combined output (a value of zero will report all SVs that pass
+                                                                   QC in at least one of the input samples) (default: 0.0)
+  --combine-low-confidence F                                       Minimum fraction of samples in which a SV needs to be present (failed QC) for it to
+                                                                   be reported in combined output (default: 0.2)
+  --combine-low-confidence-abs N                                   Minimum absolute number of samples in which a SV needs to be present (failed QC)
+                                                                   for it to be reported in combined output (default: 2)
+  --combine-null-min-coverage N                                    Minimum coverage for a sample genotype to be reported as 0/0 (sample genotypes with
+                                                                   coverage below this threshold at the SV location will be output as ./.) (default:
+                                                                   5)
+  --combine-match N                                                Multiplier for maximum deviation of multiple SV's start/end position for them to be
+                                                                   combined across samples. Given by max_dev=M*sqrt(min(SV_length_a,SV_length_b)),
+                                                                   where M is this parameter. (default: 250)
+  --combine-match-max N                                            Upper limit for the maximum deviation computed for --combine-match, in bp.
+                                                                   (default: 1000)
+  --combine-separate-intra                                         Disable combination of SVs within the same sample (default: False)
+  --combine-output-filtered                                        Include low-confidence / mosaic SVs in multi-calling (default: False)
+  --combine-pair-relabel                                           Override low-quality genotypes when combining 2 samples (may be used for e.g.
+                                                                   tumor-normal comparisons) (default: False)
+  --combine-pair-relabel-threshold COMBINE_PAIR_RELABEL_THRESHOLD  Genotype quality below which a genotype call will be relabeled (default: 20)
+  --combine-close-handles                                          Close .SNF file handles after each use. May lower performance, but may be required
+                                                                   when maximum number of file handles supported by OS is reached when merging many
+                                                                   samples. (default: False)
+  --combine-pctseq COMBINE_PCTSEQ                                  Minimum alignment distance as percent of SV length to be merged. Set to 0 to
+                                                                   disable alignments for merging. (default: 0.7)
+  --combine-support-threshold N                                    Minimum support for SVs to be considered for multi-sample calling. (default: 3)
+  --combine-population population.snf                              Name of a population SNF to enable population annotation. (default: None)
+  --re-qc auto                                                     Re-QC SVs from SNF files. Set to 0 to disable re-qc of SNF files. Set to 1 to force
+                                                                   re-qc. Default of 'auto' will try to fix known errors in SNF files. (default: auto)
+
+SV Postprocessing, QC and output parameters:
+  --output-rnames                                                  Output names of all supporting reads for each SV in the RNAMEs info field (default:
+                                                                   False)
+  --no-consensus                                                   Disable consensus sequence generation for insertion SV calls (may improve
+                                                                   performance) (default: False)
+  --no-sort                                                        Do not sort output VCF by genomic coordinates (may slightly improve performance)
+                                                                   (default: False)
+  --no-progress                                                    Disable progress display (default: False)
+  --quiet                                                          Disable all logging, except errors (default: False)
+  --max-del-seq-len N                                              Maximum deletion sequence length to be output. Deletion SVs longer than this value
+                                                                   will be written to the output as symbolic SVs. (default: 50000)
+  --symbolic                                                       Output all SVs as symbolic, including insertions and deletions, instead of
+                                                                   reporting nucleotide sequences. (default: False)
+  --allow-overwrite                                                Allow overwriting output files if already existing (default: False)
+
+Mosaic calling mode parameters:
+  --mosaic                                                         Set Sniffles run mode to detect rare, somatic and mosaic SVs (default: False)
+  --mosaic-af-max F                                                Maximum allele frequency for which SVs are considered mosaic (default: 0.218)
+  --mosaic-af-min F                                                Minimum allele frequency for mosaic SVs to be output (default: 0.05)
+  --mosaic-qc-invdup-min-length N                                  Minimum SV length for mosaic inversion and duplication SVs (default: 500)
+  --mosaic-qc-coverage-max-change-frac F                           Maximum relative coverage change across SV breakpoints (default: 0.1)
+  --mosaic-qc-strand True                                          Apply filtering based on strand support of SV calls (default: True)
+  --mosaic-include-germline                                        Report germline SVs as well in mosaic mode (default: False)
+
+Developer parameters:
+  --combine-consensus                                              Output the consensus genotype of all samples (default: False)
+  --qc-coverage-max-change-frac F                                  Maximum relative coverage change across SV breakpoints (default: -1)
+
+ Usage example A - Call SVs for a single sample:
+       sniffles --input sorted_indexed_alignments.bam --vcf output.vcf
+
+       ... OR, with CRAM input and bgzipped+tabix indexed VCF output:
+         sniffles --input sample.cram --vcf output.vcf.gz
+
+       ... OR, producing only a SNF file with SV candidates for later multi-sample calling:
+         sniffles --input sample1.bam --snf sample1.snf
+
+       ... OR, simultaneously producing a single-sample VCF and SNF file for later multi-sample calling:
+         sniffles --input sample1.bam --vcf sample1.vcf.gz --snf sample1.snf
+
+       ... OR, with additional options to specify tandem repeat annotations (for improved call accuracy), reference (for DEL sequences) and mosaic mode for detecting rare SVs:
+         sniffles --input sample1.bam --vcf sample1.vcf.gz --tandem-repeats tandem_repeats.bed --reference genome.fa --mosaic
+
+    Usage example B - Multi-sample calling:
+       Step 1. Create .snf for each sample: sniffles --input sample1.bam --snf sample1.snf
+       Step 2. Combined calling: sniffles --input sample1.snf sample2.snf ... sampleN.snf --vcf multisample.vcf
+
+       ... OR, using a .tsv file containing a list of .snf files, and custom sample ids in an optional second column (one sample per line):
+       Step 2. Combined calling: sniffles --input snf_files_list.tsv --vcf multisample.vcf
+
+    Usage example C - Determine genotypes for a set of known SVs (force calling):
+       sniffles --input sample.bam --genotype-vcf input_known_svs.vcf --vcf output_genotypes.vcf
+       

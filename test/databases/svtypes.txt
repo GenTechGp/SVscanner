@@ -1,0 +1,2 @@
+repeat:tandem repeat expansion,tandem repeat contraction,perfect tandem repetition,approximate tandem repetition
+mobile:deletion,inversion,tandem duplication,inverted tandem duplication,insertion
