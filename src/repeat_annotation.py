@@ -1,4 +1,3 @@
-import pysam
 import sys
 import argparse
 import os
@@ -7,7 +6,6 @@ import time
 import csv
 import pandas as pd
 import math
-import copy
 
 BND_LEN_THRESHOLD=0.25
 

@@ -25,7 +25,7 @@ args.div = 0.05
 args.max_trf_overlap = 0.1
 ````
 
-## Step 1 (TRF)
+## Step 1 (TRF preprocessing)
 
 For **Tandem Repeat Finder (TRF)**, entries are determined by prioritising maximal intersection between SV and repeat and minimal period size in intervals (e.g. 0.05). Non-overlapping entries are selected in order of priority.
 
@@ -45,7 +45,7 @@ For **Tandem Repeat Finder (TRF)**, entries are determined by prioritising maxim
    - Do not separate elements by classification; store all together under the `sv_id`.
 
 
-## Step 2 (TRF)
+## Step 2 (TRF filtering)
 1. For each `sv_id`:
    - Get the `trf` elements list created above.
    - Sort the repeat elements in the list based on the element's repeat start index.
@@ -68,7 +68,7 @@ For **Tandem Repeat Finder (TRF)**, entries are determined by prioritising maxim
 7. Calculate total non-overlapping elements SV coverage (`TRF_TTC`) using `TRF_LIST`.
 
 
-## Step 1 (RM)
+## Step 1 (RM preprocessing)
 For **RepeatMasker (RM)**, entries are determined by prioritising those with maximal intersection between the SV and repeat entry. Entries are grouped into their repeat class (e.g. SINE, LINE) and in order of priority non-overlapping entries are selected within each class. Based on the element coverage and SV coverage, the SV is classified as a Full/Partial RECIPROCAL or Minimal.
 
 ![Illustration](/images/RM_workflow.png)
@@ -94,7 +94,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
    - Key: classification (e.g., "SINE", "LINE", etc.)
    - Value: list of elements belonging to that classification.
 
-## Step 2 (RM)
+## Step 2 (RM filtering)
 1. Iterate through the populated dictionary key by key (each key is a classification).
 
 2. For each classification:
@@ -115,7 +115,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 
 5. Calculate the total SV coverage `RM_TTC` using `RM_LIST` (classification is not considered for this total).
 
-## Step 3
+## Step 3 (Decide Final Classification)
 1. Prepare `RM` tags and `TRF` tags as shown in **Table 2**.
 
 2. Check if `RM_TTC < args.min_total_sv_coverage`:
@@ -142,8 +142,13 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
    - `RECIPROCAL`
    - `FINAL_CLASSIFICATION`
 
+8. In addition, if a STRchive bed file is provided and the SV intersects with the position of a gene then following tags are also added to INFO
+   - `DISEASE_GENE` STR disease associated with gene
+   - `STRCHIVE_MOTIF` Pathogenic motif
+   - `PATHOGENIC_MIN` Minimum pathogenic number annotated in STRchive
 
-## Table 0: TRF Element Classification by `period_size`
+
+### Table 0: TRF Element Classification by `period_size`
 | Condition               | Classification |
 |------------------------|----------------|
 | period_size == 1       | HOMO           |
@@ -151,13 +156,13 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | 6 < period_size < 101  | VNTR           |
 | 100 < period_size      | TR             |
 
-## Table 1: Determine ECC
+### Table 1: Determine ECC
 | Condition         | ECC = True | ECC = False |
 |---------------------------|------------|-------------|
 | TC ≥ 0.75                 | Full       | Partial     |
 | TC < 0.75                 | Minimal    | Minimal     |
 
-## Table 2: VCF INFO tags
+### Table 2: VCF INFO tags
 | Key                     | Value (comma-separated string) |
 |-------------------------|--------------------------------|
 | RM_CLASSIFICATION       | Classification (repeat class) of each element in the RM_LIST |
@@ -170,7 +175,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | TRF_COPY_NUMBER         | Copy number of each element in the TRF_LIST |
 | CONSENSUS_REPEAT        | Motif of each element in the TRF_LIST |
 
-## Table 3
+### Table 3
  TRF_CLASSIFICATION | RM_CLASSIFICATION | FINAL_CLASSIFICATION |
 |--------------------|-------------------|-----------------------|
 | RECIPROCAL | NON REPETITIVE/NA | NON REPETITIVE |
@@ -179,29 +184,30 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | valid | RECIPROCAL | determine using **Table 5** |
 | valid | valid | calculate for both TRF and RM separately using **Table 4** and then select using **Table 7** |
 
-## Table 4
+### Table 4
 | condition | FINAL_CLASSIFICATION |
 |-----------|----------------------|
 | highest class TC < `args.min_class_sv_coverage` | NON REPETITIVE |
 | else | determine using **Table 5** for the class with highest TC |
 
-## Table 5
+### Table 5
 | Class | RECIPROCAL | FINAL_CLASSIFICATION |
 |-------|------------|----------------------|
 | SINE/LINE/LTR/DNA/Retroposon | Full/Partial | Class |
 | SINE/LINE/LTR/DNA/Retroposon | Minimal | NON REPETITIVE |
 | HOMO/STR/VNTR/TR | NA | Class |
 
-## Table 6
+### Table 6
 | FINAL_CLASSIFICATION | RECIPROCAL |
 |----------------------|------------|
 | SINE/LINE/LTR/DNA/Retroposon | RECIPROCAL of the class |
 | HOMO/STR/VNTR/TR | NA |
 
-## Table 7
+### Table 7
 | TRF_FINAL_CLASSIFICATION | RM_FINAL_CLASSIFICATION | FINAL_CLASSIFICATION |
 |--------------------------|-------------------------|----------------------|
 | NON REPETITIVE | NON REPETITIVE | NON REPETITIVE |
 | NON REPETITIVE | valid | RM_FINAL_CLASSIFICATION |
 | valid | NON REPETITIVE | TRF_FINAL_CLASSIFICATION |
 | valid | valid | if TRF TTC > RM TTC then TRF FINAL_CLASSIFICATION else RM FINAL_CLASSIFICATION |
+

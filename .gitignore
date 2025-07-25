@@ -36,5 +36,6 @@ test/cutesv
 test/VN049_sniffles_jasmine
 test/hgmini
 test/out_plots
+test/jsn_out
 
 dont_delete/

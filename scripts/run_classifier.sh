@@ -1,9 +1,9 @@
 #!/bin/bash
 
+VERSION="SVclassifier v0.1.0"
+
 # set -x
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
-info() {  echo -e "$1" >&2 ; }
-info "$(date)"
 
 # Input/Output (change)
 #REF=$(realpath "/g/data/te53/ontsv/references/hg38_reference_files/hg38.analysisSet.fa")
@@ -26,8 +26,7 @@ TABIX=$(realpath htslib-1.21/tabix)
 # NTHREADS=$NSLOTS   # Total number of threads
 NSPLIT_FILES=500
 NTHREADS=$(nproc --all)
-echo "Number of Threads"
-echo ${NTHREADS}
+
 MAX_JOBS=48          # Max number of RepeatMasker process to run in parallel 
 THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
@@ -66,6 +65,9 @@ usage() {
     echo "  --diagram_len VAL       Diagram length (default: $DIAGRAM_LEN)"
     echo "  --nsplit_files INT      Number of split files (default: $NSPLIT_FILES)"
     echo "  --keep_tmp_files        Keep temporary files (default: delete)"
+    echo "  --help                  Show this help message"
+    echo "  --version               Show version information"
+    echo "Version: $VERSION"
     exit 0
 }
 
@@ -103,6 +105,8 @@ parse_args() {
                 FLAG_DELETE_TMP_FILES=0; shift;;
             --help)
                 usage;;
+            --version)
+                echo "$VERSION"; exit 0;;
             *)
                 echo "Unknown argument: $1"; usage;;
         esac
@@ -129,18 +133,18 @@ parse_args() {
 
 check_required() {
 
-    [ -n "$VIRTUAL_ENV" ] && info "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
+    [ -n "$VIRTUAL_ENV" ] && echo "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
     [ -z "$OUTPUT_DIR" ] && die "OUTPUT_DIR is not set"
     [ -z "$REF" ] && die "REF is not set"
     [ -z "$VCF" ] && die "VCF is not set"
     [ -z "$STR_BED" ] && die "STR_BED is not set"
 
-    info "Output dir: ${OUTPUT_DIR}"
-    info "Reference: ${REF}"
-    info "Input SV VCF: ${VCF}"
-    info "Input BED: ${STR_BED}"
+    echo "Output dir: ${OUTPUT_DIR}"
+    echo "Reference: ${REF}"
+    echo "Input SV VCF: ${VCF}"
+    echo "Input BED: ${STR_BED}"
 
-    info "NTHREADS: ${NTHREADS}"
+    echo "Number of Threads: ${NTHREADS}"
     
     command -v split >/dev/null 2>&1 || die "split program not found"
     command -v ${TRF_BINARY} >/dev/null 2>&1 || die "TRF binary not found"
@@ -162,25 +166,25 @@ create_output_dir() {
 
 extract_flanking_regions() {
     # 1) Extract sequence and flanking regions for variants
-    info "1. Extracting structural variant sequences from VCF..."
+    echo "1. Extracting structural variant sequences from VCF..."
     python3 ${EXTRACT_SV_FLANKINGS} --vcf ${VCF} --ref ${REF} --out ${EXTRACT_SV_FLANKS_OUT} --min 10 -n ${NSPLIT_FILES} --info ${INFO_FILE} || die "failed"
-    info "done"
+    echo "done"
 }
 
 run_trf() {
     # set -x
     # 3) Run Tandem Repeat Finder and RepeatMasker - wait for both to complete
-    info "3. Running Tandem Repeat Finder..."
+    echo "3. Running Tandem Repeat Finder..."
     T4=$(date +%s)
     find "${EXTRACT_SV_FLANKS_OUT}" -name "*.fa" | parallel -j ${NTHREADS} --bar "${TRF_BINARY} {} 2 7 7 80 10 50 500 -h -ngs > {.}.dat" || die "failed"
     T5=$(date +%s) || die "failed to get T3"
     TRF_TIME=$((T5 - T4)) || die "failed to calculate time"
-    info "done. Tandem Repeat Finder took ${TRF_TIME} seconds"
+    echo "done. Tandem Repeat Finder took ${TRF_TIME} seconds"
 }
 
 run_repeatmasker() {
     mkdir -p ${RM_TMP}
-    info "3. Running RepeatMasker..."
+    echo "3. Running RepeatMasker..."
     T2=$(date +%s)
     cd ${RM_TMP}
 
@@ -196,12 +200,12 @@ run_repeatmasker() {
     T3=$(date +%s) || die "failed to get T3"
     RM_TIME=$((T3 - T2)) || die "failed to calculate time"
     rm -r ${RM_TMP} || die "failed to remove ${RM_TMP}"
-    info "done. RepeatMasker took ${RM_TIME} seconds"
+    echo "done. RepeatMasker took ${RM_TIME} seconds"
 }
 
 process_repeatmasker_output() {
     # Process the RepeatMasker files (remove the header and 16th column)
-    info "Process the RepeatMasker files (remove the header and 16th column)..."
+    echo "Process the RepeatMasker files (remove the header and 16th column)..."
     for rm_output in "${EXTRACT_SV_FLANKS_OUT}"/*.fa.out; do
         tail -n +4 "${rm_output}" | awk '{
             $16 = "";
@@ -209,7 +213,7 @@ process_repeatmasker_output() {
         }' OFS='\t' > "${rm_output}.tab" || die "failed"
     done
     # rm -rf "${EXTRACT_SV_FLANKS_OUT}/*.fa.out"
-    info "done"
+    echo "done"
 }
 
 combine_split_files() {
@@ -220,7 +224,7 @@ combine_split_files() {
 }
 
 annotation() {
-    info "4. Annotating..."
+    echo "4. Annotating..."
     test -d "${ANNOTATIONS_OUT}" && rm -r "${ANNOTATIONS_OUT}"
     python3 ${ANNOTATION} \
         --vcf ${VCF}\
@@ -241,31 +245,31 @@ annotation() {
     ${TABIX} -s1 -b2 -e2 ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "${TABIX} failed"
     ${BCFTOOLS} annotate -a ${ANNOTATIONS_OUT}/vcf_annotate.gz -c ${COL_LIST} -h ${ANNOTATIONS_OUT}/vcf_header.txt ${VCF} -o ${ANNOTATED_VCF} || die "${BCFTOOLS} annotate failed"
 
-    info "done"
+    echo "done"
 
 }
 
 sort_and_index_vcf() {
     # Sort and Index the annotated VCF
-    info "6. Sort and Index the annotated VCF..."
+    echo "6. Sort and Index the annotated VCF..."
     ${BCFTOOLS} sort -Oz -o ${ANNOTATED_VCF}.gz ${ANNOTATED_VCF} || die "${BCFTOOLS} sort failed"
     ${BCFTOOLS} index -t ${ANNOTATED_VCF}.gz || die "${BCFTOOLS} index failed"
     rm ${ANNOTATED_VCF}
-    info "done"
+    echo "done"
 }
 
 plot_classifications() {
-    info "4. Plotting..."
+    echo "4. Plotting..."
     python3 ${PLOT} \
         --out ${ANNOTATIONS_OUT}/plots\
         --tsv ${ANNOTATIONS_OUT}/plot_annotate.tsv || die "failed"
-    info "done"
+    echo "done"
 }
 
 show_output_paths() {
 
     if [[ ${FLAG_DELETE_TMP_FILES} -eq 1 ]]; then
-        info "Deleting temporary files..."
+        echo "Deleting temporary files..."
         mv ${ANNOTATIONS_OUT}/plots/plots.pdf ${OUTPUT_DIR}/${PREFIX}plots.pdf || die "failed to move plots to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/diagram.txt ${OUTPUT_DIR}/${PREFIX}diagram.txt || die "failed to move diagram.txt to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/rm_diagram.tsv ${OUTPUT_DIR}/${PREFIX}rm_diagram.tsv || die "failed to move rm_diagram.tsv to ${OUTPUT_DIR}"
@@ -276,13 +280,13 @@ show_output_paths() {
         # rm -f ${INFO_FILE} || die "failed to remove ${INFO_FILE}"
         # rm -f ${RM_FILE} || die "failed to remove ${RM_FILE}"
         # rm -f ${TRF_FILE} || die "failed to remove ${TRF_FILE}"
-        info "Annotation outputs dir: ${OUTPUT_DIR}"
-        info "Plots dir: ${OUTPUT_DIR}/plots"
-        info "SV VCF with repeats annotated: ${ANNOTATED_VCF}.gz"
+        echo "Annotation outputs dir: ${OUTPUT_DIR}"
+        echo "Plots dir: ${OUTPUT_DIR}/plots"
+        echo "SV VCF with repeats annotated: ${ANNOTATED_VCF}.gz"
     else
-        info "Annotation outputs dir: ${ANNOTATIONS_OUT}"
-        info "Plots dir: ${ANNOTATIONS_OUT}/plots"
-        info "SV VCF with repeats annotated: ${ANNOTATED_VCF}"
+        echo "Annotation outputs dir: ${ANNOTATIONS_OUT}"
+        echo "Plots dir: ${ANNOTATIONS_OUT}/plots"
+        echo "SV VCF with repeats annotated: ${ANNOTATED_VCF}"
     fi
 
 }
@@ -306,8 +310,8 @@ show_output_paths
 
 T1=$(date +%s)
 ELAPSED_TIME=$((T1 - T0))
-info "The SVclassifier pipeline took ${ELAPSED_TIME} seconds"
+echo "The SVclassifier pipeline took ${ELAPSED_TIME} seconds"
 
-info "$(date)"
-info "Success!"
+echo "$(date)"
+echo "Success!"
 exit 0

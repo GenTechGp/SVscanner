@@ -1,22 +1,20 @@
 # SV Toolkit
 
-*A collection of tools for validating and annotating structural variants (SV).* 
+*A workflow to annotate and analyse structural variants (SV) with Repeat information.* 
 
 ## Overview
 
-**SVChecker** is a tool that assists in validating SV calls by reviewing supporting evidence provided by SV callers. Via a script, the tool takes as input the reads (BAM), called variants (VCF) and reference genome (FASTA). The checker evaluates various types of evidence, such as reads overlapping breakpoints, read orientation, and coverage, to determine whether any given variants require further review.
+A workflow for annotating tandem repeats and mobile elements identified by Tandem Repeat Finder (TRF) and RepeatMasker (RM) within SVs. The workflow takes SV information (VCF) and reference genome (FASTA) as inputs. First, flanking sequences around the SV are extracted. Then extracted sequences are annotated using TRF and RM. The workflow has three main outputs.
 
-**SVClassifier** is a tool for annotating tandem repeats and mobile elements identified by Tandem Repeat Finder (TRF) and RepeatMasker within SVs. Via a script, the tool takes as input the file containing called variants (VCF) and reference genome (FASTA). It runs instances of TRF and RepeatMasker, then identifies and prioritises entries intersecting with the SV for annotation or repetitive characteristics. Additionally, the tool enables visualisation of the annotation entries via a text file. 
+1. SV VCF file with repeat information annotated.
+2. Diagrams with Repeat/SV annotations.
+3. Histograms and density plots summarising Repeat/SV annotations.
 
-## Workflow
+![Illustration](/images/SVscanner_repeat_annotation_workflow.png)
 
-#### SVChecker  
-![GS](/images/checker_workflow_dark.svg#gh-dark-mode-only)
-![GS](/images/checker_workflow.svg#gh-light-mode-only)
-
-#### SVClassifier
-![GS](/images/classifier_workflow_dark.svg#gh-dark-mode-only)
-![GS](/images/classifier_workflow.svg#gh-light-mode-only)
+- Read more about the SV extraction step [here](docs/extract_sv_and_seq_consensus_documentation.md)
+- Read more about the repeat annotation step [here](docs/repeat_annotation_steps.md)
+- Check commandline arguments for [extract_sv.py](), [repeat_annotation.py](), [generate_plots.py]()
 
 ### Main Requirements
 
@@ -33,33 +31,12 @@
 
 #### SVClassifier
 
-Executable versions of annotation software: 
-* Tandem Repeat Finder (https://github.com/Benson-Genomics-Lab/TRF/releases/tag/v4.09.1)  
-* RepeatMasker (https://www.repeatmasker.org/RepeatMasker/) or see [Usage.md](https://github.com/KCCGGenomeTechLab/SVtoolkit/blob/main/docs/usage.md#RepeatMasker)
-
-
-### Main Input files 
-
-#### SVChecker
-
-* Aligned, sorted bam containing long read alignments from **minimap2**  
-* VCF (vcf.gz) containing called SVs from **Sniffles2, cuteSV, SVIM** (must contain INFO flag `'RNAMES'`)  
-  * SVIM must be run with `--read_names` (`svim reads --help`)
-
-#### SVClassifier
-
 * VCF (.vcf.gz) containing called SVs (must contain INFO flag `'SVTYPE'`)  
   * ***NOTE***: Does not assess symbolic insertions, translocations
 * *Optional*: STRchive dataset for genome (in extended BED format)
   * [hg19](https://strchive.org/_astro/STRchive-disease-loci.hg19.DWACvaXd.bed) [hg38](https://strchive.org/_astro/STRchive-disease-loci.hg38.DR-UScgX.bed) [T2T-chm13](https://strchive.org/_astro/STRchive-disease-loci.T2T-chm13.Cm-HAugT.bed)
 
 ### Main Output files 
-
-#### SVChecker
-
-* **SV Summary** - TXT file containing summary of SVs and their supporting reads for inversions and duplications `(_checked.tab)`
-* **Discordant Reads** - TXT file containing discordant reads between caller and checker for inversions and duplications `(..._discordant.tab)`
-* **Read Details** - TXT file containing details of reads `(..._supporting_read_details.tab)`
 
 #### SVClassifier
 
@@ -71,7 +48,3 @@ Executable versions of annotation software:
 
 Details on how to [run on SGE and extended details for input/output files](/docs/usage.md) 
 
-## User Guide (Algorithms)
-
-Explanation for [SVChecker](/docs/user_guide.md) algorithms  
-Explanation for [SVClassifier](/docs/user_guide.md) algorithms
