@@ -1,4 +1,4 @@
-# SV Toolkit
+# SVscanner
 
 *A workflow to annotate and analyse structural variants (SV) with Repeat information.* 
 
@@ -23,13 +23,13 @@ A workflow for annotating tandem repeats and mobile elements identified by Tande
 1. Clone the repository
 
 ```
-git clone https://github.com/KCCGGenomeTechLab/SVtoolkit.git
+git@github.com:KCCGGenomeTechLab/SVscanner.git
 ```
 
 2. Set up Virtual Environment and install required packages. Tested with `python 3.8` and should work with higher versions as well.
 
 ```
-cd SVtoolkit
+cd SVscanner
 python3 -m venv svtools
 source svtools/bin/activate 
 pip install --upgrade pip
