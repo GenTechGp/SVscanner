@@ -1,33 +1,89 @@
 #!/bin/bash
 
-wget https://github.com/samtools/samtools/releases/download/1.21/samtools-1.21.tar.bz2
-tar -xvf samtools-1.21.tar.bz2
-cd samtools-1.21/
-./configure
-make -j 8
-cd ..
-rm samtools-1.21.tar.bz2
+# Install (bcftools, htslib, trf)
 
-wget https://github.com/samtools/bcftools/releases/download/1.21/bcftools-1.21.tar.bz2
-tar -xvf bcftools-1.21.tar.bz2
-cd bcftools-1.21/
-./configure
-make -j 8
-cd ..
-rm bcftools-1.21.tar.bz2
+set -e
 
-wget https://github.com/samtools/htslib/releases/download/1.21/htslib-1.21.tar.bz2
-tar -xvf htslib-1.21.tar.bz2
-cd htslib-1.21/
-./configure
-make -j 8
-cd ..
-rm htslib-1.21.tar.bz2
+# Initialize flags
+INSTALL_BCFTOOLS=false
+INSTALL_HTSLIB=false
+INSTALL_TRF=false
+INSTALL_PARALLEL=false
 
-wget https://github.com/Benson-Genomics-Lab/TRF/releases/download/v4.09.1/trf409.linux64
-chmod +x trf409.linux64
+# Parse arguments and set flags
+for tool in "$@"; do
+    case "$tool" in
+        bcftools)
+            INSTALL_BCFTOOLS=true
+            ;;
+        htslib)
+            INSTALL_HTSLIB=true
+            ;;
+        trf)
+            INSTALL_TRF=true
+            ;;
+        *)
+            echo "Unknown tool: $tool"
+            echo "Usage: $0 [bcftools] [htslib] [trf]"
+            exit 1
+            ;;
+    esac
+done
 
-# uncomment to install tools required for simulating SVs
+# Run actual installation based on flags
+if $INSTALL_BCFTOOLS; then
+    echo "Installing bcftools..."
+    wget -q https://github.com/samtools/bcftools/releases/download/1.21/bcftools-1.21.tar.bz2
+    tar -xf bcftools-1.21.tar.bz2
+    cd bcftools-1.21/
+    ./configure
+    make -j8
+    cd ..
+    rm bcftools-1.21.tar.bz2
+    echo "done installing bcftools"
+fi
+
+if $INSTALL_HTSLIB; then
+    echo "Installing htslib..."
+    wget -q https://github.com/samtools/htslib/releases/download/1.21/htslib-1.21.tar.bz2
+    tar -xf htslib-1.21.tar.bz2
+    cd htslib-1.21/
+    ./configure
+    make -j8
+    cd ..
+    rm htslib-1.21.tar.bz2
+    echo "done installing htslib"
+fi
+
+if $INSTALL_TRF; then
+    echo "Installing TRF..."
+    wget -q https://github.com/Benson-Genomics-Lab/TRF/releases/download/v4.09.1/trf409.linux64
+    chmod +x trf409.linux64
+    echo "done installing trf"
+fi
+
+if $INSTALL_PARALLEL; then
+    echo "Installing GNU Parallel..."
+    wget -q https://ftp.gnu.org/gnu/parallel/parallel-latest.tar.bz2
+    tar -xf parallel-latest.tar.bz2
+    cd parallel-*
+    ./configure
+    make -j8
+    cd ..
+    rm parallel-latest.tar.bz2
+    echo "done installing GNU Parallel"
+fi
+
+# uncomment to install tools required for simulating SVs (samtools, VISOR, sniffles, minimap2, pbsim3, ccs)
+
+# wget https://github.com/samtools/samtools/releases/download/1.21/samtools-1.21.tar.bz2
+# tar -xvf samtools-1.21.tar.bz2
+# cd samtools-1.21/
+# ./configure
+# make -j 8
+# cd ..
+# rm samtools-1.21.tar.bz2
+
 # wget https://github.com/davidebolo1993/VISOR/archive/refs/tags/v1.1.2.1.tar.gz
 # tar -xvf v1.1.2.1.tar.gz
 # rm v1.1.2.1.tar.gz

@@ -1,8 +1,8 @@
 # Commands
-1. [extrract_sv.py](#extrract_sv.py)
-2. [repeat_annotatoin.py](#repeat_annotatoin.py)
-3. [generate_plot.py](#generate_plot.py)
-3. [simulate_sv.py](#simulate_sv.py)
+1. [extrract_sv.py](#extrract_svpy)
+2. [repeat_annotatoin.py](#repeat_annotatoinpy)
+3. [generate_plot.py](#generate_plotpy)
+3. [simulate_sv.py](#simulate_svpy)
 
 ## extrract_sv.py
 

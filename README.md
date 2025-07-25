@@ -7,44 +7,67 @@
 A workflow for annotating tandem repeats and mobile elements identified by Tandem Repeat Finder (TRF) and RepeatMasker (RM) within SVs. The workflow takes SV information (VCF) and reference genome (FASTA) as inputs. First, flanking sequences around the SV are extracted. Then extracted sequences are annotated using TRF and RM. The workflow has three main outputs.
 
 1. SV VCF file with repeat information annotated.
-2. Diagrams with Repeat/SV annotations.
+2. Diagrams with Repeat/SV annotations ([details](docs/Repeat-SV_diagram.md)).
 3. Histograms and density plots summarising Repeat/SV annotations.
 
-![Illustration](/images/SVscanner_repeat_annotation_workflow.png)
+![Illustration](/images/SVscanner_workflow.png)
 
-- Read more about the SV extraction step [here](docs/extract_sv_and_seq_consensus_documentation.md)
-- Read more about the repeat annotation step [here](docs/repeat_annotation_steps.md)
-- Check commandline arguments for [extract_sv.py](), [repeat_annotation.py](), [generate_plots.py]()
+- STRchive dataset for genome (in extended BED format) is optional input for `repeat_annotation.py`([hg19](https://strchive.org/_astro/STRchive-disease-loci.hg19.DWACvaXd.bed), [hg38](https://strchive.org/_astro/STRchive-disease-loci.hg38.DR-UScgX.bed), [T2T-chm13](https://strchive.org/_astro/STRchive-disease-loci.T2T-chm13.Cm-HAugT.bed))
 
-### Main Requirements
+- Details about [SV extraction](docs/extract_sv_and_seq_consensus_documentation.md)
+- Details about [repeat annotation](docs/repeat_annotation_steps.md)
+- Usage of [extract_sv.py](docs/Commands.md#extrract_svpy), [repeat_annotation.py](docs/Commands.md#repeat_annotatoinpy), [generate_plots.py](docs/Commands.md#generate_plotpy)
 
-#### Python Requirements 
-* Python 3.8+ required  
-* `pysam`
-* `numpy `
-* `pandas`
-* `tqdm`
-* `h5py` (for RepeatMasker)
+## Installation 
 
-#### Other
-* `parallel` installed on system
+1. Clone the repository
 
-#### SVClassifier
+```
+git clone https://github.com/KCCGGenomeTechLab/SVtoolkit.git
+```
 
-* VCF (.vcf.gz) containing called SVs (must contain INFO flag `'SVTYPE'`)  
-  * ***NOTE***: Does not assess symbolic insertions, translocations
-* *Optional*: STRchive dataset for genome (in extended BED format)
-  * [hg19](https://strchive.org/_astro/STRchive-disease-loci.hg19.DWACvaXd.bed) [hg38](https://strchive.org/_astro/STRchive-disease-loci.hg38.DR-UScgX.bed) [T2T-chm13](https://strchive.org/_astro/STRchive-disease-loci.T2T-chm13.Cm-HAugT.bed)
+2. Set up Virtual Environment and install required packages. Tested with `python 3.8` and should work with higher versions as well.
 
-### Main Output files 
+```
+cd SVtoolkit
+python3 -m venv svtools
+source svtools/bin/activate 
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-#### SVClassifier
+3. Install RepeatMasker if not available
 
-* VCF annotated with TRF and RepeatMasker info  
-* TSV containing TRF and RepeatMasker repeats with extended detail
-* TXT file containing diagrams of SV and repeats 
+- TBC
 
-## How to Run 
 
-Details on how to [run on SGE and extended details for input/output files](/docs/usage.md) 
+4. Check if the following tools are available. If not install them.
+ - bcftools (v1.21 or above recommended)
+ - bgzip (v1.21 or above recommended)
+ - tabix (v1.21 or above recommended)
+ - trf
+ - parallel
+ 
+```
+./scripts/install_tool.sh [tools to be installed]
+e.g. ./scripts/install_tool.sh bcftools htslib
+```
+*htslib installs both bgzip and tabix
 
+5. Check if the workflow is working
+```
+./scripts/run_workflow.sh
+
+```
+
+### Quick example run
+
+The following example processes the `test/HG002_subset_mini.vcf.gz` dataset (100 records).
+
+It will take about 10 minutes. The majority of time is taken by the RepeatMasker step. Please provide the path to human genome after `--ref` argument.
+
+```
+./scripts/run_workflow.sh --vcf test/HG002_subset_mini/HG002_subset_mini.vcf.gz --ref [human genome] --out test/output
+```
+
+### NCI setup

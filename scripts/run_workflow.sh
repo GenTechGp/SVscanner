@@ -146,7 +146,6 @@ check_required() {
 
     echo "Number of Threads: ${NTHREADS}"
     
-    command -v split >/dev/null 2>&1 || die "split program not found"
     command -v ${TRF_BINARY} >/dev/null 2>&1 || die "TRF binary not found"
     command -v ${REPEAT_MASKER} >/dev/null 2>&1 || die "RepeatMasker not found"
     command -v ${BCFTOOLS} >/dev/null 2>&1 || die "${BCFTOOLS} not found"
