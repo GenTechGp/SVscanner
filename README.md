@@ -4,7 +4,7 @@
 
 ## Overview
 
-A workflow for annotating tandem repeats and mobile elements identified by Tandem Repeat Finder (TRF) and RepeatMasker (RM) within SVs. The workflow takes SV information (VCF) and reference genome (FASTA) as inputs. First, flanking sequences around the SV are extracted. Then extracted sequences are annotated using TRF and RM. The workflow has three main outputs.
+A workflow for annotating tandem repeats and mobile elements identified by Tandem Repeat Finder ([TRF](https://github.com/Benson-Genomics-Lab/TRF)) and RepeatMasker ([RM](https://github.com/Dfam-consortium/RepeatMasker)) within SVs. The workflow takes SV information (VCF) and reference genome as inputs. First, flanking sequences around the SV are extracted. Then extracted sequences are annotated using TRF and RM. The workflow has three main outputs.
 
 1. SV VCF file with repeat information annotated.
 2. Diagrams with Repeat/SV annotations ([details](docs/Repeat-SV_diagram.md)).
@@ -23,7 +23,7 @@ A workflow for annotating tandem repeats and mobile elements identified by Tande
 1. Clone the repository
 
 ```
-git@github.com:KCCGGenomeTechLab/SVscanner.git
+git clone git@github.com:KCCGGenomeTechLab/SVscanner.git
 ```
 
 2. Set up Virtual Environment and install required packages. Tested with `python 3.8` and should work with higher versions as well.
@@ -36,23 +36,23 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-3. Install RepeatMasker if not available
+3. Install `RepeatMasker` if not available
 
-- TBC
+- Follow instructions [here](docs/install_rm.md)
 
 
 4. Check if the following tools are available. If not install them.
- - bcftools (v1.21 or above recommended)
- - bgzip (v1.21 or above recommended)
- - tabix (v1.21 or above recommended)
- - trf
- - parallel
+ - `bcftools` (v1.21 or above recommended)
+ - `bgzip` (v1.21 or above recommended)
+ - `tabix` (v1.21 or above recommended)
+ - `trf`
+ - `parallel`
  
 ```
 ./scripts/install_tool.sh [tools to be installed]
 e.g. ./scripts/install_tool.sh bcftools htslib
 ```
-*htslib installs both bgzip and tabix
+*`htslib` installs both `bgzip` and `tabix`
 
 5. Check if the workflow is working
 ```
