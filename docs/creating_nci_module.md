@@ -24,7 +24,7 @@ die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
 module load parallel || die "could not load parallel module"
 
 cd "SVtoolkit dir"
-source "svtools/bin/activate" || die "could not activate svtools venv"
+source "svscanner/bin/activate" || die "could not activate svscanner venv"
 ./scripts/run_classifier.sh "$@" || die "could not run_classifier.sh"
 
 ````

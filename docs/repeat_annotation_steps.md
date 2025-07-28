@@ -78,11 +78,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 2. Obtain the element's classification (also known as repeat class), e.g., SINE, LINE, LTR, DNA, Retroposon.
 
 3. Filter out elements that are not one of the following:
-   - SINE
-   - LINE
-   - LTR
-   - DNA
-   - Retroposon
+   - SINE, LINE, LTR, DNA, Retroposon
 
 4. Calculate the element's `sv_coverage`.
 

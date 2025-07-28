@@ -21,7 +21,7 @@ SAM="${OUTPUT_DIR}/mapped.sam"
 BAM="${OUTPUT_DIR}/mapped.bam"
 VCF="${OUTPUT_DIR}/sniffles.vcf"
 
-SVTOOLS_VENV_PATH="/data/hiruna/SVtoolkit/svtools"
+SVSCANNER_VENV_PATH="/data/hiruna/SVtoolkit/svscanner"
 SNIFFLES_VENV_PATH="/data/install/sniffles_260"
 # VISOR_VENV_PATH="/data/hiruna/SVtoolkit/VISOR-1.1.2.1/visor"
 VISOR_VENV_PATH="/data/hiruna/VISOR/visor_dev"
@@ -51,7 +51,7 @@ create_output_dir() {
 
 create_visor_bed() {
     split=$1
-    source "${SVTOOLS_VENV_PATH}/bin/activate"
+    source "${SVSCANNER_VENV_PATH}/bin/activate"
     python ${SIMULATE_SV} --split ${split} --frac --simple -n ${SV_COUNT} --mob ${MOBILE_ELEMENTS} --rep ${REP_ELEMENTS} --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
     deactivate
 }
@@ -123,7 +123,7 @@ run_svclassifier() {
     base_ref=$1
     vcf=$2
 
-    source "${SVTOOLS_VENV_PATH}/bin/activate"
+    source "${SVSCANNER_VENV_PATH}/bin/activate"
     ${SV_CLASSIFIER} --output_dir ${OUTPUT_DIR}/svclassifier --sv_vcf ${vcf} --ref_fasta ${base_ref} > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
     deactivate
 }
