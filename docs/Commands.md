@@ -1,10 +1,10 @@
 # Commands
-1. [extrract_sv.py](#extrract_svpy)
+1. [extract_sv.py](#extract_svpy)
 2. [repeat_annotatoin.py](#repeat_annotatoinpy)
 3. [generate_plot.py](#generate_plotpy)
 3. [simulate_sv.py](#simulate_svpy)
 
-## extrract_sv.py
+## extract_sv.py
 
 ---
 
