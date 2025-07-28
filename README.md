@@ -6,8 +6,8 @@ A workflow to annotate tandem repeats and mobile elements within structural vari
 ## Overview
 
 ### Inputs:
-- A structural variant (SV) file in VCF format
-- A reference genome
+1. A structural variant (SV) file in VCF format
+2. A reference genome
 ### Process:
 1. Flanking sequences are extracted around each SV to form a query sequence:
     - query_sequence = left_flank + SV + right_flank
