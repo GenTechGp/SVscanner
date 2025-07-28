@@ -1,5 +1,5 @@
 # SVscanner
-![Illustration](/images/svcanner_logo.png)
+![Illustration](/images/svscanner_logo.png)
 
 This workflow annotates tandem repeats and mobile elements within structural variants (SVs) using [Tandem Repeat Finder (TRF)](https://github.com/Benson-Genomics-Lab/TRF) and [RepeatMasker (RM)](https://github.com/Dfam-consortium/RepeatMasker).
 
