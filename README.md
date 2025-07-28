@@ -30,8 +30,8 @@ git@github.com:KCCGGenomeTechLab/SVscanner.git
 
 ```
 cd SVscanner
-python3 -m venv svtools
-source svtools/bin/activate 
+python3 -m venv svscanner
+source svscanner/bin/activate 
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
