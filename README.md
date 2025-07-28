@@ -75,5 +75,32 @@ It will take about 10 minutes. The majority of time is taken by the RepeatMasker
 ./scripts/run_workflow.sh --vcf test/HG002_subset_mini/HG002_subset_mini.vcf.gz --ref [human genome] --out test/output
 ```
 
-## Gadi | NCI setup
-[TBC](https://nci.org.au/news-events/events/introduction-gadi-4)
+## SVscanner on Gadi NCI (Project if89 users)
+Until `SVscanner` is available as an official NCI module, users on Gadi can run the workflow using the following steps:
+
+### Setup:
+```
+git clone git@github.com:KCCGGenomeTechLab/SVscanner.git
+cd SVscanner
+module load python3/3.8.5
+python3 -m venv svscanner
+source svscanner/bin/activate 
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### Submit job
+```
+cd SVscanner
+qsub -N [job_name] -v VNV=[path_to_venv],OUT=[path_to_out],VCF=[path_to_vcf],REF=[path_to_ref] scripts/nci_gadi_if89.sh
+```
+
+### Note
+1. No need to install `TRF`, `RepeatMasker`, `bcftools`, `bgzip`, `tabix`, or `GNU parallel`. These are all available as pre-installed NCI modules and are loaded by the workflow.
+2. The latest RepeatMasker module (`4.1.7-p1`) on `if89` is currently broken. The workflow defaults to version `4.1.5`.
+3. The Dfam database installation on `if89` is incomplete. This will be addressed in an upcoming update.
+4. To pass additional arguments to the workflow, edit `scripts/nci_gadi_if89.sh` as needed — it forwards parameters to `scripts/run_workflow_if89.sh`.
+
+## Bug Reports
+
+Please report/request any issues/features via [GitHub Issues](https://github.com/KCCGGenomeTechLab/SVscanner/issues).

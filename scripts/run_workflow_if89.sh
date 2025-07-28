@@ -1,27 +1,22 @@
 #!/bin/bash
 
-VERSION="SVclassifier v0.1.0"
-
-# set -x
+set -e
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
 
+VERSION="SVclassifier v0.1.0"
+
 # Input/Output (change)
-#REF=$(realpath "/g/data/te53/ontsv/references/hg38_reference_files/hg38.analysisSet.fa")
-#REF="/g/data/te53/variantcall/referenceresource/genome/pipeface/chm13XX.fasta"
-#REF=$(realpath "/genome/hg38.analysisSet.fa")
 STR_BED=$(realpath "test/databases/STRchive-disease-loci.bed")
 
 # Repeat Masker species (change)
 # SPECIES="mammalia"
 SPECIES="human"
 
-# Repeat Masker and TRF, bcftools, bgzip, tabix  programs (change if necessary)
-TRF_BINARY=$(realpath "trf409.linux64")
-REPEAT_MASKER=$(realpath "RepeatMasker/RepeatMasker")
-
-BCFTOOLS=$(realpath bcftools-1.21/bcftools)
-BGZIP=$(realpath htslib-1.21/bgzip)
-TABIX=$(realpath htslib-1.21/tabix)
+TRF_BINARY="trf"
+REPEAT_MASKER="RepeatMasker"
+BCFTOOLS="bcftools"
+BGZIP="bgzip"
+TABIX="tabix"
 
 # NTHREADS=$NSLOTS   # Total number of threads
 NSPLIT_FILES=500
@@ -48,8 +43,9 @@ PLOT=$(realpath src/generate_plots.py)
 
 # Function to show usage
 usage() {
-    echo "Usage: $0 --out DIR --vcf FILE --ref FILE [options]"
+    echo "Usage: $0 --vnv PATH --out DIR --vcf FILE --ref FILE [options]"
     echo "Required arguments:"
+    echo "  --vnv PATH     Path to the SVscanner virtual environment"
     echo "  --out DIR      Path to output directory"
     echo "  --vcf FILE     Path to SV VCF file"
     echo "  --ref FILE     Path to reference FASTA file"
@@ -75,6 +71,8 @@ usage() {
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
+            --vnv)
+                SVSCANNER_VENV=$(realpath "$2"); shift 2;;
             --out)
                 OUTPUT_DIR=$(realpath "$2"); shift 2;;
             --vcf)
@@ -113,8 +111,8 @@ parse_args() {
     done
 
     # Check required arguments
-    if [[ -z "$OUTPUT_DIR" || -z "$VCF" || -z "$REF" ]]; then
-        echo "Error: --out, --vcf and --ref are required."
+    if [[ -z "$SVSCANNER_VENV" || -z "$OUTPUT_DIR" || -z "$VCF" || -z "$REF" ]]; then
+        echo "Error: --vnv, --out, --vcf and --ref are required."
         usage
     fi
 
@@ -133,7 +131,8 @@ parse_args() {
 
 check_required() {
 
-    [ -n "$VIRTUAL_ENV" ] && echo "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
+    # [ -n "$VIRTUAL_ENV" ] && echo "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
+    [ -z "$SVSCANNER_VENV" ] && die "SVSCANNER_VENV is not set"
     [ -z "$OUTPUT_DIR" ] && die "OUTPUT_DIR is not set"
     [ -z "$REF" ] && die "REF is not set"
     [ -z "$VCF" ] && die "VCF is not set"
@@ -145,13 +144,6 @@ check_required() {
     echo "Input BED: ${STR_BED}"
 
     echo "Number of Threads: ${NTHREADS}"
-    
-    command -v ${TRF_BINARY} >/dev/null 2>&1 || die "TRF binary not found"
-    command -v ${REPEAT_MASKER} >/dev/null 2>&1 || die "RepeatMasker not found"
-    command -v ${BCFTOOLS} >/dev/null 2>&1 || die "${BCFTOOLS} not found"
-    command -v ${BGZIP} >/dev/null 2>&1 || die "${BGZIP} not found"
-    command -v ${TABIX} >/dev/null 2>&1 || die "${TABIX} not found"
-    command -v parallel >/dev/null 2>&1 || die "parallel not found"
 }
 
 create_output_dir() {
@@ -289,21 +281,43 @@ show_output_paths() {
 
 }
 
-
-
 T0=$(date +%s)
 
 parse_args "$@"
 check_required
 create_output_dir
+
+module load python3/3.8.5
+source ${SVSCANNER_VENV}/bin/activate
 extract_flanking_regions
+deactivate
+module unload python3/3.8.5
+
+module load parallel
+module use -a /g/data/if89/apps/modulefiles
+module load RepeatMasker/4.1.5
 run_trf
 run_repeatmasker
 process_trf_repeatmasker_output
+module unload parallel
+module unload RepeatMasker/4.1.5
+module unload pythonlib/3.9.2
+module unload python3/3.9.2
+
+module load python3/3.8.5
+source ${SVSCANNER_VENV}/bin/activate
 annotation
 plot_classifications
+deactivate
+module unload python3/3.8.5
+
+module load bcftools/1.21
+module load htslib/1.20
 apply_annotations
 sort_and_index_vcf
+module unload bcftools/1.21
+module unload htslib/1.20
+
 show_output_paths
 
 T1=$(date +%s)

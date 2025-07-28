@@ -6,7 +6,7 @@ The following figure summarises a SV simulation pipeline comprising SV generatio
 
 ![Illustration](/images/sv_simulation_pipeline.png)
 
-## hHplotype-specific variant simulation
+## Hplotype-specific variant simulation
 The following figure summarises a SV simulation pipeline specifically for diploid variants.
 
 ![Illustration](/images/sv_simulation_pipeline_diploid.png)
