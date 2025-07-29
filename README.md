@@ -23,7 +23,7 @@ A workflow to annotate tandem repeats and mobile elements within structural vari
 ### Notes:
 1. STRchive dataset for genome (in extended BED format) is optional input for `repeat_annotation.py`([hg19](https://strchive.org/_astro/STRchive-disease-loci.hg19.DWACvaXd.bed), [hg38](https://strchive.org/_astro/STRchive-disease-loci.hg38.DR-UScgX.bed), [T2T-chm13](https://strchive.org/_astro/STRchive-disease-loci.T2T-chm13.Cm-HAugT.bed))
 
-2. Details about [SV extraction](docs/extract_sv_and_seq_consensus_documentation.md)
+2. Details about [SV extraction](docs/extract_sv_documentation.md)
 3.  Details about [repeat annotation](docs/repeat_annotation_steps.md)
 4. Usage of [extract_sv.py](docs/Commands.md#extrract_svpy), [repeat_annotation.py](docs/Commands.md#repeat_annotatoinpy), [generate_plots.py](docs/Commands.md#generate_plotpy)
 
