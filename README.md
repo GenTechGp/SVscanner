@@ -24,8 +24,9 @@ This workflow annotates tandem repeats and mobile elements within structural var
 1. STRchive dataset for genome (in extended BED format) is optional input for `repeat_annotation.py`([hg19](https://strchive.org/_astro/STRchive-disease-loci.hg19.DWACvaXd.bed), [hg38](https://strchive.org/_astro/STRchive-disease-loci.hg38.DR-UScgX.bed), [T2T-chm13](https://strchive.org/_astro/STRchive-disease-loci.T2T-chm13.Cm-HAugT.bed))
 
 2. Details about [SV extraction](docs/extract_sv_and_seq_consensus_documentation.md)
-3.  Details about [repeat annotation](docs/repeat_annotation_steps.md)
-4. Usage of [extract_sv.py](docs/Commands.md#extrract_svpy), [repeat_annotation.py](docs/Commands.md#repeat_annotatoinpy), [generate_plots.py](docs/Commands.md#generate_plotpy)
+3. Details about [Repeat/SV annotation](docs/repeat_annotation_steps.md)
+4. Usage of [run_workflow.sh](docs/Commands.md#run_workflowsh)
+5. Usage of workflow components: [extract_sv.py](docs/Commands.md#extrract_svpy), [repeat_annotation.py](docs/Commands.md#repeat_annotatoinpy), [generate_plots.py](docs/Commands.md#generate_plotpy)
 
 ## Installation 
 
@@ -78,7 +79,7 @@ It will take about 10 minutes. The majority of time is taken by the RepeatMasker
 ## SVscanner on Gadi NCI (Project if89 users)
 Until `SVscanner` is available as an official NCI module, users on Gadi can run the workflow using the following steps:
 
-### Setup:
+1. Setup:
 ```
 git clone git@github.com:KCCGGenomeTechLab/SVscanner.git
 cd SVscanner
@@ -89,13 +90,13 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### Submit job
+2. Submit job:
 ```
 cd SVscanner
 qsub -N [job_name] -v VNV=[path_to_venv],OUT=[path_to_out],VCF=[path_to_vcf],REF=[path_to_ref] scripts/nci_gadi_if89.sh
 ```
 
-### Note
+### Notes
 1. No need to install `TRF`, `RepeatMasker`, `bcftools`, `bgzip`, `tabix`, or `GNU parallel`. These are all available as pre-installed NCI modules and are loaded by the workflow.
 2. The latest RepeatMasker module (`4.1.7-p1`) on `if89` is currently broken. The workflow defaults to version `4.1.5`.
 3. The Dfam database installation on `if89` is incomplete. This will be addressed in an upcoming update.

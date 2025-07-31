@@ -23,7 +23,6 @@ BCFTOOLS=$(realpath bcftools-1.21/bcftools)
 BGZIP=$(realpath htslib-1.21/bgzip)
 TABIX=$(realpath htslib-1.21/tabix)
 
-# NTHREADS=$NSLOTS   # Total number of threads
 NSPLIT_FILES=500
 NTHREADS=$(nproc --all)
 MAX_JOBS=48          # Max number of RepeatMasker process to run in parallel 

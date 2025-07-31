@@ -1,8 +1,45 @@
 # Commands
-1. [extract_sv.py](#extract_svpy)
-2. [repeat_annotatoin.py](#repeat_annotatoinpy)
-3. [generate_plot.py](#generate_plotpy)
-3. [simulate_sv.py](#simulate_svpy)
+1. [run_workflow.sh](#run_workflowsh)
+2. [extract_sv.py](#extract_svpy)
+3. [repeat_annotatoin.py](#repeat_annotatoinpy)
+4. [generate_plot.py](#generate_plotpy)
+5. [simulate_sv.py](#simulate_svpy)
+
+## run_workflow.sh
+
+---
+
+**Required Arguments**
+
+| Argument       | Type   | Description                                                        |
+|----------------|--------|--------------------------------------------------------------------|
+| `--out`        | `str`  | **Path to the output directory**.                                 |
+| `--vcf`        | `str`  | **Path to the structural variant (SV) VCF file**.                 |
+| `--ref`        | `str`  | **Path to the reference FASTA file**.                             |
+
+---
+
+**Optional Arguments**
+
+| Argument                        | Type           | Default                 | Description                                                                 |
+|---------------------------------|----------------|-------------------------|-----------------------------------------------------------------------------|
+| `--prefix`                      | `str`          | `None`                  | Prefix for output files.                                                    |
+| `--str_bed`                     | `str`          | `None`              | Path to BED file containing STR (short tandem repeat) elements.            |
+| `--species`                     | `str`          | `human`              | Species name used by RepeatMasker.                                         |
+| `--min_sv_coverage`             | `float`        | `0.05`      | Minimum intersection between a repeat element and SV.                      |
+| `--min_class_sv_coverage`       | `float`        | `0.25`| Minimum class-level SV coverage to be considered repetitive.               |
+| `--min_total_sv_coverage`       | `float`        | `0.75`| Minimum total SV coverage by repeats to be considered repetitive.          |
+| `--max_trf_overlap`             | `float`        | `0.1`      | Maximum TRF element overlap to be considered non-overlapping.              |
+| `--interval`                    | `int`          | `0.05`             | Interval value for binning or windowing.                                   |
+| `--diagram_len`                 | `int`          | `100`          | Length of the diagram generated for visualization.                         |
+| `--nsplit_files`                | `int`          | `500`         | Number of files to split sequences into.                                   |
+| `--keep_tmp_files`             | flag           |                         | Keep intermediate files (default: delete after run).                       |
+| `--overwrite`                  | flag           |                         | Overwrite existing output files if present.                                |
+| `--nthread`                    | `int`          | all available threads   | Number of threads to use.                                                  |
+| `--njob`                       | `int`          | `48`             | Number of parallel jobs for RepeatMasker.                                  |
+| `--help`                       | flag           |                         | Show help message and exit.                                                |
+| `--version`                    | flag           |                         | Show version information and exit.                                         |
+
 
 ## extract_sv.py
 
