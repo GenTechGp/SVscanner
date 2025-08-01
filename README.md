@@ -98,6 +98,7 @@ qsub -N [job_name] -v VNV=[path_to_venv],OUT=[path_to_out],VCF=[path_to_vcf],REF
 2. The latest RepeatMasker module (`4.1.7-p1`) on `if89` is currently broken. The workflow defaults to version `4.1.5`.
 3. The Dfam database installation on `if89` is incomplete. This will be addressed in an upcoming update.
 4. To pass additional arguments to the workflow, edit `scripts/nci_gadi_if89.sh` as needed — it forwards parameters to `scripts/run_workflow_if89.sh`.
+5. A simple workflow runtime benchmark done on Gadi NCI ([link](docs/nci_benchmark.md))
 
 ## Bug Reports
 
