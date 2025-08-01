@@ -9,24 +9,21 @@ This workflow annotates tandem repeats and mobile elements within structural var
 - A structural variant (SV) file in VCF format
 - A reference genome
 ### Process:
-1. Flanking sequences are extracted around each SV to form a query sequence:
+1. Flanking sequences are extracted around each SV to form a query sequence (details about the [extraction process](docs/extract_sv_and_seq_consensus_documentation.md)):
     - query_sequence = left_flank + SV + right_flank
 2. These query sequences are annotated using TRF and RM.
 
 ### Outputs:
-1. A VCF file with repeat annotations embedded.
-2. Diagrams visualizing Repeat/SV annotations ([details](docs/Repeat-SV_diagram.md)).
+1. A VCF file with repeat annotations embedded (details about the [annotation process and the added VCF INFO tags](docs/repeat_annotation_steps.md)).
+2. Diagrams visualizing Repeat/SV annotations (details about the [diagram file format](docs/Repeat-SV_diagram.md)).
 3. Histograms and density plots summarizing Repeat/SV annotations.
 
 ![Illustration](/images/SVscanner_workflow.png)
 
 ### Notes:
 1. STRchive dataset for genome (in extended BED format) is optional input for `repeat_annotation.py`([hg19](https://strchive.org/_astro/STRchive-disease-loci.hg19.DWACvaXd.bed), [hg38](https://strchive.org/_astro/STRchive-disease-loci.hg38.DR-UScgX.bed), [T2T-chm13](https://strchive.org/_astro/STRchive-disease-loci.T2T-chm13.Cm-HAugT.bed))
-
-2. Details about [SV extraction](docs/extract_sv_and_seq_consensus_documentation.md)
-3. Details about [Repeat/SV annotation](docs/repeat_annotation_steps.md)
-4. Usage of [run_workflow.sh](docs/Commands.md#run_workflowsh)
-5. Usage of workflow components: [extract_sv.py](docs/Commands.md#extrract_svpy), [repeat_annotation.py](docs/Commands.md#repeat_annotatoinpy), [generate_plots.py](docs/Commands.md#generate_plotpy)
+3. Usage of [run_workflow.sh](docs/Commands.md#run_workflowsh)
+4. Usage of workflow components: [extract_sv.py](docs/Commands.md#extrract_svpy), [repeat_annotation.py](docs/Commands.md#repeat_annotatoinpy), [generate_plots.py](docs/Commands.md#generate_plotpy)
 
 ## Installation 
 
