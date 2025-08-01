@@ -177,27 +177,27 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
     if svlen != len(seq):
         print(f"Error: record (at {record.chrom}:{record.pos}) svlen ({svlen}) != len(ALT[0]) ({len(seq)})")
 
-    seq_consensus = seq_fl + seq + seq_fr
+    query_seq = seq_fl + seq + seq_fr
 
     if args.debug:
         _,_,_,seq_bcf,_,_ = handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i, f_len)
         flag_homozygous_for_ref_allele = record.samples[list(vcf.header.samples)[0]]["GT"] == (0,0)
-        if seq_consensus.lower() != seq_bcf.lower() and not flag_homozygous_for_ref_allele:
+        if query_seq.lower() != seq_bcf.lower() and not flag_homozygous_for_ref_allele:
             print(f"svlen ({get_svlen(record)}) != len(ALT[0]) ({len(seq)})")
             print(len(seq_fl))
             print(len(seq_fr))
-            print(f"Error: record (ID:{record.id}) seq_consensus != seq_bcf")
-            print(">seq_consensus")
-            print(seq_consensus)
+            print(f"Error: record (ID:{record.id}) query_seq != seq_bcf")
+            print(">query_seq")
+            print(query_seq)
             print(">seq_bcf")
             print(seq_bcf)
             exit(1)
 
-    seq_len = len(seq_consensus)
+    seq_len = len(query_seq)
 
     output_fasta = f"{output_dir}/{svID}.fa"
     with open(output_fasta, "w") as f:
-        f.write(f">{svID}\n{seq_consensus}\n")
+        f.write(f">{svID}\n{query_seq}\n")
     
     return [svID, svlen, seq_len, start_fl, end_fr]
 
@@ -224,12 +224,12 @@ def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
     except Exception as e:
         print(f"Error fetching sequence for ({record.id}): {e}")
         raise    
-    seq_consensus = seq
-    seq_len = len(seq_consensus)
+    query_seq = seq
+    seq_len = len(query_seq)
 
     output_fasta = f"{output_dir}/{svID}.fa"
     with open(output_fasta, "w") as f:
-        f.write(f">{svID}\n{seq_consensus}\n")
+        f.write(f">{svID}\n{query_seq}\n")
     
     return [svID, svlen, seq_len, start_f, end_f]
 
@@ -268,12 +268,12 @@ def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
     # print(len(seq_fr))
     assert len(seq) == svlen
 
-    seq_consensus = seq_fl + seq + seq + seq_fr # assuming tandem dups
-    seq_len = len(seq_consensus)
+    query_seq = seq_fl + seq + seq + seq_fr # assuming tandem dups
+    seq_len = len(query_seq)
 
     output_fasta = f"{output_dir}/{svID}.fa"
     with open(output_fasta, "w") as f:
-        f.write(f">{svID}\n{seq_consensus}\n")
+        f.write(f">{svID}\n{query_seq}\n")
     
     return [svID, svlen, seq_len, start_fl, end_fr]
 
@@ -301,12 +301,12 @@ def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
         print(f"Error fetching sequence for ({record.id}): {e}")
         raise
 
-    seq_consensus = seq
-    seq_len = len(seq_consensus)
+    query_seq = seq
+    seq_len = len(query_seq)
 
     output_fasta = f"{output_dir}/{svID}.fa"
     with open(output_fasta, "w") as f:
-        f.write(f">{svID}\n{seq_consensus}\n")
+        f.write(f">{svID}\n{query_seq}\n")
     
     return [svID, svlen, seq_len, start_f, end_f]
 
@@ -338,13 +338,13 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     end_0 = record.pos+f_len-1 # End position of the REF allele
     chrom_length = chrom_lengths.get(chrom_0, 0)
     end_f_0 = min(end_0, chrom_length)  # Ensure end doesn't exceed chromosome length
-    seq_consensus_0 = ""
+    query_seq_0 = ""
     try:
-        seq_consensus_0 = fasta.fetch(region=f"{chrom_0}:{start_f_0}-{end_f_0}")
+        query_seq_0 = fasta.fetch(region=f"{chrom_0}:{start_f_0}-{end_f_0}")
     except Exception as e:
         print(f"Error fetching sequence for ({record.id}): {e}")
         raise
-    seq_len_0 = len(seq_consensus_0)
+    seq_len_0 = len(query_seq_0)
 
     # The second part is the reference sequence for the second end of the breakend
     chrom_1, pos_1 = extract_bnd_target(record.alts[0])  # Extract the chromosome from the ALT allele
@@ -359,20 +359,20 @@ def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     end_1 = pos_1+f_len-1 # End position of the REF allele
     chrom_length = chrom_lengths.get(chrom_1, 0)
     end_f_1 = min(end_1, chrom_length)  # Ensure end doesn't exceed chromosome length
-    seq_consensus_1 = ""
+    query_seq_1 = ""
     try:
-        seq_consensus_1 = fasta.fetch(region=f"{chrom_1}:{start_f_1}-{end_f_1}")
+        query_seq_1 = fasta.fetch(region=f"{chrom_1}:{start_f_1}-{end_f_1}")
     except Exception as e:
         print(f"Error fetching sequence for ({record.id}): {e}")
         raise
-    seq_len_1 = len(seq_consensus_1)
+    seq_len_1 = len(query_seq_1)
 
     output_fasta = f"{output_dir}/{svID_0}.fa"
     with open(output_fasta, "w") as f:
-        f.write(f">{svID_0}\n{seq_consensus_0}\n")
+        f.write(f">{svID_0}\n{query_seq_0}\n")
     output_fasta = f"{output_dir}/{svID_1}.fa"
     with open(output_fasta, "w") as f:
-        f.write(f">{svID_1}\n{seq_consensus_1}\n")
+        f.write(f">{svID_1}\n{query_seq_1}\n")
 
     return [svID_0, -1, seq_len_0, start_f_0, end_f_0], [svID_1, -1, seq_len_1, start_f_1, end_f_1, chrom_1, pos_1, end_1]
 
@@ -514,7 +514,7 @@ def print_record_stats(args, record_stats_arr, balanced_seq_bins):
         for i, b in enumerate(balanced_seq_bins):
             f.write(f"{i}.fa, {len(b)}, {sum(x[2] for x in b)}\n")
 
-        f.write(f"('SV_ID', svlen, consensus_seq_len, i.fa)\n")
+        f.write(f"('SV_ID', svlen, query_seq_len, i.fa)\n")
         for record in record_stats_arr:
             f.write(f"{record[0]},{record[1]},{record[2]},{record[5]}\n")
 
@@ -559,8 +559,8 @@ def concat_fasta(args, balanced_seq_bins):
                 with open(input_fasta, "r") as input:
                     lines = input.readlines()
                     svID = lines[0]
-                    seq_consensus = lines[1]
-                    output.write(f"{svID}{seq_consensus}")
+                    query_seq = lines[1]
+                    output.write(f"{svID}{query_seq}")
                 os.remove(input_fasta)
 
 def write_to_id_file(args, vcf, record, record_stats):
