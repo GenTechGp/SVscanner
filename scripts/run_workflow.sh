@@ -23,12 +23,9 @@ BCFTOOLS=$(realpath bcftools-1.21/bcftools)
 BGZIP=$(realpath htslib-1.21/bgzip)
 TABIX=$(realpath htslib-1.21/tabix)
 
-# NTHREADS=$NSLOTS   # Total number of threads
 NSPLIT_FILES=500
 NTHREADS=$(nproc --all)
-
 MAX_JOBS=48          # Max number of RepeatMasker process to run in parallel 
-THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
 
 # Parameters (change if necessary)
 MIN_SV_COVERAGE=0.05 #The minimum intersection between a repeat element and SV (aka sv_coverage) e.g. 0.05 (5%) (0 < min_sv_coverage < 1)
@@ -39,6 +36,7 @@ INTERVAL=0.05
 DIAGRAM_LEN=100
 
 FLAG_DELETE_TMP_FILES=1 # Flag to delete temporary files (1 = yes, 0 = no)
+FLAG_OVERWRITE=0 # Flag to overwrite existing output files (1 = yes, 0 = no)
 PREFIX="" # Prefix for output files (default: None)
 
 # Python and bash scripts (keep as it is)
@@ -65,6 +63,9 @@ usage() {
     echo "  --diagram_len VAL       Diagram length (default: $DIAGRAM_LEN)"
     echo "  --nsplit_files INT      Number of split files (default: $NSPLIT_FILES)"
     echo "  --keep_tmp_files        Keep temporary files (default: delete)"
+    echo "  --overwrite             Overwrite existing output files (default: no overwrite)"
+    echo "  --nthread INT           Number of threads to use (default: all available threads)"
+    echo "  --njob INT              Number of parallel jobs for RepeatMasker (default: $MAX_JOBS)"
     echo "  --help                  Show this help message"
     echo "  --version               Show version information"
     echo "Version: $VERSION"
@@ -103,6 +104,12 @@ parse_args() {
                 NSPLIT_FILES="$2"; shift 2;;
             --keep_tmp_files)
                 FLAG_DELETE_TMP_FILES=0; shift;;
+            --overwrite)
+                FLAG_OVERWRITE=1; shift;;
+            --nthread)
+                NTHREADS="$2"; shift 2;;
+            --njob)
+                MAX_JOBS="$2"; shift 2;;
             --help)
                 usage;;
             --version)
@@ -145,6 +152,7 @@ check_required() {
     echo "Input BED: ${STR_BED}"
 
     echo "Number of Threads: ${NTHREADS}"
+    echo "Number of RepeatMasker jobs: ${MAX_JOBS}"
     
     command -v ${TRF_BINARY} >/dev/null 2>&1 || die "TRF binary not found"
     command -v ${REPEAT_MASKER} >/dev/null 2>&1 || die "RepeatMasker not found"
@@ -155,17 +163,20 @@ check_required() {
 }
 
 create_output_dir() {
-	#test -d "${OUTPUT_DIR}" && rm -r "${OUTPUT_DIR}"
-    # error if output directory already exists
     if [[ -d "${OUTPUT_DIR}" ]]; then
-        die "Output directory ${OUTPUT_DIR} already exists. Please choose a different output directory or delete the existing one."
+        if [[ ${FLAG_OVERWRITE} -eq 1 ]]; then
+            echo "Output directory ${OUTPUT_DIR} already exists. Overwriting..."
+            rm -rf "${OUTPUT_DIR}" || die "Failed to remove existing output directory ${OUTPUT_DIR}"
+        else
+            die "Output directory ${OUTPUT_DIR} already exists. Please choose a different output directory or delete the existing one."
+        fi
     fi
 	mkdir -p "${OUTPUT_DIR}" || die "Failed creating ${OUTPUT_DIR}"
 }
 
 extract_flanking_regions() {
     # 1) Extract sequence and flanking regions for variants
-    echo "1. Extracting structural variant sequences from VCF..."
+    echo "Extracting structural variant sequences from VCF..."
     python3 ${EXTRACT_SV_FLANKINGS} --vcf ${VCF} --ref ${REF} --out ${EXTRACT_SV_FLANKS_OUT} --min 10 -n ${NSPLIT_FILES} --info ${INFO_FILE} || die "failed"
     echo "done"
 }
@@ -173,9 +184,9 @@ extract_flanking_regions() {
 run_trf() {
     # set -x
     # 3) Run Tandem Repeat Finder and RepeatMasker - wait for both to complete
-    echo "3. Running Tandem Repeat Finder..."
+    echo "Running Tandem Repeat Finder..."
     T4=$(date +%s)
-    find "${EXTRACT_SV_FLANKS_OUT}" -name "*.fa" | parallel -j ${NTHREADS} --bar "${TRF_BINARY} {} 2 7 7 80 10 50 500 -h -ngs > {.}.dat" || die "failed"
+    find "${EXTRACT_SV_FLANKS_OUT}" -name "*.fa" | parallel -j ${NTHREADS} "${TRF_BINARY} {} 2 7 7 80 10 50 500 -h -ngs > {.}.dat" || die "failed"
     T5=$(date +%s) || die "failed to get T3"
     TRF_TIME=$((T5 - T4)) || die "failed to calculate time"
     echo "done. Tandem Repeat Finder took ${TRF_TIME} seconds"
@@ -183,7 +194,7 @@ run_trf() {
 
 run_repeatmasker() {
     mkdir -p ${RM_TMP}
-    echo "3. Running RepeatMasker..."
+    echo "Running RepeatMasker..."
     T2=$(date +%s)
     cd ${RM_TMP}
 
@@ -193,6 +204,7 @@ run_repeatmasker() {
     shopt -u nullglob
 
     # Run RepeatMasker in parallel with error sensitivity
+    THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
     find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | parallel --halt now,fail=1 -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} -species ${SPECIES} > {}.log 2>&1" || die "RepeatMasker failed"
 
     cd - || die "cd - failed"
@@ -219,7 +231,7 @@ process_trf_repeatmasker_output() {
 }
 
 annotation() {
-    echo "4. Annotating..."
+    echo "Annotating..."
     test -d "${ANNOTATIONS_OUT}" && rm -r "${ANNOTATIONS_OUT}"
     python3 ${ANNOTATION} \
         --vcf ${VCF}\
@@ -238,7 +250,7 @@ annotation() {
 }
 
 plot_classifications() {
-    echo "4. Plotting..."
+    echo "Plotting..."
     python3 ${PLOT} \
         --out ${ANNOTATIONS_OUT}/plots\
         --tsv ${ANNOTATIONS_OUT}/plot_annotate.tsv || die "failed"
@@ -247,7 +259,7 @@ plot_classifications() {
 
 apply_annotations() {
     # apply annotations to the VCF
-    echo "5. Applying annotations to the VCF..."
+    echo "Applying annotations to the VCF..."
     COL_LIST=$(head -n 1 ${ANNOTATIONS_OUT}/vcf_annotate.tsv | cut -c2- | tr '\t' ',')
     ${BGZIP} ${ANNOTATIONS_OUT}/vcf_annotate.tsv -c > ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "${BGZIP} failed"
     ${TABIX} -s1 -b2 -e2 ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "${TABIX} failed"
@@ -257,7 +269,7 @@ apply_annotations() {
 
 sort_and_index_vcf() {
     # Sort and Index the annotated VCF
-    echo "6. Sort and Index the annotated VCF..."
+    echo "Sort and Index the annotated VCF..."
     ${BCFTOOLS} sort -Oz -o ${ANNOTATED_VCF}.gz ${ANNOTATED_VCF} || die "${BCFTOOLS} sort failed"
     ${BCFTOOLS} index -t ${ANNOTATED_VCF}.gz || die "${BCFTOOLS} index failed"
     rm ${ANNOTATED_VCF}
