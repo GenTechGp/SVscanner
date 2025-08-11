@@ -42,7 +42,7 @@ def create_svtype_hist_plot(df, output_pdf, sv_order):
     # Define SV type groups and colors
     legend_labels = {
         'NON_REPETITIVE': ['NON_REPETITIVE'],
-        'Tandem repeat': ['HOMO', 'STR', 'TR'],
+        'Tandem repeat': ['HOMO', 'STR', 'VNTR', 'TR'],
         'Mobile element': ['LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
     }
 
@@ -52,6 +52,7 @@ def create_svtype_hist_plot(df, output_pdf, sv_order):
         'NON_REPETITIVE': '#94d0c5',
         'HOMO': '#beb9d8',
         'STR': '#eb8274',
+        'VNTR': "#e68eee",
         'TR': '#87b0d2',
         'LTR': '#f4b567',
         'LINE': '#b4d56f',
@@ -142,7 +143,7 @@ def create_dist_plot(df, output_pdf):
     df['log2_SV_len'] = np.log2(df['SVLEN'])
 
     def categorize_sv_type(sv_type):
-        if sv_type in ['HOMO', 'STR', 'TR']:
+        if sv_type in ['HOMO', 'STR', 'VNTR', 'TR']:
             return 'Tandem repeat'
         elif sv_type in ['LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']:
             return 'Mobile element'
@@ -151,7 +152,7 @@ def create_dist_plot(df, output_pdf):
 
     df['CLASSIFICATION_CATEGORY'] = df['CLASSIFICATION'].apply(categorize_sv_type)
 
-    ordered_classification_types = ['NON_REPETITIVE', 'HOMO', 'STR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
+    ordered_classification_types = ['NON_REPETITIVE', 'HOMO', 'STR', 'VNTR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
 
     # Use only two colors
     full_color = '#94d0c5'    # green
@@ -258,7 +259,7 @@ def create_svlength_hist_plot(df, output_pdf):
     df['log2_SV_len'] = np.log2(df['SVLEN'])
 
     def categorize_sv_type(sv_type):
-        if sv_type in ['HOMO', 'STR', 'TR']:
+        if sv_type in ['HOMO', 'STR', 'VNTR', 'TR']:
             return 'Tandem repeat'
         elif sv_type in ['LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']:
             return 'Mobile element'
@@ -267,7 +268,7 @@ def create_svlength_hist_plot(df, output_pdf):
 
     df['CLASSIFICATION_CATEGORY'] = df['CLASSIFICATION'].apply(categorize_sv_type)
 
-    ordered_classification_types = ['NON_REPETITIVE', 'HOMO', 'STR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
+    ordered_classification_types = ['NON_REPETITIVE', 'HOMO', 'STR', 'VNTR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
 
     full_color = '#94d0c5'    # green
     partial_color = '#eb8274' # pink
