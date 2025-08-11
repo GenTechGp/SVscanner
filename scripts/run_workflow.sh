@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="SVclassifier v0.1.0"
+VERSION="SVscanner v0.1.0"
 
 # set -x
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
@@ -311,7 +311,14 @@ show_output_paths() {
 
     if [[ ${FLAG_DELETE_TMP_FILES} -eq 1 ]]; then
         echo "Deleting temporary files..."
-        mv ${ANNOTATIONS_OUT}/plots/plots.pdf ${OUTPUT_DIR}/${PREFIX}plots.pdf || die "failed to move plots to ${OUTPUT_DIR}"
+        #if ${ANNOTATIONS_OUT}/plots/plots.pdf exists, move it to the output directory
+        if [[ -f ${ANNOTATIONS_OUT}/plots/plots.pdf ]]; then
+            mv ${ANNOTATIONS_OUT}/plots/plots.pdf ${OUTPUT_DIR}/${PREFIX}plots.pdf || die "failed to move plots to ${OUTPUT_DIR}"
+        else
+            mv ${ANNOTATIONS_OUT}/plots ${OUTPUT_DIR}/${PREFIX}plots || die "failed to move plots to ${OUTPUT_DIR}"
+            echo "Plots dir: ${OUTPUT_DIR}/${PREFIX}plots"
+        fi
+
         mv ${ANNOTATIONS_OUT}/diagram.txt ${OUTPUT_DIR}/${PREFIX}diagram.txt || die "failed to move diagram.txt to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/rm_diagram.tsv ${OUTPUT_DIR}/${PREFIX}rm_diagram.tsv || die "failed to move rm_diagram.tsv to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/trf_diagram.tsv ${OUTPUT_DIR}/${PREFIX}trf_diagram.tsv || die "failed to move trf_diagram.tsv to ${OUTPUT_DIR}"
@@ -322,7 +329,6 @@ show_output_paths() {
         # rm -f ${RM_FILE} || die "failed to remove ${RM_FILE}"
         # rm -f ${TRF_FILE} || die "failed to remove ${TRF_FILE}"
         echo "Annotation outputs dir: ${OUTPUT_DIR}"
-        echo "Plots dir: ${OUTPUT_DIR}/plots"
         echo "SV VCF with repeats annotated: ${ANNOTATED_VCF}.gz"
     else
         echo "Annotation outputs dir: ${ANNOTATIONS_OUT}"
@@ -331,8 +337,6 @@ show_output_paths() {
     fi
 
 }
-
-
 
 T0=$(date +%s)
 
@@ -351,7 +355,7 @@ show_output_paths
 
 T1=$(date +%s)
 ELAPSED_TIME=$((T1 - T0))
-echo "The SVclassifier pipeline took ${ELAPSED_TIME} seconds"
+echo "The SVscanner pipeline took ${ELAPSED_TIME} seconds"
 
 echo "$(date)"
 echo "Success!"
