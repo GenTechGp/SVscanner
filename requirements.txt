@@ -3,6 +3,5 @@ pysam
 pandas
 matplotlib
 h5py
-tqdm
 scipy
 pypdf

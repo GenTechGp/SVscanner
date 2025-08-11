@@ -20,7 +20,6 @@ modules=(
     pandas
     matplotlib
     h5py
-    tqdm
     scipy
 )
 
@@ -39,5 +38,6 @@ if (( ${#missing[@]} )); then
     exit 1
 fi
 
-echo "All checks passed — Python version and required modules are available."
+echo "Python version: $PY_VER"
+echo "Required modules are installed: ${modules[*]}"
 exit 0
