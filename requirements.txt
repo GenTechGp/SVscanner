@@ -3,7 +3,6 @@ pysam
 biopython
 pandas
 matplotlib
-seaborn
 pypdf
 h5py
 tqdm
