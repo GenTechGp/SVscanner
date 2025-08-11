@@ -1,9 +1,8 @@
 numpy
 pysam
-biopython
 pandas
 matplotlib
-pypdf
 h5py
 tqdm
 scipy
+pypdf

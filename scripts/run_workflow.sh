@@ -40,6 +40,7 @@ FLAG_OVERWRITE=0 # Flag to overwrite existing output files (1 = yes, 0 = no)
 PREFIX="" # Prefix for output files (default: None)
 
 # Python and bash scripts (keep as it is)
+CHECK_REQUIRED=$(realpath scripts/check_required_python.sh)
 EXTRACT_SV_FLANKINGS=$(realpath src/extract_sv.py)
 ANNOTATION=$(realpath src/repeat_annotation.py)
 PLOT=$(realpath src/generate_plots.py)
@@ -140,7 +141,9 @@ parse_args() {
 
 check_required() {
 
-    [ -n "$VIRTUAL_ENV" ] && echo "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
+    # 1. Check Python version
+    CHECK_REQUIRED || die "Python version check failed"
+
     [ -z "$OUTPUT_DIR" ] && die "OUTPUT_DIR is not set"
     [ -z "$REF" ] && die "REF is not set"
     [ -z "$VCF" ] && die "VCF is not set"

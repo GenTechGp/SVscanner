@@ -1,7 +1,6 @@
 import sys
 import argparse
 import os
-from Bio.Seq import Seq
 import time
 import csv
 import pandas as pd
@@ -327,14 +326,19 @@ def load_strchive(str_file):
             motifs
                 repeat_motifs:      list of strings         e.g. repeat ['CAT', 'ATC', 'TCA'] reverse ['ATG', 'GAT', 'TGA']
         """
+        def reverse_complement(seq: str) -> str:
+            iupac_trans = str.maketrans(
+                "ACGTRYMKBDHVNacgtrymkbdhvn",
+                "TGCAYRKMVHDBNtgcayrkmvhdbn"
+            )
+            return seq.translate(iupac_trans)[::-1]
         motifs = []
 
         if repeat != None:
             n = len(repeat)
             for i in range(n):
                 rotation = repeat[i:]+repeat[:i]
-                seq = Seq(rotation)
-                reverse_rotation = str(seq.reverse_complement())
+                reverse_rotation = reverse_complement(rotation)
                 motifs.append(rotation)
                 motifs.append(reverse_rotation)
         
