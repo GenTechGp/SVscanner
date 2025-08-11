@@ -1,12 +1,11 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import argparse
 import os
 from matplotlib.patches import Patch
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
-from pypdf import PdfReader, PdfWriter
+# from pypdf import PdfReader, PdfWriter
 import scipy.stats as stats
 from matplotlib.patches import Patch
 from matplotlib.backends.backend_pdf import PdfPages
@@ -26,6 +25,12 @@ def read_tsv(tsv_file):
     return df
 
 def merge_pdfs(output_pdf, input_pdfs):
+    try:
+        from pypdf import PdfReader, PdfWriter
+    except ImportError:
+        print("PyPDF not found. Skipping PDF merge.")
+        return
+    
     writer = PdfWriter()
 
     for pdf_file in input_pdfs:
@@ -38,11 +43,11 @@ def merge_pdfs(output_pdf, input_pdfs):
         writer.write(f_out)
 
 def create_svtype_hist_plot(df, output_pdf, sv_order):
-    """Generate vertically stacked subplots for SV types with clean formatting."""
+    """Generate vertically stacked subplots for SV types with clean formatting (Matplotlib only)."""
     # Define SV type groups and colors
     legend_labels = {
         'NON_REPETITIVE': ['NON_REPETITIVE'],
-        'Tandem repeat': ['HOMO', 'STR', 'TR'],
+        'Tandem repeat': ['HOMO', 'STR', 'VNTR', 'TR'],
         'Mobile element': ['LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
     }
 
@@ -52,6 +57,7 @@ def create_svtype_hist_plot(df, output_pdf, sv_order):
         'NON_REPETITIVE': '#94d0c5',
         'HOMO': '#beb9d8',
         'STR': '#eb8274',
+        'VNTR': "#e68eee",
         'TR': '#87b0d2',
         'LTR': '#f4b567',
         'LINE': '#b4d56f',
@@ -60,21 +66,23 @@ def create_svtype_hist_plot(df, output_pdf, sv_order):
         'DNA': '#f9f6b7'
     }
 
+    # Group and order data
     grouped = df.groupby(['SVTYPE', 'CLASSIFICATION']).size().reset_index(name='Count')
-    grouped['CLASSIFICATION'] = pd.Categorical(grouped['CLASSIFICATION'], categories=classification_type_order, ordered=True)
+    grouped['CLASSIFICATION'] = pd.Categorical(
+        grouped['CLASSIFICATION'],
+        categories=classification_type_order,
+        ordered=True
+    )
     grouped['SVTYPE'] = pd.Categorical(grouped['SVTYPE'], categories=sv_order, ordered=True)
 
     # Filter out SV types with no data
     sv_order_with_data = [sv for sv in sv_order if not grouped[grouped['SVTYPE'] == sv].empty]
-
     num_sv = len(sv_order_with_data)
     if num_sv == 0:
         print("No data available for any SV types.")
         return
 
-    sns.set(style="white")  # remove background grid
     fig, axes = plt.subplots(nrows=num_sv, ncols=1, figsize=(15, 2.5 * num_sv), sharex=True)
-
     if num_sv == 1:
         axes = [axes]  # make iterable
 
@@ -82,13 +90,29 @@ def create_svtype_hist_plot(df, output_pdf, sv_order):
         ax = axes[i]
         sub_df = grouped[grouped['SVTYPE'] == sv]
 
-        sns.barplot(
-            data=sub_df, x='CLASSIFICATION', y='Count', hue='CLASSIFICATION',
-            hue_order=classification_type_order, palette=colors,
-            dodge=False, ax=ax
+        # Ensure all classification types are present, fill missing counts with 0
+        sub_df = (
+            sub_df
+            .set_index('CLASSIFICATION')
+            .reindex(pd.Index(classification_type_order, name='CLASSIFICATION'))
+            .fillna({'Count': 0})
+            .reset_index()
         )
 
-        # Move title inside the plot
+        x_positions = range(len(sub_df))
+        bar_colors = [colors[cls] for cls in sub_df['CLASSIFICATION']]
+
+        ax.bar(x_positions, sub_df['Count'], color=bar_colors)
+
+        # Set category labels for x-axis (only for last subplot)
+        if i == num_sv - 1:
+            ax.set_xticks(x_positions)
+            ax.set_xticklabels(sub_df['CLASSIFICATION'], rotation=45, ha='right', fontsize=10)
+        else:
+            ax.set_xticks(x_positions)
+            ax.set_xticklabels([])
+
+        # Title inside the plot
         ax.text(
             0.95, 0.9, f"{sv}",
             transform=ax.transAxes,
@@ -97,24 +121,17 @@ def create_svtype_hist_plot(df, output_pdf, sv_order):
             va='top',
             ha='right'
         )
-        
-        ax.set_xlabel("")
+
         ax.set_ylabel("")
-        ax.grid(False)  # remove gridlines
+        ax.grid(False)
 
-        # Remove individual legends
-        legend = ax.get_legend()
-        if legend is not None:
-            legend.remove()
-
-    axes[-1].tick_params(axis='x', which='both', bottom=True, labelbottom=True, labelrotation=45, labelsize=10)
     axes[-1].set_xlabel("Classification", fontsize=12, fontweight='bold')
     fig.text(0.04, 0.5, 'Count', va='center', rotation='vertical', fontsize=12, fontweight='bold')
 
     # Custom legend
     legend_handles = []
     for group_name, types in legend_labels.items():
-        legend_handles.append(Patch(facecolor='white', edgecolor='white', label=f"**{group_name}**"))
+        legend_handles.append(Patch(facecolor='white', edgecolor='white', label=group_name))
         for t in types:
             legend_handles.append(Patch(facecolor=colors[t], label=f"  {t}"))
 
@@ -125,14 +142,14 @@ def create_svtype_hist_plot(df, output_pdf, sv_order):
         frameon=False
     )
 
+    # Bold group labels in legend
     for text in fig.legends[0].get_texts():
-        if text.get_text().startswith("**") and text.get_text().endswith("**"):
-            text.set_text(text.get_text().strip("*"))
+        if not text.get_text().startswith("  "):  # group name
             text.set_weight('bold')
         else:
             text.set_fontstyle('normal')
 
-    plt.tight_layout(rect=[0.07, 0, 0.85, 1])  # extra space on left for y-label and right for legend
+    plt.tight_layout(rect=[0.07, 0, 0.85, 1])
 
     with PdfPages(output_pdf) as pdf:
         pdf.savefig(fig, bbox_inches='tight')
@@ -142,7 +159,7 @@ def create_dist_plot(df, output_pdf):
     df['log2_SV_len'] = np.log2(df['SVLEN'])
 
     def categorize_sv_type(sv_type):
-        if sv_type in ['HOMO', 'STR', 'TR']:
+        if sv_type in ['HOMO', 'STR', 'VNTR', 'TR']:
             return 'Tandem repeat'
         elif sv_type in ['LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']:
             return 'Mobile element'
@@ -151,7 +168,7 @@ def create_dist_plot(df, output_pdf):
 
     df['CLASSIFICATION_CATEGORY'] = df['CLASSIFICATION'].apply(categorize_sv_type)
 
-    ordered_classification_types = ['NON_REPETITIVE', 'HOMO', 'STR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
+    ordered_classification_types = ['NON_REPETITIVE', 'HOMO', 'STR', 'VNTR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
 
     # Use only two colors
     full_color = '#94d0c5'    # green
@@ -258,7 +275,7 @@ def create_svlength_hist_plot(df, output_pdf):
     df['log2_SV_len'] = np.log2(df['SVLEN'])
 
     def categorize_sv_type(sv_type):
-        if sv_type in ['HOMO', 'STR', 'TR']:
+        if sv_type in ['HOMO', 'STR', 'VNTR', 'TR']:
             return 'Tandem repeat'
         elif sv_type in ['LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']:
             return 'Mobile element'
@@ -267,7 +284,7 @@ def create_svlength_hist_plot(df, output_pdf):
 
     df['CLASSIFICATION_CATEGORY'] = df['CLASSIFICATION'].apply(categorize_sv_type)
 
-    ordered_classification_types = ['NON_REPETITIVE', 'HOMO', 'STR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
+    ordered_classification_types = ['NON_REPETITIVE', 'HOMO', 'STR', 'VNTR', 'TR', 'LTR', 'LINE', 'SINE', 'Retroposon', 'DNA']
 
     full_color = '#94d0c5'    # green
     partial_color = '#eb8274' # pink
