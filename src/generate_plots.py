@@ -5,7 +5,7 @@ import os
 from matplotlib.patches import Patch
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
-from pypdf import PdfReader, PdfWriter
+# from pypdf import PdfReader, PdfWriter
 import scipy.stats as stats
 from matplotlib.patches import Patch
 from matplotlib.backends.backend_pdf import PdfPages
@@ -25,6 +25,12 @@ def read_tsv(tsv_file):
     return df
 
 def merge_pdfs(output_pdf, input_pdfs):
+    try:
+        from pypdf import PdfReader, PdfWriter
+    except ImportError:
+        print("PyPDF not found. Skipping PDF merge.")
+        return
+    
     writer = PdfWriter()
 
     for pdf_file in input_pdfs:
