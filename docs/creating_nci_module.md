@@ -42,9 +42,9 @@ touch svclass/1.0
 
 #%Module1.0
 proc ModulesHelp { } {
-    puts stderr "This module loads the svclassifier script."
+    puts stderr "This module loads the SVscanner script."
 }
-module-whatis "SVclassifier nci bash script"
+module-whatis "SVscanner nci bash script"
 
 set scriptdir ${DIR}/tools/svclass/1.0
 prepend-path PATH $scriptdir

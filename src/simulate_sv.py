@@ -3,7 +3,6 @@ import pysam
 import sys
 import argparse
 import os
-from Bio.Seq import Seq
 import time
 import random
 

@@ -150,7 +150,7 @@ def get_fasta_record(record_id, input_path):
 
 def fetch_for_id(args, output_path):
     with open(output_path, "w") as outfile:
-        input_path = os.path.join(args.input_dir, "svclassifier/simulated_info.tab")
+        input_path = os.path.join(args.input_dir, "svscanner/simulated_info.tab")
         record = get_tsv_record(args.id, input_path)
         outfile.write(f"## {input_path}\n")
         outfile.write(f"{record}\n")
@@ -172,28 +172,28 @@ def fetch_for_id(args, output_path):
         outfile.write(f"## {input_path}\n")
         outfile.write(f"{record}\n")
         
-        # input_path = os.path.join(args.input_dir, "svclassifier/simulated_annotated.vcf.gz")
+        # input_path = os.path.join(args.input_dir, "svscanner/simulated_annotated.vcf.gz")
         # record = get_sniffles_record(sniffles_id, input_path)
         # outfile.write(f"## {input_path}\n")
         # outfile.write(f"{record}\n")
         
-        input_path = os.path.join(args.input_dir, "svclassifier/annotations_out/diagram.txt")
+        input_path = os.path.join(args.input_dir, "svscanner/annotations_out/diagram.txt")
         record = get_diagram_record(sniffles_id, input_path)
         outfile.write(f"## {input_path}\n")
         outfile.write(f"{record}\n")
 
-        input_path = os.path.join(args.input_dir, "svclassifier/annotations_out/plot_annotate.tsv")
+        input_path = os.path.join(args.input_dir, "svscanner/annotations_out/plot_annotate.tsv")
         record = get_tsv_record(sniffles_id, input_path)
         outfile.write(f"## {input_path}\n")
         outfile.write(f"{record}\n")
 
-        input_path = os.path.join(args.input_dir, "svclassifier/extract_sv_flanks_out/extract_sv.summary")
+        input_path = os.path.join(args.input_dir, "svscanner/extract_sv_flanks_out/extract_sv.summary")
         record = get_tsv_record(relative_id, input_path)
         outfile.write(f"## {input_path}\n")
         outfile.write(f"{record}\n")
         
         fasta_file_number = record.split(',')[3].strip()
-        input_path = os.path.join(args.input_dir, "svclassifier/extract_sv_flanks_out", f"{fasta_file_number}.fa")
+        input_path = os.path.join(args.input_dir, "svscanner/extract_sv_flanks_out", f"{fasta_file_number}.fa")
         record = get_fasta_record(relative_id, input_path)
         outfile.write(f"## {input_path}\n")
         outfile.write(f"{record}\n")
@@ -212,7 +212,7 @@ def determine_classification(sim_record, svtype_map):
 
 def fetch_all(args):
     output_path = os.path.join(args.output_dir, "all_records.txt")
-    input_path = os.path.join(args.input_dir, "svclassifier/simulated_info.tab")
+    input_path = os.path.join(args.input_dir, "svscanner/simulated_info.tab")
     header = ["chrom", "vcf_pos", "relative_ID", "sniffles_ID", "classification", "reciprocal", "sim_record_count", "sim_ID", "sim_ref_pos", "element_details", "simulated_svlen/called_svlen", "simulated_svtype/called_svtype", "sim_classification/called_classification", "sim_reciprocal/called_reciprocal"]
     sv_records = get_tsv_record(args.id, input_path, all=True)
     
@@ -274,7 +274,7 @@ def fetch_all(args):
             # if relative_id != "DUP.630":
             #     continue
 
-            input_path = os.path.join(args.input_dir, "svclassifier/annotations_out/plot_annotate.tsv")
+            input_path = os.path.join(args.input_dir, "svscanner/annotations_out/plot_annotate.tsv")
             plot_record = get_tsv_record(sniffles_id, input_path)
             called_classification = plot_record.strip().split('\t')[3]
             called_reciprocal = plot_record.strip().split('\t')[4]
@@ -335,7 +335,7 @@ def fetch_all(args):
     conf_matrix_sim_called_sv.loc["not_simulated_sv", "called_sv"] = no_sim_record_count
     conf_matrix_sim_called_sv.loc["not_simulated_sv", "not_called_sv"] = "NA"
     
-    print(f"info: SV count in svclassifier/simulated_info.tab: {len(sv_records)}")
+    print(f"info: SV count in svscanner/simulated_info.tab: {len(sv_records)}")
     print(f"info: Simulation records count in base_ref/simulated_svtypes.tsv: {len(sim_records)}")
     print(f"info: Count of SVs with no simulation record: {no_sim_record_count}")
     print(f"info: Count of Simulation records with no SV: {called_sv_sim_hit_freq_table.get(0, 0)}")

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="SVclassifier v0.1.0"
+VERSION="SVscanner v0.1.0"
 
 # set -x
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
@@ -15,13 +15,11 @@ STR_BED=$(realpath "test/databases/STRchive-disease-loci.bed")
 # SPECIES="mammalia"
 SPECIES="human"
 
-# Repeat Masker and TRF, bcftools, bgzip, tabix  programs (change if necessary)
-TRF_BINARY=$(realpath "trf409.linux64")
-REPEAT_MASKER=$(realpath "RepeatMasker/RepeatMasker")
-
-BCFTOOLS=$(realpath bcftools-1.21/bcftools)
-BGZIP=$(realpath htslib-1.21/bgzip)
-TABIX=$(realpath htslib-1.21/tabix)
+TRF_BINARY=""
+REPEAT_MASKER=""
+BCFTOOLS=""
+BGZIP=""
+TABIX=""
 
 NSPLIT_FILES=500
 NTHREADS=$(nproc --all)
@@ -40,6 +38,7 @@ FLAG_OVERWRITE=0 # Flag to overwrite existing output files (1 = yes, 0 = no)
 PREFIX="" # Prefix for output files (default: None)
 
 # Python and bash scripts (keep as it is)
+CHECK_REQUIRED=$(realpath scripts/check_required_python.sh)
 EXTRACT_SV_FLANKINGS=$(realpath src/extract_sv.py)
 ANNOTATION=$(realpath src/repeat_annotation.py)
 PLOT=$(realpath src/generate_plots.py)
@@ -138,9 +137,32 @@ parse_args() {
     ANNOTATED_VCF=${OUTPUT_DIR}/${PREFIX}annotated.vcf
 }
 
-check_required() {
+check_binary() {
+    local name=$1
+    shift
+    local candidates=("$@")
 
-    [ -n "$VIRTUAL_ENV" ] && echo "venv ($(basename "$VIRTUAL_ENV"))  found" || die "No venv found. Please activate the venv"
+    for cmd in "${candidates[@]}"; do
+        if [[ -f "$cmd" && -x "$cmd" ]]; then
+            echo "$(realpath "$cmd")"
+            return 0
+        fi
+
+        local full_path
+        full_path=$(command -v "$cmd" 2>/dev/null)
+        if [[ -n "$full_path" ]]; then
+            echo "$full_path"
+            return 0
+        fi
+    done
+
+    die "$name binary not found in any of: ${candidates[*]}"
+}
+
+check_required() {
+    # 1. Check Python version
+    ${CHECK_REQUIRED} || die "Python version check failed"
+
     [ -z "$OUTPUT_DIR" ] && die "OUTPUT_DIR is not set"
     [ -z "$REF" ] && die "REF is not set"
     [ -z "$VCF" ] && die "VCF is not set"
@@ -153,13 +175,22 @@ check_required() {
 
     echo "Number of Threads: ${NTHREADS}"
     echo "Number of RepeatMasker jobs: ${MAX_JOBS}"
-    
-    command -v ${TRF_BINARY} >/dev/null 2>&1 || die "TRF binary not found"
-    command -v ${REPEAT_MASKER} >/dev/null 2>&1 || die "RepeatMasker not found"
-    command -v ${BCFTOOLS} >/dev/null 2>&1 || die "${BCFTOOLS} not found"
-    command -v ${BGZIP} >/dev/null 2>&1 || die "${BGZIP} not found"
-    command -v ${TABIX} >/dev/null 2>&1 || die "${TABIX} not found"
-    command -v parallel >/dev/null 2>&1 || die "parallel not found"
+
+
+    TRF_BINARY=$(check_binary "TRF" "trf" "trf409.linux64") || exit 1
+    REPEAT_MASKER=$(check_binary "RepeatMasker" "RepeatMasker" "RepeatMasker/RepeatMasker") || exit 1
+    BCFTOOLS=$(check_binary "bcftools" "bcftools" "bcftools-1.21/bcftools") || exit 1
+    BGZIP=$(check_binary "bgzip" "bgzip" "htslib-1.21/bgzip") || exit 1
+    TABIX=$(check_binary "tabix" "tabix" "htslib-1.21/tabix") || exit 1
+    parallel=$(command -v parallel) || die "parallel not found"
+
+    echo "REPEAT_MASKER: ${REPEAT_MASKER}"
+    echo "TRF_BINARY: ${TRF_BINARY}"
+    echo "BCFTOOLS: ${BCFTOOLS}"
+    echo "BGZIP: ${BGZIP}"
+    echo "TABIX: ${TABIX}" 
+    echo "parallel: ${parallel}"
+
 }
 
 create_output_dir() {
@@ -280,7 +311,14 @@ show_output_paths() {
 
     if [[ ${FLAG_DELETE_TMP_FILES} -eq 1 ]]; then
         echo "Deleting temporary files..."
-        mv ${ANNOTATIONS_OUT}/plots/plots.pdf ${OUTPUT_DIR}/${PREFIX}plots.pdf || die "failed to move plots to ${OUTPUT_DIR}"
+        #if ${ANNOTATIONS_OUT}/plots/plots.pdf exists, move it to the output directory
+        if [[ -f ${ANNOTATIONS_OUT}/plots/plots.pdf ]]; then
+            mv ${ANNOTATIONS_OUT}/plots/plots.pdf ${OUTPUT_DIR}/${PREFIX}plots.pdf || die "failed to move plots to ${OUTPUT_DIR}"
+        else
+            mv ${ANNOTATIONS_OUT}/plots ${OUTPUT_DIR}/${PREFIX}plots || die "failed to move plots to ${OUTPUT_DIR}"
+            echo "Plots dir: ${OUTPUT_DIR}/${PREFIX}plots"
+        fi
+
         mv ${ANNOTATIONS_OUT}/diagram.txt ${OUTPUT_DIR}/${PREFIX}diagram.txt || die "failed to move diagram.txt to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/rm_diagram.tsv ${OUTPUT_DIR}/${PREFIX}rm_diagram.tsv || die "failed to move rm_diagram.tsv to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/trf_diagram.tsv ${OUTPUT_DIR}/${PREFIX}trf_diagram.tsv || die "failed to move trf_diagram.tsv to ${OUTPUT_DIR}"
@@ -291,7 +329,6 @@ show_output_paths() {
         # rm -f ${RM_FILE} || die "failed to remove ${RM_FILE}"
         # rm -f ${TRF_FILE} || die "failed to remove ${TRF_FILE}"
         echo "Annotation outputs dir: ${OUTPUT_DIR}"
-        echo "Plots dir: ${OUTPUT_DIR}/plots"
         echo "SV VCF with repeats annotated: ${ANNOTATED_VCF}.gz"
     else
         echo "Annotation outputs dir: ${ANNOTATIONS_OUT}"
@@ -300,8 +337,6 @@ show_output_paths() {
     fi
 
 }
-
-
 
 T0=$(date +%s)
 
@@ -320,7 +355,7 @@ show_output_paths
 
 T1=$(date +%s)
 ELAPSED_TIME=$((T1 - T0))
-echo "The SVclassifier pipeline took ${ELAPSED_TIME} seconds"
+echo "The SVscanner pipeline took ${ELAPSED_TIME} seconds"
 
 echo "$(date)"
 echo "Success!"

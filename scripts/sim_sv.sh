@@ -35,7 +35,7 @@ SIMULATE_SV="src/simulate_sv.py"
 PBSIM3="/data/install/pbsim3-3.0.5/src/pbsim"
 PBSIM3_DATA="/data/install/pbsim3-3.0.5/data"
 
-SV_CLASSIFIER="scripts/run_classifier.sh"
+SVSCANNER="scripts/run_workflow.sh"
 
 TRF_BED="/genome/hg38.trf.bed"
 MOBILE_ELEMENTS="test/databases/dfam_selected_species.fasta"
@@ -119,12 +119,12 @@ variant_call_sniffles() {
     rm -rf ${VCF}.gz && ${BGZIP} -c ${VCF} > ${VCF}.gz && ${TABIX} -p vcf ${VCF}.gz || die "bgzip and tabix failed"
 }
 
-run_svclassifier() {
+run_svscanner() {
     base_ref=$1
     vcf=$2
 
     source "${SVSCANNER_VENV_PATH}/bin/activate"
-    ${SV_CLASSIFIER} --output_dir ${OUTPUT_DIR}/svclassifier --sv_vcf ${vcf} --ref_fasta ${base_ref} > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
+    ${SVSCANNER} --output_dir ${OUTPUT_DIR}/svscanner --sv_vcf ${vcf} --ref_fasta ${base_ref} > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
     deactivate
 }
 
@@ -135,7 +135,7 @@ simulate_sv_using_visor ${BASE_REF} ${OUTPUT_DIR}/base_ref/ref_1.fa ${OUTPUT_DIR
 simulated_reads_pacbio_hifi ${OUTPUT_DIR}/base_ref/ref_0.fa ${OUTPUT_DIR}/base_ref/ref_1.fa
 align_reads_pacbio_hifi ${BASE_REF}
 variant_call_sniffles ${BASE_REF}
-run_svclassifier ${BASE_REF} ${OUTPUT_DIR}/sniffles.vcf.gz
+run_svscanner ${BASE_REF} ${OUTPUT_DIR}/sniffles.vcf.gz
 
 info "success"
 
