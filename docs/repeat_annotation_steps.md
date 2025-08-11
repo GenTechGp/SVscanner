@@ -6,7 +6,6 @@ The steps followed in annotating the vcf records using TRF and RM information ar
 
 ![Illustration](/images/annotation_tag_illustration.png)
 
-Note - `ri_l` is not necessarily equal to `ri_sv_l`. It can be less than, equal or greater than `ri_sv_l`.
 
 * RM\_ELEMENTS\_COVERAGE = `ri_sv_l/ri_L` e.g. [`r1_sv_l/r1_L`, `r2_sv_l/r2_L`]
 * RM\_ELEMENT\_PROPORTION = `ri_l/ri_L` e.g. [`r1_l/r1_L`, `r2_l/r2_L`]
@@ -14,6 +13,11 @@ Note - `ri_l` is not necessarily equal to `ri_sv_l`. It can be less than, equal 
   - TRF_SV_COVERAGE is also calculated similarly.
 * RM\_TOTAL\_SV\_COVERAGE = `sum(ri_sv_l)/sv_L` e.g. `(r1_sv_l+r2_sv_l)/sv_L`
    - TRF_TOTAL_SV_COVERAGE is also calculated similarly.
+
+### Note
+1.  `ri_l` is not necessarily equal to `ri_sv_l`. It can be less than, equal or greater than `ri_sv_l`.
+2. The dotted lines in the figure show the boundaries of the alignment.
+3. Diagrams visualizing Repeat/SV annotations ([diagram file format](docs/Repeat-SV_diagram.md)) show only the parts of the repeat elements that align to the SV.
 
 ## Important parameters with default values
 

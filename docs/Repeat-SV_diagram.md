@@ -9,7 +9,7 @@ Each record starts with a line beginning with a `>` symbol.
 - **`SV_REGION`**: The precise SV site or inserted sequence location (e.g., `chr1:10692-10927`).
 - **`SV_LENGTH`**: The length of the SV in base pairs.
 
-
+Note that diagrams show only the parts of the repeat elements that align to the SV.
 
 ```
 

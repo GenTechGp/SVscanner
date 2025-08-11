@@ -9,7 +9,7 @@ A workflow to annotate tandem repeats and mobile elements within structural vari
 1. A structural variant (SV) file in VCF format
 2. A reference genome
 ### Process:
-1. Flanking sequences are extracted around each SV to form a query sequence (details about the [extraction process](docs/extract_sv_and_seq_consensus_documentation.md)):
+1. Flanking sequences are extracted around each SV to form a query sequence (details about the [extraction process](docs/sv_extraction.md)):
     - query_sequence = left_flank + SV + right_flank
 2. These query sequences are annotated using TRF and RM.
 
@@ -53,8 +53,8 @@ pip install -r requirements.txt
  - `parallel`
  
 ```
-./scripts/install_tool.sh [tools to be installed]
-e.g. ./scripts/install_tool.sh bcftools htslib
+./scripts/install_tools.sh [tools to be installed]
+e.g. ./scripts/install_tools.sh bcftools htslib
 ```
 *`htslib` installs both `bgzip` and `tabix`
 
