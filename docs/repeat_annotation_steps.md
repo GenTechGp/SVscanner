@@ -181,7 +181,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | NON REPETITIVE/NA | NON REPETITIVE | NON REPETITIVE/NA | determine using **Table 6** |
 | valid | NON REPETITIVE/NA | determine using **Table 4** | determine using **Table 6** |
 | NON REPETITIVE/NA | valid | determine using **Table 4** | determine using **Table 6** |
-| valid | valid | calculate for both TRF and RM separately using **Table 4** and then select using **Table 7** | determine using **Table 6** |
+| valid | valid | calculate for both TRF and RM separately using **Table 4** (let's call them TRF_FINAL_CLASSIFICATION and RM_FINAL_CLASSIFICATION respectively) and then select using **Table 7** | determine using **Table 6** |
 
 ### Table 4
 | condition | FINAL_CLASSIFICATION |
@@ -209,6 +209,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | NON REPETITIVE | valid | RM_FINAL_CLASSIFICATION |
 | valid | NON REPETITIVE | TRF_FINAL_CLASSIFICATION |
 | valid | valid | if TRF TTC > RM TTC then TRF FINAL_CLASSIFICATION else RM FINAL_CLASSIFICATION |
+
 
 
 
