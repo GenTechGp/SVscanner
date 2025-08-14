@@ -72,7 +72,7 @@ For **Tandem Repeat Finder (TRF)**, entries are determined by prioritising maxim
 7. Calculate total non-overlapping elements SV coverage (`TRF_TTC`) using `TRF_LIST`.
 
 
-## Step 1 (RM preprocessing)
+## Step 3 (RM preprocessing)
 For **RepeatMasker (RM)**, entries are determined by prioritising those with maximal intersection between the SV and repeat entry. Entries are grouped into their repeat class (e.g. SINE, LINE) and in order of priority non-overlapping entries are selected within each class. Based on the element coverage and SV coverage, the SV is classified as a Full/Partial RECIPROCAL or Minimal.
 
 ![Illustration](/images/RM_workflow.png)
@@ -94,7 +94,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
    - Key: classification (e.g., "SINE", "LINE", etc.)
    - Value: list of elements belonging to that classification.
 
-## Step 2 (RM filtering)
+## Step 4 (RM filtering)
 1. Iterate through the populated dictionary key by key (each key is a classification).
 
 2. For each classification:
@@ -115,7 +115,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 
 5. Calculate the total SV coverage `RM_TTC` using `RM_LIST` (classification is not considered for this total).
 
-## Step 3 (Decide Final Classification)
+## Step 5 (Decide Final Classification)
 1. Prepare `RM` tags and `TRF` tags as shown in **Table 2**.
 
 2. Check if `RM_TTC < args.min_total_sv_coverage`:
@@ -209,6 +209,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | NON REPETITIVE | valid | RM_FINAL_CLASSIFICATION |
 | valid | NON REPETITIVE | TRF_FINAL_CLASSIFICATION |
 | valid | valid | if TRF TTC > RM TTC then TRF FINAL_CLASSIFICATION else RM FINAL_CLASSIFICATION |
+
 
 
 
