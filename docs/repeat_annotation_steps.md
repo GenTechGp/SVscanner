@@ -176,13 +176,12 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | CONSENSUS_REPEAT        | Motif of each element in the TRF_LIST |
 
 ### Table 3
- TRF_CLASSIFICATION | RM_CLASSIFICATION | FINAL_CLASSIFICATION |
+ TRF_CLASSIFICATION | RM_CLASSIFICATION | FINAL_CLASSIFICATION | RECIPROCAL |
 |--------------------|-------------------|-----------------------|
-| RECIPROCAL | NON REPETITIVE/NA | NON REPETITIVE |
-| NON REPETITIVE/NA | RECIPROCAL | determine using **Table 5** |
-| NON REPETITIVE/NA | valid | determine using **Table 4** |
-| valid | RECIPROCAL | determine using **Table 5** |
-| valid | valid | calculate for both TRF and RM separately using **Table 4** and then select using **Table 7** |
+| NON REPETITIVE/NA | NON REPETITIVE || NON REPETITIVE/NA | determine using **Table 5** |
+| valid | NON REPETITIVE/NA | determine using **Table 4** | determine using **Table 5** |
+| NON REPETITIVE/NA | valid | determine using **Table 4** | determine using **Table 5** |
+| valid | valid | calculate for both TRF and RM separately using **Table 4** and then select using **Table 7** | determine using **Table 5** |
 
 ### Table 4
 | condition | FINAL_CLASSIFICATION |
@@ -210,4 +209,5 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | NON REPETITIVE | valid | RM_FINAL_CLASSIFICATION |
 | valid | NON REPETITIVE | TRF_FINAL_CLASSIFICATION |
 | valid | valid | if TRF TTC > RM TTC then TRF FINAL_CLASSIFICATION else RM FINAL_CLASSIFICATION |
+
 
