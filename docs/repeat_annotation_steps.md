@@ -39,13 +39,20 @@ For **Tandem Repeat Finder (TRF)**, entries are determined by prioritising maxim
    - The file can have multiple lines (elements) per `sv_id`.
    - For each line, save the element under the corresponding `sv_id`.
 
-2. Determine each TRF element's classification using **Table 0**.
+2. Determine each TRF element's classification using table below.
 
-3. Calculate each element's `sv_coverage`.
+    | Condition               | Classification |
+    |------------------------|----------------|
+    | period_size == 1       | HOMO           |
+    | 1 < period_size < 7    | STR            |
+    | 6 < period_size < 101  | VNTR           |
+    | 100 < period_size      | TR             |
 
-4. Filter out elements where `sv_coverage < args.min_sv_coverage`.
+4. Calculate each element's `sv_coverage`.
 
-5. Store the remaining elements in an array for each `sv_id`:
+5. Filter out elements where `sv_coverage < args.min_sv_coverage`.
+
+6. Store the remaining elements in an array for each `sv_id`:
    - Do not separate elements by classification; store all together under the `sv_id`.
 
 
@@ -148,14 +155,6 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
    - `PATHOGENIC_MIN` Minimum pathogenic number annotated in STRchive
 
 
-### Table 0: TRF Element Classification by `period_size`
-| Condition               | Classification |
-|------------------------|----------------|
-| period_size == 1       | HOMO           |
-| 1 < period_size < 7    | STR            |
-| 6 < period_size < 101  | VNTR           |
-| 100 < period_size      | TR             |
-
 ### Table 1: Determine ECC
 | Condition         | ECC = True | ECC = False |
 |---------------------------|------------|-------------|
@@ -209,6 +208,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | NON REPETITIVE | valid | RM_FINAL_CLASSIFICATION |
 | valid | NON REPETITIVE | TRF_FINAL_CLASSIFICATION |
 | valid | valid | if TRF TTC > RM TTC then TRF FINAL_CLASSIFICATION else RM FINAL_CLASSIFICATION |
+
 
 
 
