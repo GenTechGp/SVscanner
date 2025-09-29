@@ -14,7 +14,7 @@ A workflow to annotate tandem repeats and mobile elements within structural vari
 2. These query sequences are annotated using TRF and RM.
 
 ### Outputs:
-1. A VCF file with repeat annotations embedded (details about the [annotation process and the added VCF INFO tags](docs/repeat_annotation_steps.md)).
+1. A VCF file with repeat annotations embedded (details about [VCF INFO tags](docs/repeat_annotation_VCF_tags.md) and [annotation process](docs/repeat_annotation_steps.md)).
 2. Diagrams visualizing Repeat/SV annotations (details about the [diagram file format](docs/Repeat-SV_diagram.md)).
 3. Histograms and density plots summarizing Repeat/SV annotations.
 

@@ -1,6 +1,6 @@
 # Repeat Annotation Steps
 
-The steps followed in annotating the vcf records using TRF and RM information are given below.
+The steps followed in annotating the vcf records using TRF and RM information are given below. For VCF INFO tags refer [repeat_annotation_VCF_tags.md](docs/repeat_annotation_VCF_tags.md)
 
 ## SV/Repeat overlap calculations
 
