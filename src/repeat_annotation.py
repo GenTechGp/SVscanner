@@ -8,29 +8,31 @@ import math
 
 BND_LEN_THRESHOLD=0.25
 
-ANNOTATE_NEW_TAGS_HEADER="\
-##INFO=<ID=RM_CLASSIFICATION,Number=1,Type=String,Description=\"Classification of repeat class covering the SV [SINE,LINE,LTR,DNA,Retroposon or NON-REPETITIVE]\">\n\
-##INFO=<ID=RM_ELEMENTS_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the transposable element covered by the SV\">\n\
-##INFO=<ID=RM_ELEMENT_PROPORTION,Number=1,Type=String,Description=\"Proportion of the query sequence (includes flanking region) found in the transposable element\">\n\
-##INFO=<ID=RM_RECIPROCAL,Number=1,Type=String,Description=\"Type of transposition [Full/Partial/Minimal]\">\n\
-##INFO=<ID=RM_SV_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the SV by the transposable element\">\n\
-##INFO=<ID=RM_TOTAL_SV_COVERAGE,Number=1,Type=String,Description=\"Total coverage of the SV covered by transposable elements\">\n\
-##INFO=<ID=TRF_CLASSIFICATION,Number=1,Type=String,Description=\"Classification(s) of tandem repeat class covering the SV [HOMO,STR,VNTR,TR or NON-REPETITIVE]\">\n\
-##INFO=<ID=TRF_SV_COVERAGE,Number=1,Type=String,Description=\"Coverage(s) of the SV by the tandem repeat(s)\">\n\
-##INFO=<ID=TRF_TOTAL_SV_COVERAGE,Number=1,Type=String,Description=\"Total coverage of the SV covered by tandem repeats\">\n\
-##INFO=<ID=TRF_PERIOD_SIZE,Number=1,Type=String,Description=\"Period size of the repeat(s)\">\n\
-##INFO=<ID=TRF_COPY_NUMBER,Number=1,Type=String,Description=\"Copy number of the repeat(s)\">\n\
-##INFO=<ID=CONSENSUS_REPEAT,Number=1,Type=String,Description=\"Motif of repeat(s) found by Tandem Repeat Finder\">\n\
-##INFO=<ID=FINAL_CLASSIFICATION,Number=1,Type=String,Description=\"Classification of SV as repetitive element based on TRF and RepeatMasker results\">\n\
-##INFO=<ID=DISEASE_GENE,Number=1,Type=String,Description=\"STR disease associated with gene\">\n\
-##INFO=<ID=STRCHIVE_MOTIF,Number=1,Type=String,Description=\"Is consensus repeat a version (rotation/complement) of pathogenic motif(s) annotated by STRchive \">\n\
-##INFO=<ID=PATHOGENIC_MIN,Number=1,Type=String,Description=\"Minimum pathogenic number\">\n\
+ANNOTATE_TAGS_HEADER="\
+##INFO=<ID=RM_CLASSIFICATION,Number=.,Type=String,Description=\"Repeat class(es) overlapping the SV: SINE, LINE, LTR, DNA, Retroposon, NON-REPETITIVE\">\n\
+##INFO=<ID=RM_SV_COVERAGE,Number=.,Type=Float,Description=\"For each overlap, fraction of SV length covered (overlap_len/sv_len)\">\n\
+##INFO=<ID=RM_ELEMENTS_COVERAGE,Number=.,Type=Float,Description=\"For each overlap, fraction of the repeat element covered by the SV (overlap_len/element_len)\">\n\
+##INFO=<ID=RM_ELEMENT_PROPORTION,Number=.,Type=Float,Description=\"For each RepeatMasker hit, proportion of the query sequence (SV + flanks) aligning to that element\">\n\
+##INFO=<ID=RM_RECIPROCAL,Number=1,Type=String,Description=\"Overlap class for the dominant RepeatMasker class: Full if ≥~75% of the SV is covered and each overlapped element is ≥75% covered; Partial if ≥~75% SV coverage but one or more elements are <75% covered; Minimal if <75% SV coverage\">\n\
+##INFO=<ID=RM_TOTAL_SV_COVERAGE,Number=1,Type=Float,Description=\"Proportion of the SV covered by RepeatMasker hits, with overlaps merged to avoid double-counting (0–1)\">\n\
+\
+##INFO=<ID=TRF_CLASSIFICATION,Number=.,Type=String,Description=\"TRF repeat class(es) overlapping the SV: HOMO (homopolymer), STR, VNTR, TR, or NON-REPETITIVE\">\n\
+##INFO=<ID=TRF_SV_COVERAGE,Number=.,Type=Float,Description=\"For each TRF hit, fraction of SV length covered\">\n\
+##INFO=<ID=TRF_PERIOD_SIZE,Number=.,Type=Integer,Description=\"Period size(s) in bp for each TRF hit\">\n\
+##INFO=<ID=TRF_COPY_NUMBER,Number=.,Type=Float,Description=\"Copy number(s) for each TRF hit\">\n\
+##INFO=<ID=TRF_TOTAL_SV_COVERAGE,Number=1,Type=Float,Description=\"Proportion of the SV covered by TRF hits, with overlaps merged to avoid double-counting (0–1)\">\n\
+\
+##INFO=<ID=CONSENSUS_REPEAT,Number=1,Type=String,Description=\"Dominant repeat motif from TRF across the SV\">\n\
+##INFO=<ID=FINAL_CLASSIFICATION,Number=1,Type=String,Description=\"Final repeat class for the SV, combining TRF and RepeatMasker. If only one method reports a repeat, use that class; if both do, choose the stronger/cleaner call as defined in the methods; if neither, NON-REPETITIVE/NA. RECIPROCAL is reported for mobile-element classes and NA for TRF-only classes.\">\n\
+##INFO=<ID=DISEASE_GENE,Number=1,Type=String,Description=\"STR-associated disease gene (from STRchive)\">\n\
+##INFO=<ID=STRCHIVE_MOTIF,Number=1,Type=String,Description=\"Pathogenic motif(s) matched in STRchive (normalised for rotation/complement)\">\n\
+##INFO=<ID=PATHOGENIC_MIN,Number=1,Type=Integer,Description=\"Minimum pathogenic repeat count for the matched gene/motif (STRchive)\">\n\
 "
 
-ANNOTATE_COLS=["CHROM","POS","ID","REF","ALT","RM_CLASSIFICATION","RM_ELEMENTS_COVERAGE","RM_ELEMENT_PROPORTION",\
-               "RM_SV_COVERAGE","RM_TOTAL_SV_COVERAGE","RM_RECIPROCAL","TRF_CLASSIFICATION","TRF_PERIOD_SIZE",\
-                "TRF_COPY_NUMBER","CONSENSUS_REPEAT","TRF_SV_COVERAGE","TRF_TOTAL_SV_COVERAGE","FINAL_CLASSIFICATION",\
-                    "DISEASE_GENE","STRCHIVE_MOTIF","PATHOGENIC_MIN"]
+ANNOTATE_COLS=["CHROM","POS","ID","REF","ALT",\
+               "RM_CLASSIFICATION","RM_SV_COVERAGE","RM_ELEMENTS_COVERAGE","RM_ELEMENT_PROPORTION","RM_RECIPROCAL","RM_TOTAL_SV_COVERAGE",\
+                "TRF_CLASSIFICATION","TRF_SV_COVERAGE","TRF_PERIOD_SIZE","TRF_COPY_NUMBER","TRF_TOTAL_SV_COVERAGE",\
+                "CONSENSUS_REPEAT","FINAL_CLASSIFICATION","DISEASE_GENE","STRCHIVE_MOTIF","PATHOGENIC_MIN"]
 
 PLOT_COLS=["ID","SVTYPE","SVLEN","CLASSIFICATION","RECIPROCAL"]
 
@@ -696,9 +698,9 @@ def get_annot_info(args, sv_info, sv_id, strchive):
 
         return {
             'RM_CLASSIFICATION': ','.join(classifications) if classifications else 'NA',
-            'RM_ELEMENTS_COVERAGE': ','.join(element_coverage) if element_coverage else 'NA',
-            'RM_ELEMENT_PROPORTION': ','.join(element_proportion) if element_proportion else 'NA',
-            'RM_SV_COVERAGE': ','.join(sv_coverage) if sv_coverage else 'NA',
+            'RM_ELEMENTS_COVERAGE': ','.join(element_coverage) if element_coverage else '.',
+            'RM_ELEMENT_PROPORTION': ','.join(element_proportion) if element_proportion else '.',
+            'RM_SV_COVERAGE': ','.join(sv_coverage) if sv_coverage else '.',
             'e_id': ','.join(e_id) if e_id else 'NA'
         }
         
@@ -722,10 +724,10 @@ def get_annot_info(args, sv_info, sv_id, strchive):
 
         return {
             'TRF_CLASSIFICATION': ','.join(classifications) if classifications else 'NA',
-            'TRF_PERIOD_SIZE': ','.join(period_sizes) if period_sizes else 'NA',
-            'TRF_COPY_NUMBER': ','.join(copy_number) if copy_number else 'NA',
+            'TRF_PERIOD_SIZE': ','.join(period_sizes) if period_sizes else '.',
+            'TRF_COPY_NUMBER': ','.join(copy_number) if copy_number else '.',
             'CONSENSUS_REPEAT': ','.join(consensus_repeats) if consensus_repeats else 'NA',
-            'TRF_SV_COVERAGE': ','.join(sv_coverage) if sv_coverage else 'NA',
+            'TRF_SV_COVERAGE': ','.join(sv_coverage) if sv_coverage else '.',
             'e_id': ','.join(e_id) if e_id else 'NA'
         }
 
@@ -856,18 +858,24 @@ def get_annot_info(args, sv_info, sv_id, strchive):
     # --> Replaces any <50% as non-repetitive
 
     # RepeatMasker
-    total_rm_coverage = sv_data.get('total_rm_nonoverlap_coverage', 'NA')
-    if total_rm_coverage != 'NA' and float(total_rm_coverage) < args.min_total_sv_coverage:
+    total_rm_coverage = sv_data.get('total_rm_nonoverlap_coverage', '.')
+    if total_rm_coverage != '.' and float(total_rm_coverage) < args.min_total_sv_coverage:
         for key in rm_data:
-            rm_data[key] = 'NA'
+            if key in ['RM_CLASSIFICATION', 'e_id']:
+                rm_data[key] = 'NA'
+            else:
+                rm_data[key] = '.'
         rm_data['RM_CLASSIFICATION'] = 'NON_REPETITIVE'
     rm_data['RM_TOTAL_SV_COVERAGE'] = total_rm_coverage
 
     # TRF
-    total_trf_coverage = sv_data.get('total_trf_nonoverlap_coverage', 'NA')
-    if total_trf_coverage != 'NA' and float(total_trf_coverage) < args.min_total_sv_coverage:
+    total_trf_coverage = sv_data.get('total_trf_nonoverlap_coverage', '.')
+    if total_trf_coverage != '.' and float(total_trf_coverage) < args.min_total_sv_coverage:
         for key in trf_data:
-            trf_data[key] = 'NA'
+            if key in ['TRF_CLASSIFICATION', 'CONSENSUS_REPEAT', 'e_id']:
+                trf_data[key] = 'NA'
+            else:
+                trf_data[key] = '.'
         trf_data['TRF_CLASSIFICATION'] = 'NON_REPETITIVE'
     trf_data['TRF_TOTAL_SV_COVERAGE'] = total_trf_coverage
 
@@ -1012,8 +1020,7 @@ def output_annotations(args, strchive, sv_info):
     
     header_out = f"{args.out}/vcf_header.txt"
     with open(header_out, "w") as f:
-            # print(ANNOTATE_NEW_TAGS_HEADER)
-            f.write(f"{ANNOTATE_NEW_TAGS_HEADER}")
+        f.write(f"{ANNOTATE_TAGS_HEADER}")
 
     tsv_rm_out = f"{args.out}/rm_annotate.tsv"
     tsv_trf_out = f"{args.out}/trf_annotate.tsv"
