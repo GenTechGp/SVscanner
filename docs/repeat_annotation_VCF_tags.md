@@ -32,7 +32,7 @@
 | RM_RECIPROCAL         | Partial                 | Partial  | NA               | NA               | Always available (value or NA)                                       |
 | RM_TOTAL_SV_COVERAGE  | 0.99                    | 1        | 0.07             |                  | Not available if RM_CLASSIFICATION is NA                             |
 | TRF_CLASSIFICATION    | NON_REPETITIVE          | NA       | VNTR             | VNTR             | Always available (value or NA)                                       |
-| TRF_SV_COVERAGE       |                         | 0.77     | 1                |                  | Not available if TRF_CLASSIFICATION is NON_REPETITIVE or NA           |
+| TRF_SV_COVERAGE       |                         |          | 0.77             | 1                | Not available if TRF_CLASSIFICATION is NON_REPETITIVE or NA           |
 | TRF_PERIOD_SIZE       |                         |          | 74               | 66               | Not available if TRF_CLASSIFICATION is NON_REPETITIVE or NA           |
 | TRF_COPY_NUMBER       |                         |          | 8.8              | 44               | Not available if TRF_CLASSIFICATION is NON_REPETITIVE or NA           |
 | TRF_TOTAL_SV_COVERAGE | 0                       |          | 0.77             | 1                | Not available if TRF_CLASSIFICATION is NA                             |
