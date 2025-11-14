@@ -9,7 +9,7 @@ params.ref     = null
 params.outdir  = 'results'
 params.species = 'human'
 params.str_bed = ''
-
+params.cpus    = 1
 
 // ---------------------------
 // Process
