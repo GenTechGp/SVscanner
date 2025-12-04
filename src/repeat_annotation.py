@@ -999,32 +999,31 @@ def output_annotations(args, strchive, sv_info):
         for sv_id in sv_info:
             sv_type = sv_id.split('.')[0]
             sv_len = sv_info[sv_id]['sv_len']
-            sv_count += 1
             info = get_annot_info(args, sv_info, sv_id, strchive)
             if "BND" not in sv_id:
                 f.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
                 f.write("\n")
-                continue
-
-            # ---- BND CASE ----
-            CHROM = info['CHROM']
-            POS = info['POS']
-            ALT = info['ALT']
-            # extract chrom:pos inside ALT
-            m = re.search(r'([A-Za-z0-9_]+):(\d+)', ALT)
-            if not m:
-                print(f"WARNING: could not parse ALT partner for {sv_id}: {ALT}")
-                continue
-            alt_chrom = m.group(1)
-            alt_pos = int(m.group(2))
-            # skip self-breakpoint BND
-            if CHROM == alt_chrom and POS == alt_pos:
-                print(f"Skipping BND entry with identical breakpoints: "
-                    f"{CHROM}:{POS} and {alt_chrom}:{alt_pos}")
-                continue
-            # write valid BND
-            f.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
-            f.write("\n")
+            else:
+                # ---- BND CASE ----
+                CHROM = info['CHROM']
+                POS = info['POS']
+                ALT = info['ALT']
+                # extract chrom:pos inside ALT
+                m = re.search(r'([A-Za-z0-9_]+):(\d+)', ALT)
+                if not m:
+                    print(f"WARNING: could not parse ALT partner for {sv_id}: {ALT}")
+                    continue
+                alt_chrom = m.group(1)
+                alt_pos = int(m.group(2))
+                # skip self-breakpoint BND
+                if CHROM == alt_chrom and POS == alt_pos:
+                    print(f"Skipping BND entry with identical breakpoints: "
+                        f"{CHROM}:{POS} and {alt_chrom}:{alt_pos}")
+                    continue
+                # write valid BND
+                f.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
+                f.write("\n")
+            sv_count += 1
 
             classification, transposition = info['FINAL_CLASSIFICATION'], info['RM_RECIPROCAL']
             if classification in repeat_count:
