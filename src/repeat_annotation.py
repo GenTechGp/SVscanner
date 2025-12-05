@@ -1083,8 +1083,9 @@ def output_annotations(args, strchive, sv_info):
                 count_by_sv[sv_type][classification][transposition_map[transposition]] += 1
             
             f2.write(f"{sv_id}/{sv_info[sv_id]['callerID']}\t{sv_type}\t{sv_len}\t{classification}\t{transposition}\n")
-
-            f3.write(f"{sv_id}\t{classification}\t{traceback}\n")
+            
+            vcf_id = info['ID']
+            f3.write(f"{vcf_id}\t{classification}\t{traceback}\n")
 
     
     header_out = f"{args.out}/vcf_header.txt"
