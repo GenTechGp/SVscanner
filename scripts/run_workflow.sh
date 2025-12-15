@@ -19,7 +19,6 @@ TRF_BINARY=""
 REPEAT_MASKER=""
 BCFTOOLS=""
 BGZIP=""
-TABIX=""
 
 NSPLIT_FILES=500
 NTHREADS=$(nproc --all)
@@ -42,6 +41,8 @@ CHECK_REQUIRED=$(realpath scripts/check_required_python.sh)
 EXTRACT_SV_FLANKINGS=$(realpath src/extract_sv.py)
 ANNOTATION=$(realpath src/repeat_annotation.py)
 PLOT=$(realpath src/generate_plots.py)
+TRACEBACK_PLOT=$(realpath src/generate_traceback_plots.py)
+VCF_ANNOTATE=$(realpath src/annotate_vcf.py)
 
 # Function to show usage
 usage() {
@@ -176,19 +177,16 @@ check_required() {
     echo "Number of Threads: ${NTHREADS}"
     echo "Number of RepeatMasker jobs: ${MAX_JOBS}"
 
-
     TRF_BINARY=$(check_binary "TRF" "trf" "trf409.linux64") || exit 1
     REPEAT_MASKER=$(check_binary "RepeatMasker" "RepeatMasker" "RepeatMasker/RepeatMasker") || exit 1
     BCFTOOLS=$(check_binary "bcftools" "bcftools" "bcftools-1.21/bcftools") || exit 1
     BGZIP=$(check_binary "bgzip" "bgzip" "htslib-1.21/bgzip") || exit 1
-    TABIX=$(check_binary "tabix" "tabix" "htslib-1.21/tabix") || exit 1
     parallel=$(command -v parallel) || die "parallel not found"
 
     echo "REPEAT_MASKER: ${REPEAT_MASKER}"
     echo "TRF_BINARY: ${TRF_BINARY}"
     echo "BCFTOOLS: ${BCFTOOLS}"
     echo "BGZIP: ${BGZIP}"
-    echo "TABIX: ${TABIX}" 
     echo "parallel: ${parallel}"
 
 }
@@ -288,13 +286,23 @@ plot_classifications() {
     echo "done"
 }
 
+plot_tracebacks() {
+    echo "Plotting tracebacks..."
+    python3 ${TRACEBACK_PLOT} \
+        --output ${ANNOTATIONS_OUT}/traceback_plots.pdf \
+        --traceback ${ANNOTATIONS_OUT}/traceback.tsv || die "failed"
+    echo "done"
+}
+
 apply_annotations() {
     # apply annotations to the VCF
     echo "Applying annotations to the VCF..."
-    COL_LIST=$(head -n 1 ${ANNOTATIONS_OUT}/vcf_annotate.tsv | cut -c2- | tr '\t' ',')
-    ${BGZIP} ${ANNOTATIONS_OUT}/vcf_annotate.tsv -c > ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "${BGZIP} failed"
-    ${TABIX} -s1 -b2 -e2 ${ANNOTATIONS_OUT}/vcf_annotate.gz || die "${TABIX} failed"
-    ${BCFTOOLS} annotate -a ${ANNOTATIONS_OUT}/vcf_annotate.gz -c ${COL_LIST} -h ${ANNOTATIONS_OUT}/vcf_header.txt ${VCF} -o ${ANNOTATED_VCF} || die "${BCFTOOLS} annotate failed"
+    python3 ${VCF_ANNOTATE} \
+        --vcf ${VCF} \
+        --header ${ANNOTATIONS_OUT}/vcf_header.txt \
+        --tsv ${ANNOTATIONS_OUT}/vcf_annotate.tsv \
+        --mate ${ANNOTATIONS_OUT}/vcf_annotate_bnd_mate.tsv \
+        --output ${ANNOTATED_VCF} || die "failed to annotate VCF"
     echo "done"
 }
 
@@ -322,6 +330,9 @@ show_output_paths() {
         mv ${ANNOTATIONS_OUT}/diagram.txt ${OUTPUT_DIR}/${PREFIX}diagram.txt || die "failed to move diagram.txt to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/rm_diagram.tsv ${OUTPUT_DIR}/${PREFIX}rm_diagram.tsv || die "failed to move rm_diagram.tsv to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/trf_diagram.tsv ${OUTPUT_DIR}/${PREFIX}trf_diagram.tsv || die "failed to move trf_diagram.tsv to ${OUTPUT_DIR}"
+        mv ${ANNOTATIONS_OUT}/traceback_plots.pdf ${OUTPUT_DIR}/${PREFIX}traceback_plots.pdf # only if generated
+        mv ${ANNOTATIONS_OUT}/vcf_annotate.tsv ${OUTPUT_DIR}/${PREFIX}vcf_annotate.tsv || die "failed to move vcf_annotate.tsv to ${OUTPUT_DIR}"
+        mv ${ANNOTATIONS_OUT}/vcf_annotate_bnd_mate.tsv ${OUTPUT_DIR}/${PREFIX}vcf_annotate_bnd_mate.tsv || die "failed to move vcf_annotate_bnd_mate.tsv to ${OUTPUT_DIR}"
 
         rm -rf ${ANNOTATIONS_OUT} || die "failed to remove ${ANNOTATIONS_OUT}"
         rm -rf ${EXTRACT_SV_FLANKS_OUT} || die "failed to remove ${EXTRACT_SV_FLANKS_OUT}"
@@ -349,6 +360,7 @@ run_repeatmasker
 process_trf_repeatmasker_output
 annotation
 plot_classifications
+plot_tracebacks
 apply_annotations
 sort_and_index_vcf
 show_output_paths

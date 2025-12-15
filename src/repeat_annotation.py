@@ -23,12 +23,12 @@ ANNOTATE_TAGS_HEADER="\
 ##INFO=<ID=TRF_COPY_NUMBER,Number=.,Type=Float,Description=\"Copy number(s) for each TRF hit\">\n\
 ##INFO=<ID=TRF_TOTAL_SV_COVERAGE,Number=1,Type=Float,Description=\"Proportion of the SV covered by TRF hits, with overlaps merged to avoid double-counting (0–1)\">\n\
 \
-##INFO=<ID=CONSENSUS_REPEAT,Number=1,Type=String,Description=\"Dominant repeat motif from TRF across the SV\">\n\
+##INFO=<ID=CONSENSUS_REPEAT,Number=.,Type=String,Description=\"Dominant repeat motif from TRF across the SV\">\n\
 ##INFO=<ID=FINAL_CLASSIFICATION,Number=1,Type=String,Description=\"Final repeat class for the SV, combining TRF and RepeatMasker. If only one method reports a repeat, use that class; if both do, choose the stronger/cleaner call as defined in the methods; if neither, NON-REPETITIVE/NA. RECIPROCAL is reported for mobile-element classes and NA for TRF-only classes.\">\n\
 ##INFO=<ID=DISEASE_GENE,Number=1,Type=String,Description=\"STR-associated disease gene (from STRchive)\">\n\
 ##INFO=<ID=STRCHIVE_MOTIF,Number=1,Type=String,Description=\"Pathogenic motif(s) matched in STRchive (normalised for rotation/complement)\">\n\
 ##INFO=<ID=PATHOGENIC_MIN,Number=1,Type=Integer,Description=\"Minimum pathogenic repeat count for the matched gene/motif (STRchive)\">\n\
-##INFO=<ID=BND_MATE_INFO,Number=1,Type=String,Description=\"Annotations for the second breakend (mate) query sequence in BND/TRA records. Semicolon-delimited key=value pairs mirroring primary tags\">\n\
+##INFO=<ID=BND_MATE_INFO,Number=1,Type=String,Description=\"Annotations for the second breakend (mate) query sequence in BND/TRA records. Pipe-delimited key=value pairs mirroring primary tags\">\n\
 "
 
 ANNOTATE_COLS=["CHROM","POS","ID",\
@@ -56,8 +56,8 @@ def read_sv_info(sv_file):
             sv_len = int(sv[5])
             sv_id = sv[6]
             callerID = sv[7]
-            ref_seq = sv[8]
-            alt_seq = sv[9]
+            # ref_seq = sv[8]
+            # alt_seq = sv[9]
 
             if "BND" in sv_id:
                 assert sv_len == -1
@@ -83,8 +83,8 @@ def read_sv_info(sv_file):
                 'end' : query_end - query_start,
                 'callerID' : callerID,  
                 'header' : f'{sv_id}\t({callerID})\t{chrom}:{query_start}-{query_end}\t{chrom}:{pos}-{end}\t{sv_len}\t',
-                'REF': ref_seq,
-                'ALT': alt_seq,
+                # 'REF': ref_seq,
+                # 'ALT': alt_seq,
             }
 
     return sv_info
@@ -991,8 +991,8 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         'PATHOGENIC_MIN' : '.',
         **rm_data,  # Unpack repeat data from RepeatMasker annotations
         **trf_data, # Unpack repeat data from TRF annotations
-        'REF' : sv_data['REF'],
-        'ALT' : sv_data['ALT'],
+        # 'REF' : sv_data['REF'],
+        # 'ALT' : sv_data['ALT'],
     }
 
     ####### Check if it intersects any known STR sites #####
@@ -1105,9 +1105,11 @@ def output_annotations(args, strchive, sv_info):
     traceback_out = f"{args.out}/traceback.tsv"
     with open(annotate_tsv_out, "w") as f_anotatate_tsv_out, open(plot_annotate_out, "w") as f_plot_annotate_out, open(traceback_out, "w") as f_traceback_out, open(annotate_tsv_out_bnd_mate, "w") as f_anotatate_tsv_out_bnd_mate:
         # print("\t".join(ANNOTATE_COLS))
-        f_anotatate_tsv_out.write("#")
         f_anotatate_tsv_out.write("\t".join(ANNOTATE_COLS))
         f_anotatate_tsv_out.write("\n")
+
+        f_anotatate_tsv_out_bnd_mate.write("\t".join(ANNOTATE_COLS))
+        f_anotatate_tsv_out_bnd_mate.write("\n")
 
         f_plot_annotate_out.write("\t".join(PLOT_COLS))
         f_plot_annotate_out.write("\n")

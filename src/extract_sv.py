@@ -369,9 +369,9 @@ def handle_vcf_types_bnd_mate(args, vcf, fasta, record, chrom_lengths, i):
 
     # 2) Try INFO tags commonly used by callers
     if chrom_1 is None:
-        chrom_1 = record.info.get("CHR2", None)
+        chrom_1 = record.info.get("CHR2") if "CHR2" in record.info else None
     if pos_1 is None:
-        pos_1 = record.info.get("POS2", None)
+        pos_1 = record.info.get("POS2") if "POS2" in record.info else None
 
     # 3) If still missing, try mate lookup via MATEID (if present)
     # if (chrom_1 is None or pos_1 is None) and "MATEID" in record.info:
@@ -447,15 +447,6 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
         print(f"Error: record (ID:{record.id}) does not have any INFO keys. Please check the VCF file header")
         return 15
 
-    chrom = record.chrom
-    chrom_1 = record.info.get("CHR2") if "CHR2" in record.info else None 
-    if chrom_1 is not None:
-        chrom = chrom_1
-    chrom_length = chrom_lengths.get(chrom, 0)
-    if record.stop > chrom_length:
-        print(f"Error: record (ID:{record.id}) stop ({record.stop}) exceeds chromosome length ({chrom_length}) for {chrom}")
-        return 15
-
     # Extract SVTYPE from INFO field
     svtype = record.info.get("SVTYPE") if "SVTYPE" in record.info else None
     
@@ -463,6 +454,12 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
     if svtype in {"BND", "TRA"}:
         return 5
     
+    chrom = record.chrom
+    chrom_length = chrom_lengths.get(chrom, 0)
+    if record.stop - 1 > chrom_length + 1:
+        print(f"Error: record (ID:{record.id}) stop ({record.stop}) exceeds chromosome length ({chrom_length}) for {chrom}")
+        return 15
+
     if "SVLEN" in record.info:
         svlen = abs(get_svlen(record))
         if svlen < args.min:
@@ -610,7 +607,7 @@ def write_id_file(args, vcf_records_arr, record_stats_arr):
         for record_stats in record_stats_arr:
             record = vcf_records_arr[record_stats_arr.index(record_stats)]
             # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}\t${ref}\t${alt}"
-            info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, record_stats[1], record_stats[0], record.id, record.ref, record.alts[0])
+            info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, record_stats[1], record_stats[0], record.id)
             # print(info)
             f.write(f"{info}\n")
 

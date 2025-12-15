@@ -22,6 +22,17 @@ def read_tsv(tsv_file):
     df = pd.read_csv(tsv_file, sep='\t')
     df['SVLEN'] = pd.to_numeric(df['SVLEN'], errors='coerce')
     df = df.dropna(subset=['SVLEN'])
+
+    # Remove rows with CLASSIFICATION as Repetitive/Tandem or Repetitive/Mobile or Repetitive/Mixed
+    df = df[~df['CLASSIFICATION'].isin(['Repetitive/Tandem', 'Repetitive/Mobile', 'Repetitive/Mixed'])]
+
+    # CLASSIFICATION column remove prefix Repetitive/Tandem Repetitive/Mobile Repetitive/Mixed
+    df['CLASSIFICATION'] = df['CLASSIFICATION'].str.replace('Repetitive/Tandem/', '')
+    df['CLASSIFICATION'] = df['CLASSIFICATION'].str.replace('Repetitive/Mobile/', '')
+    df['CLASSIFICATION'] = df['CLASSIFICATION'].str.replace('Repetitive/Mixed/', '')
+
+    # print df
+    # print(df)
     return df
 
 def merge_pdfs(output_pdf, input_pdfs):
@@ -91,12 +102,20 @@ def create_svtype_hist_plot(df, output_pdf, sv_order):
         sub_df = grouped[grouped['SVTYPE'] == sv]
 
         # Ensure all classification types are present, fill missing counts with 0
+        # sub_df = (
+        #     sub_df
+        #     .set_index('CLASSIFICATION')
+        #     .reindex(pd.Index(classification_type_order, name='CLASSIFICATION'))
+        #     .fillna({'Count': 0})
+        #     .reset_index()
+        # )
+        # Ensure unique CLASSIFICATION rows by aggregating, then reindex
         sub_df = (
-            sub_df
-            .set_index('CLASSIFICATION')
-            .reindex(pd.Index(classification_type_order, name='CLASSIFICATION'))
-            .fillna({'Count': 0})
-            .reset_index()
+            sub_df.groupby('CLASSIFICATION', as_index=False, observed=True)['Count'].sum()
+                  .set_index('CLASSIFICATION')
+                  .reindex(pd.Index(classification_type_order, name='CLASSIFICATION'))
+                  .fillna({'Count': 0})
+                  .reset_index()
         )
 
         x_positions = range(len(sub_df))

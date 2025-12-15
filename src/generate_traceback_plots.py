@@ -66,7 +66,7 @@ def read_cmd_args():
         help="Path to traceback TSV. Lines starting with '#' are treated as comments and parsed as header annotations. "
              "Each data row must be: vcf_id, TRF_TOTAL_SV_COVERAGE, RM_TOTAL_SV_COVERAGE, FINAL_CLASSIFICATION, transposition, Traceback",
     )
-    parser.add_argument("--outdir", required=True, help="Output directory")
+    parser.add_argument("--output", required=True, help="Output pdf file path")
     return parser.parse_args()
 
 def read_header_comments(path):
@@ -270,7 +270,6 @@ def plot_header_page(raw_lines, parsed_entries):
 
 def main():
     args = read_cmd_args()
-    os.makedirs(args.outdir, exist_ok=True)
 
     # Read header comments and mapping for the first page
     raw_lines, parsed_entries = read_header_comments(args.traceback)
@@ -294,7 +293,7 @@ def main():
     traceback_colors_map = build_distinct_colors(all_types_ordered)
     traceback_colors = {lab: traceback_colors_map[lab] for lab in all_types_ordered}  # preserve order
 
-    out_pdf = os.path.join(args.outdir, "traceback_plots.pdf")
+    out_pdf = args.output
     with PdfPages(out_pdf) as pdf:
         # First page: header annotations (original order), with marker note
         header_fig = plot_header_page(raw_lines, parsed_entries)
@@ -310,4 +309,8 @@ def main():
     print(f"Wrote PDF: {out_pdf}")
 
 if __name__ == "__main__":
+    # if pdfpages is not found return
+    if 'PdfPages' not in globals():
+        print("Error: matplotlib PdfPages module not found. Please ensure matplotlib is installed.")
+        exit(0)
     main()
