@@ -28,9 +28,10 @@ ANNOTATE_TAGS_HEADER="\
 ##INFO=<ID=DISEASE_GENE,Number=1,Type=String,Description=\"STR-associated disease gene (from STRchive)\">\n\
 ##INFO=<ID=STRCHIVE_MOTIF,Number=1,Type=String,Description=\"Pathogenic motif(s) matched in STRchive (normalised for rotation/complement)\">\n\
 ##INFO=<ID=PATHOGENIC_MIN,Number=1,Type=Integer,Description=\"Minimum pathogenic repeat count for the matched gene/motif (STRchive)\">\n\
+##INFO=<ID=BND_MATE_INFO,Number=1,Type=String,Description=\"Annotations for the second breakend (mate) query sequence in BND/TRA records. Semicolon-delimited key=value pairs mirroring primary tags\">\n\
 "
 
-ANNOTATE_COLS=["CHROM","POS","ID","REF","ALT",\
+ANNOTATE_COLS=["CHROM","POS","ID",\
                "RM_CLASSIFICATION","RM_SV_COVERAGE","RM_ELEMENTS_COVERAGE","RM_ELEMENT_PROPORTION","RM_RECIPROCAL","RM_TOTAL_SV_COVERAGE",\
                 "TRF_CLASSIFICATION","TRF_SV_COVERAGE","TRF_PERIOD_SIZE","TRF_COPY_NUMBER","TRF_TOTAL_SV_COVERAGE",\
                 "CONSENSUS_REPEAT","FINAL_CLASSIFICATION","DISEASE_GENE","STRCHIVE_MOTIF","PATHOGENIC_MIN"]
@@ -767,7 +768,7 @@ def get_annot_info(args, sv_info, sv_id, strchive):
             else:
                 return max_repeat, "M"
     
-    def get_final_classification(args, trf_class, rm_class, total_trf_coverage, total_rm_coverage, trf_data, rm_data, reciprocal_map, traceback):
+    def get_pre_classification(args, trf_class, rm_class, total_trf_coverage, total_rm_coverage, trf_data, rm_data, reciprocal_map, traceback):
         """
         Function that determines the final classification of the SV --> Tandem Repeat or Transposable element
         When multiple repeat types are present it compares the coverage and selects the repeat with the highest coverage fraction
@@ -790,12 +791,13 @@ def get_annot_info(args, sv_info, sv_id, strchive):
             trf_classification, t0 = highest_fraction(args, trf_classes, trf_coverages, reciprocal_map)
             rm_classification, t1 = highest_fraction(args, rm_classes, rm_coverages, reciprocal_map)
             if trf_classification != 'NON_REPETITIVE' and  rm_classification != 'NON_REPETITIVE':
-                if total_trf_coverage >= total_rm_coverage:
+                rm_transpoition = reciprocal_map.get(rm_classification, 'NA')
+                if total_rm_coverage >= total_trf_coverage and rm_transpoition == 'Full':
                     traceback += "C"
-                    classification = trf_classification
+                    classification = rm_classification
                 else:
                     traceback += "D"
-                    classification = rm_classification
+                    classification = trf_classification
             elif trf_classification != 'NON_REPETITIVE' and rm_classification == 'NON_REPETITIVE':
                 traceback += "E"
                 classification = trf_classification
@@ -832,8 +834,8 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         else:
             return 'NA'
     
-    def pick_e_ids(final_classification, rm_data, trf_data):
-        # print(f"----{final_classification}")
+    def pick_e_ids(pre_classification, rm_data, trf_data):
+        # print(f"----{pre_classification}")
         rm_classes = rm_data['RM_CLASSIFICATION'].split(',')
         rm_e_ids = rm_data['e_id'].split(',')
         trf_classes = trf_data['TRF_CLASSIFICATION'].split(',')
@@ -843,17 +845,70 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         trf_picked_e_ids = []
 
         for element in rm_classes:
-            if element == final_classification:
+            if element == pre_classification:
                 rm_picked_e_ids.append(rm_e_ids[i])
             i += 1
         i = 0
         for element in trf_classes:
-            if element == final_classification:
+            if element == pre_classification:
                 trf_picked_e_ids.append(trf_e_ids[i])
             i += 1
 
         return rm_picked_e_ids, trf_picked_e_ids
 
+    
+    def post_evaluation(pre_classification, trf_sv_cov, rm_sv_cov):
+        """
+        Post evaluation logic for final classification based on pre_classification,
+        trf_sv_cov (x), and rm_sv_cov (y).
+        """
+        # Missing values → 0
+        trf_sv_cov = 0 if trf_sv_cov == "." else float(trf_sv_cov)
+        rm_sv_cov = 0 if rm_sv_cov == "." else float(rm_sv_cov)
+
+        # Strict bounds
+        if not (0 <= trf_sv_cov <= 1) or not (0 <= rm_sv_cov <= 1):
+            raise ValueError("Error! Coverage out of bounds.")
+
+        if pre_classification == "NON_REPETITIVE":
+            if 0 <= trf_sv_cov < 0.50 and 0 <= rm_sv_cov < 0.50:
+                return "NON_REPETITIVE"  # A
+            elif 0.50 <= trf_sv_cov <= 1 and 0 <= rm_sv_cov < 0.50:
+                return "Repetitive/Tandem"  # B,C
+            elif 0 <= trf_sv_cov < 0.50 and 0.50 <= rm_sv_cov < 0.75:
+                return "Repetitive/Mobile"  # D
+            elif 0.50 <= trf_sv_cov < 0.75 and 0.50 <= rm_sv_cov < 0.75:
+                return "Repetitive/Mixed"  # E
+            elif 0.75 <= trf_sv_cov <= 1 and 0.50 <= rm_sv_cov < 0.75:
+                return "Repetitive/Tandem"  # F
+            elif 0 <= trf_sv_cov < 0.75 and 0.75 <= rm_sv_cov <= 1:
+                return "Repetitive/Mobile"  # G,H
+            elif 0.75 <= trf_sv_cov <= 1 and 0.75 <= rm_sv_cov <= 1:
+                return "Repetitive/Mixed"  # I
+            else:
+                raise ValueError("Error! Invalid region for NON_REPETITIVE.")
+
+        elif pre_classification in ["DNA", "LINE", "LTR", "Retroposon", "SINE"]:
+            # M overlay: valid only in G,H,I
+            if 0 <= trf_sv_cov < 0.75 and 0.75 <= rm_sv_cov <= 1:
+                return "Repetitive/Mobile/" + pre_classification  # G,H
+            elif 0.75 <= trf_sv_cov <= 1 and 0.75 <= rm_sv_cov <= 1:
+                return "Repetitive/Mixed/" + pre_classification  # I
+            else:
+                raise ValueError("Error! Invalid region for M overlay.")
+
+        elif pre_classification in ["STR", "VNTR", "TR", "HOMO"]:
+            # N overlay: valid in C,F,I
+            if 0.75 <= trf_sv_cov <= 1 and 0 <= rm_sv_cov < 0.75:
+                return "Repetitive/Tandem/" + pre_classification  # C, F
+            elif 0.75 <= trf_sv_cov <= 1 and 0.75 <= rm_sv_cov <= 1:
+                return "Repetitive/Mixed/" + pre_classification  # I
+            else:
+                raise ValueError("Error! Invalid region for N overlay.")
+
+        else:
+            raise ValueError("Error! Pre-classification not recognized.")
+    
     sv_data = sv_info[sv_id]
     chrom = sv_data['chrom']
     pos = sv_data['position']
@@ -905,23 +960,24 @@ def get_annot_info(args, sv_info, sv_id, strchive):
     trf_class = trf_data['TRF_CLASSIFICATION']
     rm_class = rm_data['RM_CLASSIFICATION']
     reciprocal_map = sv_data['transposition'] if 'transposition' in sv_data else 'NA'
-    final_classification, traceback = get_final_classification(args, trf_class, rm_class, total_trf_coverage, total_rm_coverage, trf_data, rm_data, reciprocal_map, traceback)
-    transposition = pick_reciprocal(final_classification, reciprocal_map)
-    rm_picked_e_ids, trf_picked_e_ids = pick_e_ids(final_classification, rm_data, trf_data)
+    pre_classification, traceback = get_pre_classification(args, trf_class, rm_class, total_trf_coverage, total_rm_coverage, trf_data, rm_data, reciprocal_map, traceback)
+    transposition = pick_reciprocal(pre_classification, reciprocal_map)
+    rm_picked_e_ids, trf_picked_e_ids = pick_e_ids(pre_classification, rm_data, trf_data)
 
-    sv_data['RM_PICKED_E_IDS'] = rm_picked_e_ids
-    sv_data['TRF_PICKED_E_IDS'] = trf_picked_e_ids
-    sv_data['FINAL_CLASSIFICATION'] = final_classification
-    sv_data['RM_RECIPROCAL'] = transposition
-
-    if final_classification == 'TR':
+    if pre_classification == 'TR':
         trf_period_size = trf_data['TRF_PERIOD_SIZE'].split(',')
         trf_class = []
         for period_size in trf_period_size:
             trf_class.append(get_TRF_classification(int(period_size)))
         trf_data['TRF_CLASSIFICATION'] = ','.join(trf_class)
         max_trf_coverage, index = max((float(x), i) for i, x in enumerate(trf_data['TRF_SV_COVERAGE'].split(',')) if x != 'NA')
-        final_classification = trf_class[index]
+        pre_classification = trf_class[index]
+
+    final_classification = post_evaluation(pre_classification, trf_data['TRF_TOTAL_SV_COVERAGE'], rm_data['RM_TOTAL_SV_COVERAGE'])
+    sv_data['RM_PICKED_E_IDS'] = rm_picked_e_ids
+    sv_data['TRF_PICKED_E_IDS'] = trf_picked_e_ids
+    sv_data['FINAL_CLASSIFICATION'] = final_classification
+    sv_data['RM_RECIPROCAL'] = transposition
 
     # Unpacks annotations
     info = {
@@ -930,9 +986,9 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         'ID' : callerID,
         'RM_RECIPROCAL' : transposition,
         'FINAL_CLASSIFICATION' : final_classification,
-        'DISEASE_GENE' : '',
-        'STRCHIVE_MOTIF' : '',
-        'PATHOGENIC_MIN' : '',
+        'DISEASE_GENE' : '.',
+        'STRCHIVE_MOTIF' : '.',
+        'PATHOGENIC_MIN' : '.',
         **rm_data,  # Unpack repeat data from RepeatMasker annotations
         **trf_data, # Unpack repeat data from TRF annotations
         'REF' : sv_data['REF'],
@@ -1000,9 +1056,8 @@ def output_annotations(args, strchive, sv_info):
         "B" : "total TRF coverage >= threshold",
         "b" : "total TRF coverage < threshold",
 
-
-        "C" : "Both TRF and RM contain repeats; both classify as repetitive; tie broken by choosing TRF (TRF ≥ RM coverage)",
-        "D" : "Both TRF and RM contain repeats; both classify as repetitive; tie broken by choosing RM  (RM > TRF coverage)",
+        "C" : "Both TRF and RM contain repeats; both classify as repetitive; RM > TRF coverage and reciprocal is 'Full' → choose RM",
+        "D" : "Both TRF and RM contain repeats; both classify as repetitive; if C is False → choose TRF",
         "E" : "Both TRF and RM have annotations, but only TRF classifies as repetitive → choose TRF",
         "F" : "Both TRF and RM have annotations, but only RM  classifies as repetitive → choose RM",
         "G" : "TRF only (RM is NA or NON_REPETITIVE) → choose TRF",
@@ -1017,30 +1072,49 @@ def output_annotations(args, strchive, sv_info):
 
     # Initialise count for breakdown of repeat types
     sv_count = 0
-    repeat_count = {'HOMO' : 0, 'STR' : 0, 'VNTR' : 0, 'TR' : 0, 'Full' : 0, 'Partial' : 0, 'NON_REPETITIVE' : 0}
+    repeat_count = {'Repetitive/Tandem':0, 'Repetitive/Tandem/HOMO' : 0, 'Repetitive/Tandem/STR' : 0, 'Repetitive/Tandem/VNTR' : 0, 'Repetitive/Tandem/TR' : 0, 'Repetitive/Mobile':0, 'Repetitive/Mobile/SINE':0, 'Repetitive/Mobile/LINE':0, 'Repetitive/Mobile/LTR':0, 'Repetitive/Mobile/DNA':0, 'Repetitive/Mobile/Retroposon':0, 'Repetitive/Mixed':0, 'Repetitive/Mixed/HOMO':0, 'Repetitive/Mixed/STR':0, 'Repetitive/Mixed/VNTR':0, 'Repetitive/Mixed/TR':0, 'Repetitive/Mixed/SINE':0, 'Repetitive/Mixed/LINE':0, 'Repetitive/Mixed/LTR':0, 'Repetitive/Mixed/DNA':0, 'Repetitive/Mixed/Retroposon':0, 'NON_REPETITIVE' : 0}
+
     count_by_sv = {
-        'INS': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
-        'DEL': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
-        'DUP': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
-        'INV': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
-        'BND': {'HOMO': 0, 'STR': 0, 'VNTR': 0, 'TR': 0, 'SINE' : [0,0], 'LINE' : [0,0], 'LTR' : [0,0], 'DNA' : [0,0], 'Retroposon' : [0,0], 'NON_REPETITIVE' : 0},
+        'Repetitive/Tandem': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Tandem/HOMO': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Tandem/STR': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Tandem/VNTR': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Tandem/TR': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Mobile': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Mobile/SINE': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'Repetitive/Mobile/LINE': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'Repetitive/Mobile/LTR': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'Repetitive/Mobile/DNA': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'Repetitive/Mobile/Retroposon': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'Repetitive/Mixed': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Mixed/HOMO': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Mixed/STR': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Mixed/VNTR': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Mixed/TR': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0},
+        'Repetitive/Mixed/SINE': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'Repetitive/Mixed/LINE': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'Repetitive/Mixed/LTR': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'Repetitive/Mixed/DNA': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'Repetitive/Mixed/Retroposon': {'INS': [0,0], 'DEL': [0,0], 'DUP': [0,0], 'INV': [0,0], 'BND': [0,0], 'Total': 0},
+        'NON_REPETITIVE': {'INS': 0, 'DEL': 0, 'DUP': 0, 'INV': 0, 'BND': 0, 'Total': 0}
     }
 
     annotate_tsv_out = f"{args.out}/vcf_annotate.tsv"
+    annotate_tsv_out_bnd_mate = f"{args.out}/vcf_annotate_bnd_mate.tsv"
     plot_annotate_out = f"{args.out}/plot_annotate.tsv"
     traceback_out = f"{args.out}/traceback.tsv"
-    with open(annotate_tsv_out, "w") as f, open(plot_annotate_out, "w") as f2, open(traceback_out, "w") as f3:
+    with open(annotate_tsv_out, "w") as f_anotatate_tsv_out, open(plot_annotate_out, "w") as f_plot_annotate_out, open(traceback_out, "w") as f_traceback_out, open(annotate_tsv_out_bnd_mate, "w") as f_anotatate_tsv_out_bnd_mate:
         # print("\t".join(ANNOTATE_COLS))
-        f.write("#")
-        f.write("\t".join(ANNOTATE_COLS))
-        f.write("\n")
+        f_anotatate_tsv_out.write("#")
+        f_anotatate_tsv_out.write("\t".join(ANNOTATE_COLS))
+        f_anotatate_tsv_out.write("\n")
 
-        f2.write("\t".join(PLOT_COLS))
-        f2.write("\n")
+        f_plot_annotate_out.write("\t".join(PLOT_COLS))
+        f_plot_annotate_out.write("\n")
 
         # write the tracback_map
-        f3.write("\n".join(f"{key}\t{value}" for key, value in traceback_map.items()))
-        f3.write("\n\n")
+        f_traceback_out.write("\n".join(f"#{key}\t{value}" for key, value in traceback_map.items()))
+        f_traceback_out.write("\n")
 
         # Process each structural variant and write to VCF
         transposition_map = {"Full": 0, "Partial":1}
@@ -1049,48 +1123,39 @@ def output_annotations(args, strchive, sv_info):
             sv_len = sv_info[sv_id]['sv_len']
             info, traceback = get_annot_info(args, sv_info, sv_id, strchive)
             if "BND" not in sv_id:
-                f.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
-                f.write("\n")
+                f_anotatate_tsv_out.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
+                f_anotatate_tsv_out.write("\n")
             else:
                 # ---- BND CASE ----
-                CHROM = info['CHROM']
-                POS = info['POS']
-                ALT = info['ALT']
-                # extract chrom:pos inside ALT
-                m = re.search(r'([A-Za-z0-9_]+):(\d+)', ALT)
-                if not m:
-                    print(f"WARNING: could not parse ALT partner for {sv_id}: {ALT}")
-                    continue
-                alt_chrom = m.group(1)
-                alt_pos = int(m.group(2))
-                # skip self-breakpoint BND
-                if CHROM == alt_chrom and POS == alt_pos:
-                    print(f"Skipping BND entry with identical breakpoints: "
-                        f"{CHROM}:{POS} and {alt_chrom}:{alt_pos}")
-                    continue
-                # write valid BND
-                f.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
-                f.write("\n")
+                if sv_id.endswith('.0'):
+                    f_anotatate_tsv_out.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
+                    f_anotatate_tsv_out.write("\n")
+                else:
+                    f_anotatate_tsv_out_bnd_mate.write("\t".join(str(info[key]) for key in ANNOTATE_COLS))
+                    f_anotatate_tsv_out_bnd_mate.write("\n")
             sv_count += 1
 
             classification, transposition = info['FINAL_CLASSIFICATION'], info['RM_RECIPROCAL']
             if classification in repeat_count:
                 repeat_count[classification] += 1
-                count_by_sv[sv_type][classification] += 1
-            # A repeat element 
-            else: 
-                repeat_count[transposition] += 1
-                count_by_sv[sv_type][classification][transposition_map[transposition]] += 1
+                if transposition in ['Full', 'Partial']:
+                    count_by_sv[classification][sv_type][transposition_map[transposition]] += 1
+                else:
+                    count_by_sv[classification][sv_type] += 1
+            else:
+                print(f"WARNING: classification {classification} not found in repeat_count keys.")
             
-            f2.write(f"{sv_id}/{sv_info[sv_id]['callerID']}\t{sv_type}\t{sv_len}\t{classification}\t{transposition}\n")
+            f_plot_annotate_out.write(f"{sv_id}/{sv_info[sv_id]['callerID']}\t{sv_type}\t{sv_len}\t{classification}\t{transposition}\n")
             
             vcf_id = info['ID']
-            f3.write(f"{vcf_id}\t{classification}\t{traceback}\n")
+            trf_sv_coverage = info['TRF_TOTAL_SV_COVERAGE']
+            rm_sv_coverage = info['RM_TOTAL_SV_COVERAGE']
+            f_traceback_out.write(f"{vcf_id}\t{trf_sv_coverage}\t{rm_sv_coverage}\t{classification}\t{transposition}\t{traceback}\n")
 
     
     header_out = f"{args.out}/vcf_header.txt"
-    with open(header_out, "w") as f:
-        f.write(f"{ANNOTATE_TAGS_HEADER}")
+    with open(header_out, "w") as f_anotatate_tsv_out:
+        f_anotatate_tsv_out.write(f"{ANNOTATE_TAGS_HEADER}")
 
     tsv_rm_out = f"{args.out}/rm_annotate.tsv"
     tsv_trf_out = f"{args.out}/trf_annotate.tsv"
@@ -1106,7 +1171,10 @@ def output_annotations(args, strchive, sv_info):
             create_trf_tsv_record(sv_info, sv_id, tsv_trf_out)  # Write to trf file
 
     # Print results summary
-    print_results("Classification summary", repeat_count, sv_count, True)
+    # print_results("Classification summary", repeat_count, sv_count, True)
+    for key, value in repeat_count.items():
+        percentage = (value / sv_count) * 100
+        count_by_sv[key]['Total'] = f"{value} ({percentage:.2f}%)"
     # Print results summary by SV type 
     sv_type_df = pd.DataFrame(count_by_sv).T
         #     HOMO STR TR ...
@@ -1493,7 +1561,7 @@ def argparser():
     )
 
     required_args = parser.add_argument_group("required arguments")
-    required_args.add_argument('-v', '--vcf', required=True, type=str, help="Path to the input VCF file (compressed or uncompressed)")
+    required_args.add_argument('-v', '--vcf', required=False, type=str, help="Path to the input VCF file (compressed or uncompressed)")
     required_args.add_argument('--rm', required=True, type=str, help="Path to RepeatMasker .out file")
     required_args.add_argument('--trf', required=True, type=str, help="Path to TRF .dat file")
     required_args.add_argument('-i', '--info', required=True, type=str, help="Path to SV info file")
@@ -1518,7 +1586,7 @@ if __name__ == "__main__":
     parser = argparser()
     args = parser.parse_args()
     
-    print(f"Info: VCF File: {args.vcf}")
+    # print(f"Info: VCF File: {args.vcf}")
     print(f"Info: RepeatMasker: {args.rm}")
     print(f"info: TandemRepeatFinder: {args.trf}")
     print(f"info: SV info file: {args.info}")
