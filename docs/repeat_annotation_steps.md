@@ -21,14 +21,15 @@ The steps followed in annotating the vcf records using TRF and RM information ar
 
 ## Important parameters with default values
 
-````
-args.min_sv_coverage = 0.05
-args.min_total_sv_coverage = 0.75
-args.sv_coverage_cutoff = 0.5
-args.min_class_sv_coverage = 0.25
-args.div = 0.05
-args.max_trf_overlap = 0.1
-````
+| Parameter | Default | Description |
+|----------|---------|-------------|
+| min_sv_coverage | 0.05 | The minimum intersection between a repeat element and SV (aka sv_coverage) e.g. 0.05 (5%) (0 < min_sv_coverage < 1). |
+| min_total_sv_coverage | 0.75 | The tight minimum total sv coverage by repeat elements to be considered repetitive. |
+| sv_coverage_cutoff | 0.5 | The soft minimum total sv coverage by repeat elements to be considered repetitive. |
+| min_class_sv_coverage | 0.25 | The minimum class sv coverage by repeat elements to be considered repetitive. |
+| div | 0.05 | The chosen intervals to prioritise period size over intersection (0 < divisor < 1). |
+| max_trf_overlap | 0.1 | The maximum TRF element overlap to be considered non-overlapping (0 < max_trf_overlap < 1). |
+
 
 ## Step 1 (TRF preprocessing)
 
@@ -142,7 +143,10 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
    - `PRE_CLASSIFICATION`
    - `RECIPROCAL`
 
-7. Print the following:
+7. Use **Table 8** to determine:
+  - `FINAL_CLASSIFICATION`
+
+8. Print the following:
    - `RM` tags
    - `RM_TOTAL_SV_COVERAGE`
    - `TRF` tags
@@ -150,7 +154,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
    - `RECIPROCAL`
    - `PRE_CLASSIFICATION`
 
-8. In addition, if a STRchive bed file is provided and the SV intersects with the position of a gene then following tags are also added to INFO
+9. In addition, if a STRchive bed file is provided and the SV intersects with the position of a gene then following tags are also added to INFO
    - `DISEASE_GENE` STR disease associated with gene
    - `STRCHIVE_MOTIF` Pathogenic motif
    - `PATHOGENIC_MIN` Minimum pathogenic number annotated in STRchive
@@ -211,8 +215,29 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | valid | valid | if RM TTC > TRF TTC and RECIPROCAL is Full then RM_PRE_CLASSIFICATION else TRF_PRE_CLASSIFICATION |
 
 
+### Table 8
+| PRE_CLASSIFICATION | `TRF_TTC` = x | `RM_TTC` = y | Region | Final classification |
+|--------------------|---------------|---------------|--------|----------------------|
+| NON_REPETITIVE     | 0 ≤ x < S     | 0 ≤ y < S     | A      | NON_REPETITIVE       |
+|                    | S ≤ x ≤ 1     | 0 ≤ y < S     | B, C   | Repetitive / Tandem  |
+|                    | 0 ≤ x < S     | S ≤ y < T     | D      | Repetitive / Mobile  |
+|                    | S ≤ x < T     | S ≤ y < T     | E      | Repetitive / Mixed   |
+|                    | T ≤ x ≤ 1     | S ≤ y < T     | F      | Repetitive / Tandem  |
+|                    | 0 ≤ x < T     | T ≤ y ≤ 1     | G, H   | Repetitive / Mobile  |
+|                    | T ≤ x ≤ 1     | T ≤ y ≤ 1     | I      | Repetitive / Mixed   |
+| M                  | 0 ≤ x < T     | T ≤ y ≤ 1     | G, H   | Repetitive / Mobile / M |
+| N                  | T ≤ x ≤ 1     | 0 ≤ y < T     | F, C   | Repetitive / Tandem / N |
+| M or N             | T ≤ x ≤ 1     | T ≤ y ≤ 1     | I      | Repetitive / Mixed / M or N |
+| M or N             | 0 ≤ x < T     | 0 ≤ y < T     | A, B, D, E | Error!            |
 
 
+**Note:**  
+- S = `args.sv_coverage_cutoff` (0.5)  
+- T = `args.min_total_sv_coverage` (0.75)
+- if `TRF_TTC` is missing then set it to 0
+- if `RM_TTC` is missing then set it to 0
+- M = if PRE_CLASSIFICATION in {DNA,Retroposon,SINE,LINE,LTR}
+- N = if PRE_CLASSIFICATION in {TR,VNTR,STR,HOMO}
 
 
-
+![Illustration](/images/final_classification_regions.png)
