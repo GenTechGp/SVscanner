@@ -1,8 +1,8 @@
 # Repeat Annotation VCF tags
 
-| CALLER_ID              | Description                                                                                                                                                                                                 | Type         |
+| CALLER_ID               | Description                                                                                                                                                                                                 | Type         |
 |-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| RM_CLASSIFICATION       | Repeat class(es) overlapping the SV: SINE, LINE, LTR, DNA, Retroposon, NON-REPETITIVE.                                                                                                                     | list[string] |
+| RM_CLASSIFICATION       | Repeat class(es) overlapping the SV: SINE, LINE, LTR, DNA, Retroposon, NON-REPETITIVE.                                                                                                                      | list[string] |
 | RM_SV_COVERAGE          | For each overlap, fraction of SV length covered (overlap_len / sv_len).                                                                                                                                     | list[float]  |
 | RM_ELEMENTS_COVERAGE    | For each overlap, fraction of the repeat element covered by the SV (overlap_len / element_len).                                                                                                             | list[float]  |
 | RM_ELEMENT_PROPORTION   | For each Repeat Masker hit, proportion of the query sequence (SV + flanks) aligning to that element.                                                                                                        | list[float]  |
@@ -12,12 +12,13 @@
 | TRF_SV_COVERAGE         | For each TRF hit, fraction of SV length covered.                                                                                                                                                            | list[float]  |
 | TRF_PERIOD_SIZE         | Period size(s) in bp for each TRF hit.                                                                                                                                                                      | list[integer]|
 | TRF_COPY_NUMBER         | Copy number(s) for each TRF hit.                                                                                                                                                                            | list[float]  |
-| TRF_TOTAL_SV_COVERAGE   | Proportion of the SV covered by TRF hits, with overlaps merged so regions aren’t counted twice [0–1].                                                                                                      | float        |
-| CONSENSUS_REPEAT        | Dominant repeat motif from TRF across the SV.                                                                                                                                                               | string       |
-| FINAL_CLASSIFICATION    | Final repeat class for the SV, combining TRF and RepeatMasker. If only one method reports a repeat, use that class; if both do, choose the stronger/cleaner call; if neither, NON-REPETITIVE/NA.             | string       |
+| TRF_TOTAL_SV_COVERAGE   | Proportion of the SV covered by TRF hits, with overlaps merged so regions aren’t counted twice [0–1].                                                                                                       | float        |
+| CONSENSUS_REPEAT        | Dominant repeat motif from TRF across the SV.                                                                                                                                                               | list[string] |
+| FINAL_CLASSIFICATION    | Final repeat class for the SV, combining TRF and RepeatMasker. If only one method reports a repeat, use that class; if both do, choose the stronger/cleaner call; if neither, NON-REPETITIVE/NA.            | string       |
 | DISEASE_GENE*           | STR-associated disease gene (from STRchive).                                                                                                                                                                | string       |
 | STRCHIVE_MOTIF*         | Pathogenic motif(s) matched in STRchive (normalised for rotation/complement).                                                                                                                               | string       |
 | PATHOGENIC_MIN*         | Minimum pathogenic repeat count for the matched gene/motif (STRchive).                                                                                                                                      | integer      |
+| BND_MATE_INFO           | Annotations for the second breakend (mate) query sequence in BND/TRA records. Pipe-delimited key=value pairs mirroring primary tags                                                                         | string      |
 
 *Added as INFO attribute only when SV intersects with position of gene
 
@@ -38,3 +39,9 @@
 | TRF_TOTAL_SV_COVERAGE | 0                       |          | 0.77             | 1                | Not available if TRF_CLASSIFICATION is NA                             |
 | CONSENSUS_REPEAT      | NA                      | NA       | ATAGGTGTTGGC     | GGAACAGTCGAGTG   | Always available (value or NA)                                       |
 | FINAL_CLASSIFICATION  | LINE                    | LTR      | VNTR             | VNTR             | Always available                                                     |
+
+
+### Example record with BND_MATE_INFO tag
+```
+chr21	5216247	Sniffles2.BND.A1CS14	G	G]chr20:30346078]	59	GT	PRECISE;SVTYPE=BND;SUPPORT=8;COVERAGE=0,0,55,62,67;STRAND=+-;CHR2=chr20;PHASE=2,5216322,7,8,FAIL,PASS;STDEV_POS=0.5;VAF=0.138;RM_CLASSIFICATION=NON_REPETITIVE;RM_RECIPROCAL=NA;RM_TOTAL_SV_COVERAGE=0.47;TRF_CLASSIFICATION=NA;CONSENSUS_REPEAT=NA;FINAL_CLASSIFICATION=NON_REPETITIVE;BND_MATE_INFO=RM_CLASSIFICATION=NON_REPETITIVE|RM_RECIPROCAL=NA|RM_TOTAL_SV_COVERAGE=0.5|TRF_CLASSIFICATION=NON_REPETITIVE|TRF_TOTAL_SV_COVERAGE=0.0|CONSENSUS_REPEAT=NA|FINAL_CLASSIFICATION=Repetitive/Mobile	GT:GQ:DR:DV:PS	0/0:59:50:8:5216322
+```
