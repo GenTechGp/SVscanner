@@ -21,13 +21,15 @@ The steps followed in annotating the vcf records using TRF and RM information ar
 
 ## Important parameters with default values
 
-````
-args.min_sv_coverage = 0.05
-args.min_total_sv_coverage = 0.75
-args.min_class_sv_coverage = 0.25
-args.div = 0.05
-args.max_trf_overlap = 0.1
-````
+| Parameter | Default | Description |
+|----------|---------|-------------|
+| min_sv_coverage | 0.05 | The minimum intersection between a repeat element and SV (aka sv_coverage) e.g. 0.05 (5%) (0 < min_sv_coverage < 1). |
+| min_total_sv_coverage | 0.75 | The tight minimum total sv coverage by repeat elements to be considered repetitive. |
+| sv_coverage_cutoff | 0.5 | The soft minimum total sv coverage by repeat elements to be considered repetitive. |
+| min_class_sv_coverage | 0.25 | The minimum class sv coverage by repeat elements to be considered repetitive. |
+| div | 0.05 | The chosen intervals to prioritise period size over intersection (0 < divisor < 1). |
+| max_trf_overlap | 0.1 | The maximum TRF element overlap to be considered non-overlapping (0 < max_trf_overlap < 1). |
+
 
 ## Step 1 (TRF preprocessing)
 
@@ -138,18 +140,21 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 5. Set `TRF_TOTAL_SV_COVERAGE = TRF_TTC`.
 
 6. Use **Table 3** to determine:
-   - `FINAL_CLASSIFICATION`
+   - `PRE_CLASSIFICATION`
    - `RECIPROCAL`
 
-7. Print the following:
+7. Use **Table 8** to determine:
+  - `FINAL_CLASSIFICATION`
+
+8. Print the following:
    - `RM` tags
    - `RM_TOTAL_SV_COVERAGE`
    - `TRF` tags
    - `TRF_TOTAL_SV_COVERAGE`
    - `RECIPROCAL`
-   - `FINAL_CLASSIFICATION`
+   - `PRE_CLASSIFICATION`
 
-8. In addition, if a STRchive bed file is provided and the SV intersects with the position of a gene then following tags are also added to INFO
+9. In addition, if a STRchive bed file is provided and the SV intersects with the position of a gene then following tags are also added to INFO
    - `DISEASE_GENE` STR disease associated with gene
    - `STRCHIVE_MOTIF` Pathogenic motif
    - `PATHOGENIC_MIN` Minimum pathogenic number annotated in STRchive
@@ -175,43 +180,64 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | CONSENSUS_REPEAT        | Motif of each element in the TRF_LIST |
 
 ### Table 3
- TRF_CLASSIFICATION | RM_CLASSIFICATION | FINAL_CLASSIFICATION | RECIPROCAL |
+ TRF_CLASSIFICATION | RM_CLASSIFICATION | PRE_CLASSIFICATION | RECIPROCAL |
 |--------------------|-------------------|-----------------------|-----------------------|
 | NON REPETITIVE/NA | NON REPETITIVE | NON REPETITIVE/NA | determine using **Table 6** |
 | valid | NON REPETITIVE/NA | determine using **Table 4** | determine using **Table 6** |
 | NON REPETITIVE/NA | valid | determine using **Table 4** | determine using **Table 6** |
-| valid | valid | calculate for both TRF and RM separately using **Table 4** (let's call them TRF_FINAL_CLASSIFICATION and RM_FINAL_CLASSIFICATION respectively) and then select using **Table 7** | determine using **Table 6** |
+| valid | valid | calculate for both TRF and RM separately using **Table 4** (let's call them TRF_PRE_CLASSIFICATION and RM_PRE_CLASSIFICATION respectively) and then select using **Table 7** | determine using **Table 6** |
 
 ### Table 4
-| condition | FINAL_CLASSIFICATION |
+| condition | PRE_CLASSIFICATION |
 |-----------|----------------------|
 | highest class TC < `args.min_class_sv_coverage` | NON REPETITIVE |
 | else | determine using **Table 5** for the class with highest TC |
 
 ### Table 5
-| Class | RECIPROCAL | FINAL_CLASSIFICATION |
+| Class | RECIPROCAL | PRE_CLASSIFICATION |
 |-------|------------|----------------------|
 | SINE/LINE/LTR/DNA/Retroposon | Full/Partial | Class |
 | SINE/LINE/LTR/DNA/Retroposon | Minimal | NON REPETITIVE |
 | HOMO/STR/VNTR/TR | NA | Class |
 
 ### Table 6
-| FINAL_CLASSIFICATION | RECIPROCAL |
+| PRE_CLASSIFICATION | RECIPROCAL |
 |----------------------|------------|
 | SINE/LINE/LTR/DNA/Retroposon | RECIPROCAL of the class |
 | HOMO/STR/VNTR/TR | NA |
 
 ### Table 7
-| TRF_FINAL_CLASSIFICATION | RM_FINAL_CLASSIFICATION | FINAL_CLASSIFICATION |
+| TRF_PRE_CLASSIFICATION | RM_PRE_CLASSIFICATION | PRE_CLASSIFICATION |
 |--------------------------|-------------------------|----------------------|
 | NON REPETITIVE | NON REPETITIVE | NON REPETITIVE |
-| NON REPETITIVE | valid | RM_FINAL_CLASSIFICATION |
-| valid | NON REPETITIVE | TRF_FINAL_CLASSIFICATION |
-| valid | valid | if TRF TTC > RM TTC then TRF FINAL_CLASSIFICATION else RM FINAL_CLASSIFICATION |
+| NON REPETITIVE | valid | RM_PRE_CLASSIFICATION |
+| valid | NON REPETITIVE | TRF_PRE_CLASSIFICATION |
+| valid | valid | if RM TTC > TRF TTC and RECIPROCAL is Full then RM_PRE_CLASSIFICATION else TRF_PRE_CLASSIFICATION |
 
 
+### Table 8
+| PRE_CLASSIFICATION | `TRF_TTC` = x | `RM_TTC` = y | Region | Final classification |
+|--------------------|---------------|---------------|--------|----------------------|
+| NON_REPETITIVE     | 0 ≤ x < S     | 0 ≤ y < S     | A      | NON_REPETITIVE       |
+|                    | S ≤ x ≤ 1     | 0 ≤ y < S     | B, C   | Repetitive / Tandem  |
+|                    | 0 ≤ x < S     | S ≤ y < T     | D      | Repetitive / Mobile  |
+|                    | S ≤ x < T     | S ≤ y < T     | E      | Repetitive / Mixed   |
+|                    | T ≤ x ≤ 1     | S ≤ y < T     | F      | Repetitive / Tandem  |
+|                    | 0 ≤ x < T     | T ≤ y ≤ 1     | G, H   | Repetitive / Mobile  |
+|                    | T ≤ x ≤ 1     | T ≤ y ≤ 1     | I      | Repetitive / Mixed   |
+| M                  | 0 ≤ x < T     | T ≤ y ≤ 1     | G, H   | Repetitive / Mobile / M |
+| N                  | T ≤ x ≤ 1     | 0 ≤ y < T     | F, C   | Repetitive / Tandem / N |
+| M or N             | T ≤ x ≤ 1     | T ≤ y ≤ 1     | I      | Repetitive / Mixed / M or N |
+| M or N             | 0 ≤ x < T     | 0 ≤ y < T     | A, B, D, E | Error!            |
 
 
+**Note:**  
+- S = `args.sv_coverage_cutoff` (0.5)  
+- T = `args.min_total_sv_coverage` (0.75)
+- if `TRF_TTC` is missing then set it to 0
+- if `RM_TTC` is missing then set it to 0
+- M = if PRE_CLASSIFICATION in {DNA,Retroposon,SINE,LINE,LTR}
+- N = if PRE_CLASSIFICATION in {TR,VNTR,STR,HOMO}
 
 
-
+![Illustration](/images/final_classification_regions.png)

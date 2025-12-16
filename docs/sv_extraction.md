@@ -107,3 +107,4 @@ This document summarizes the method used to construct the `query_seq` for each S
 - For INS, the actual length is determined from `len(ALT[0])` rather than from `SVLEN` due to known inaccuracies in some callers.
 - For DUP, INV, and DEL, sequence integrity is verified against expected `svlen`.
 - `query_seq` is written to a `.fa` FASTA file named by SV type and index (`<SVTYPE>.<i>.fa`).
+- Even though two query sequences are extracted and individually annotated for a single BND record, only the annotations derived from the first query sequence (corresponding to the actual VCF record’s CHROM:POS) are written back to the annotations TSV and later the annotated VCF.

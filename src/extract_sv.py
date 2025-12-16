@@ -323,57 +323,100 @@ def extract_bnd_target(alt):
 def handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i):
     f_len = args.flen
     output_dir = args.out
-    
+
     svtype = record.info.get("SVTYPE", None)
     assert svtype in {"BND", "TRA"}, f"Error: SVTYPE {svtype} is not supported for BND processing"
     svtype = "BND"
     svID_0 = f'{svtype}.{i}.0'
-    svID_1 = f'{svtype}.{i}.1'
 
-    # BND records have two parts, one for each end of the breakend
-    # The first part is the reference sequence for the first end of the breakend
     chrom_0 = record.chrom
-    start_f_0 = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
-    end_0 = record.pos+f_len-1 # End position of the REF allele
+    start_f_0 = max(record.pos - f_len, 1)
+    end_0 = record.pos + f_len - 1
     chrom_length = chrom_lengths.get(chrom_0, 0)
-    end_f_0 = min(end_0, chrom_length)  # Ensure end doesn't exceed chromosome length
-    query_seq_0 = ""
+    end_f_0 = min(end_0, chrom_length)
+
     try:
         query_seq_0 = fasta.fetch(region=f"{chrom_0}:{start_f_0}-{end_f_0}")
     except Exception as e:
         print(f"Error fetching sequence for ({record.id}): {e}")
-        raise
+        return None
     seq_len_0 = len(query_seq_0)
 
-    # The second part is the reference sequence for the second end of the breakend
-    chrom_1, pos_1 = extract_bnd_target(record.alts[0])  # Extract the chromosome from the ALT allele
+    output_fasta = f"{output_dir}/{svID_0}.fa"
+    try:
+        with open(output_fasta, "w") as f:
+            f.write(f">{svID_0}\n{query_seq_0}\n")
+    except Exception as e:
+        print(f"Error writing fasta for ({record.id}): {e}")
+        return None
+
+    return [svID_0, -1, seq_len_0, start_f_0, end_f_0]
+
+def handle_vcf_types_bnd_mate(args, vcf, fasta, record, chrom_lengths, i):
+    f_len = args.flen
+    output_dir = args.out
+
+    svtype = record.info.get("SVTYPE", None)
+    assert svtype in {"BND", "TRA"}, f"Error: SVTYPE {svtype} is not supported for BND processing"
+    svtype = "BND"
+    svID_1 = f'{svtype}.{i}.1'
+
+    chrom_1, pos_1 = (None, None)
+
+    # 1) Try to parse ALT breakend notation
+    if record.alts and record.alts[0] and record.alts[0] not in ('.', '<TRA>'):
+        chrom_1, pos_1 = extract_bnd_target(record.alts[0])
+
+    # 2) Try INFO tags commonly used by callers
+    if chrom_1 is None:
+        chrom_1 = record.info.get("CHR2") if "CHR2" in record.info else None
+    if pos_1 is None:
+        pos_1 = record.info.get("POS2") if "POS2" in record.info else None
+
+    # 3) If still missing, try mate lookup via MATEID (if present)
+    # if (chrom_1 is None or pos_1 is None) and "MATEID" in record.info:
+    #     mate_id = record.info.get("MATEID")
+    #     if mate_id:
+    #         try:
+    #             # Linear scan; caller asked to avoid heavy safeguards/optimizations
+    #             for rec in vcf:
+    #                 if rec.id == mate_id:
+    #                     chrom_1 = rec.chrom
+    #                     pos_1 = rec.pos
+    #                     break
+    #         except Exception as e:
+    #             print(f"Error scanning for MATEID {mate_id} in ({record.id}): {e}")
+
+    # 4) If still missing, return None (no error)
     if chrom_1 is None or pos_1 is None:
-        chrom_1 = record.info.get("CHR2") if "CHR2" in record.info else None 
-        pos_1 = record.stop
-    if chrom_1 is None or pos_1 is None:
-        print(f"Error: Unable to extract target chromosome from ALT allele {record.alts[0]} or INFO tags in record {record.id}")
-        exit(1)
-    pos_1 = int(pos_1)  # Convert position to integer
-    start_f_1 = max(pos_1-f_len, 1) # Ensure start is >= 1 (1-based)
-    end_1 = pos_1+f_len-1 # End position of the REF allele
+        return None
+
+    try:
+        pos_1 = int(pos_1)
+    except Exception:
+        return None
+
+    start_f_1 = max(pos_1 - f_len, 1)
+    end_1 = pos_1 + f_len - 1
     chrom_length = chrom_lengths.get(chrom_1, 0)
-    end_f_1 = min(end_1, chrom_length)  # Ensure end doesn't exceed chromosome length
-    query_seq_1 = ""
+    end_f_1 = min(end_1, chrom_length)
+
     try:
         query_seq_1 = fasta.fetch(region=f"{chrom_1}:{start_f_1}-{end_f_1}")
     except Exception as e:
-        print(f"Error fetching sequence for ({record.id}): {e}")
-        raise
+        print(f"Error fetching mate sequence for ({record.id}): {e}")
+        return None
     seq_len_1 = len(query_seq_1)
 
-    output_fasta = f"{output_dir}/{svID_0}.fa"
-    with open(output_fasta, "w") as f:
-        f.write(f">{svID_0}\n{query_seq_0}\n")
     output_fasta = f"{output_dir}/{svID_1}.fa"
-    with open(output_fasta, "w") as f:
-        f.write(f">{svID_1}\n{query_seq_1}\n")
+    try:
+        with open(output_fasta, "w") as f:
+            f.write(f">{svID_1}\n{query_seq_1}\n")
+    except Exception as e:
+        print(f"Error writing mate fasta for ({record.id}): {e}")
+        return None
 
-    return [svID_0, -1, seq_len_0, start_f_0, end_f_0], [svID_1, -1, seq_len_1, start_f_1, end_f_1, chrom_1, pos_1, end_1]
+    return [svID_1, -1, seq_len_1, start_f_1, end_f_1, chrom_1, pos_1, end_1]
 
 def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
     """
@@ -404,15 +447,6 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
         print(f"Error: record (ID:{record.id}) does not have any INFO keys. Please check the VCF file header")
         return 15
 
-    chrom = record.chrom
-    chrom_1 = record.info.get("CHR2") if "CHR2" in record.info else None 
-    if chrom_1 is not None:
-        chrom = chrom_1
-    chrom_length = chrom_lengths.get(chrom, 0)
-    if record.stop > chrom_length:
-        print(f"Error: record (ID:{record.id}) stop ({record.stop}) exceeds chromosome length ({chrom_length}) for {chrom}")
-        return 15
-
     # Extract SVTYPE from INFO field
     svtype = record.info.get("SVTYPE") if "SVTYPE" in record.info else None
     
@@ -420,6 +454,12 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
     if svtype in {"BND", "TRA"}:
         return 5
     
+    chrom = record.chrom
+    chrom_length = chrom_lengths.get(chrom, 0)
+    if record.stop - 1 > chrom_length + 1:
+        print(f"Error: record (ID:{record.id}) stop ({record.stop}) exceeds chromosome length ({chrom_length}) for {chrom}")
+        return 15
+
     if "SVLEN" in record.info:
         svlen = abs(get_svlen(record))
         if svlen < args.min:
@@ -562,12 +602,14 @@ def concat_fasta(args, balanced_seq_bins):
                     output.write(f"{svID}{query_seq}")
                 os.remove(input_fasta)
 
-def write_to_id_file(args, vcf, record, record_stats):
+def write_id_file(args, vcf_records_arr, record_stats_arr):
     with open(args.info, "a") as f:
-        # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}\t${ref}\t${alt}"
-        info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, record_stats[1], record_stats[0], record.id, record.ref, record.alts[0])
-        # print(info)
-        f.write(f"{info}\n")
+        for record_stats in record_stats_arr:
+            record = vcf_records_arr[record_stats_arr.index(record_stats)]
+            # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}\t${ref}\t${alt}"
+            info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, record_stats[1], record_stats[0], record.id)
+            # print(info)
+            f.write(f"{info}\n")
 
 def process_vcf_records(args):
     # Load the VCF file
@@ -582,6 +624,7 @@ def process_vcf_records(args):
     vcf_summary = [0]*(NO_RETURN_CODES+1)
 
     record_stats_arr = []
+    vcf_records_arr = []
 
     warnings_dict = {"multi-allelic": 0, "multi-sample": 0}
     
@@ -602,20 +645,22 @@ def process_vcf_records(args):
         elif ret == 4:
             record_stats = handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i)
         elif ret == 5:
-            record_stats, second = handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i)
-            with open(args.info, "a") as f:
-                # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}\t${ref}\t${alt}"
-                info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(second[5], second[3], second[3]+second[2], second[6], second[7], second[1], second[0], record.id, record.ref, record.alts[0])
-                f.write(f"{info}\n")
-            record_stats_arr.append(second[:5])
+            record_stats = handle_vcf_types_bnd(args, vcf, fasta, record, chrom_lengths, i)
+            second = handle_vcf_types_bnd_mate(args, vcf, fasta, record, chrom_lengths, i)
+            if second is not None:
+                temp_record = record.copy()
+                temp_record.chrom = second[5]
+                temp_record.pos = second[6]
+                temp_record.stop = second[7]
+                record_stats_arr.append(second[:5])
+                vcf_records_arr.append(temp_record)
         else:
             print(f"Skipped. vcf check failed (code: {ret}) for record (ID:{record.id})")
             continue
-        write_to_id_file(args, vcf, record, record_stats)
-        # if i == 100:
-        #     break
         record_stats_arr.append(record_stats)
-    
+        vcf_records_arr.append(record)
+
+    write_id_file(args, vcf_records_arr, record_stats_arr)    
     balanced_seq_bins = balance_bins(record_stats_arr, args.n)
     concat_fasta(args, balanced_seq_bins)
     
