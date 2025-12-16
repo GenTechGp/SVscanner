@@ -38,5 +38,10 @@ test/VN049_sniffles_jasmine
 test/hgmini
 test/out_plots
 test/jsn_out
+test/annotate_out*
+test/traceback_plots.pdf
+test/VN049*
+test/annotated*.vcf
+test/run*
 
 dont_delete/
