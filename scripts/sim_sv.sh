@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+# set -x
 RED='\033[0;31m' ; GREEN='\033[0;32m' ; NC='\033[0m' # No Color
 die() { echo -e "${RED}$1${NC}" >&2 ; echo ; exit 1 ; } # terminate script
 info() {  echo -e "${GREEN}$1${NC}" >&2 ; }
@@ -13,7 +13,7 @@ OUTPUT_DIR=$(realpath "test/sim_ref_run")
 BASE_REF=${OUTPUT_DIR}/base_ref/base_ref.fa
 BOTH_REF=${OUTPUT_DIR}/both_ref.fa
 
-SV_COUNT=1000
+SV_COUNT=100
 
 READS="read_0.fasta"
 SIM_READS="${OUTPUT_DIR}/sim_reads.fq.gz"
@@ -21,15 +21,14 @@ SAM="${OUTPUT_DIR}/mapped.sam"
 BAM="${OUTPUT_DIR}/mapped.bam"
 VCF="${OUTPUT_DIR}/sniffles.vcf"
 
-SVSCANNER_VENV_PATH="/data/hiruna/SVtoolkit/svscanner"
+SVSCANNER_VENV_PATH="/data/hiruna/SVscanner/svscanner"
 SNIFFLES_VENV_PATH="/data/install/sniffles_260"
 # VISOR_VENV_PATH="/data/hiruna/SVtoolkit/VISOR-1.1.2.1/visor"
 VISOR_VENV_PATH="/data/hiruna/VISOR/visor_dev"
 PACBIO_CCS="/data/install/ccs_v6.4.0/ccs"
-BCFTOOLS="bcftools-1.21/bcftools"
-SAMTOOLS="samtools-1.21/samtools"
-TABIX="htslib-1.21/tabix"
-BGZIP="htslib-1.21/bgzip"
+BCFTOOLS="bcftools"
+TABIX="tabix"
+BGZIP="bgzip"
 
 SIMULATE_SV="src/simulate_sv.py"
 PBSIM3="/data/install/pbsim3-3.0.5/src/pbsim"
@@ -124,7 +123,7 @@ run_svscanner() {
     vcf=$2
 
     source "${SVSCANNER_VENV_PATH}/bin/activate"
-    ${SVSCANNER} --output_dir ${OUTPUT_DIR}/svscanner --sv_vcf ${vcf} --ref_fasta ${base_ref} > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
+    ${SVSCANNER} --out ${OUTPUT_DIR}/svscanner --vcf ${vcf} --ref ${base_ref} > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
     deactivate
 }
 
