@@ -1,6 +1,6 @@
 # Repeat Annotation Steps
 
-The steps followed in annotating the vcf records using TRF and RM information are given below. For VCF INFO tags refer [repeat_annotation_VCF_tags.md](docs/repeat_annotation_VCF_tags.md)
+The steps followed in annotating the vcf records using TRF and RM information are given below. For VCF INFO tags refer [repeat_annotation_VCF_tags.md](repeat_annotation_VCF_tags.md)
 
 ## SV/Repeat overlap calculations
 
@@ -17,7 +17,7 @@ The steps followed in annotating the vcf records using TRF and RM information ar
 ### Note
 1.  `ri_l` is not necessarily equal to `ri_sv_l`. It can be less than, equal or greater than `ri_sv_l`.
 2. The dotted lines in the figure show the boundaries of the alignment.
-3. Diagrams visualizing Repeat/SV annotations ([diagram file format](docs/Repeat-SV_diagram.md)) show only the parts of the repeat elements that align to the SV.
+3. Diagrams visualizing Repeat/SV annotations ([diagram file format](Repeat-SV_diagram.md)) show only the parts of the repeat elements that align to the SV.
 
 ## Important parameters with default values
 
