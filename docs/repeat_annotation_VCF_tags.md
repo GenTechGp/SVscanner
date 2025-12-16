@@ -38,10 +38,39 @@
 | TRF_COPY_NUMBER       |                         |          | 8.8              | 44               | Not available if TRF_CLASSIFICATION is NON_REPETITIVE or NA           |
 | TRF_TOTAL_SV_COVERAGE | 0                       |          | 0.77             | 1                | Not available if TRF_CLASSIFICATION is NA                             |
 | CONSENSUS_REPEAT      | NA                      | NA       | ATAGGTGTTGGC     | GGAACAGTCGAGTG   | Always available (value or NA)                                       |
-| FINAL_CLASSIFICATION  | LINE                    | LTR      | VNTR             | VNTR             | Always available                                                     |
+| FINAL_CLASSIFICATION  | Repetitive/Mobile/LINE  | Repetitive/Mobile/LTR    | Repetitive/Tandem/VNTR             | Repetitive/Tandem/VNTR             | Always available                                                     |
 
 
 ### Example record with BND_MATE_INFO tag
 ```
 chr21	5216247	Sniffles2.BND.A1CS14	G	G]chr20:30346078]	59	GT	PRECISE;SVTYPE=BND;SUPPORT=8;COVERAGE=0,0,55,62,67;STRAND=+-;CHR2=chr20;PHASE=2,5216322,7,8,FAIL,PASS;STDEV_POS=0.5;VAF=0.138;RM_CLASSIFICATION=NON_REPETITIVE;RM_RECIPROCAL=NA;RM_TOTAL_SV_COVERAGE=0.47;TRF_CLASSIFICATION=NA;CONSENSUS_REPEAT=NA;FINAL_CLASSIFICATION=NON_REPETITIVE;BND_MATE_INFO=RM_CLASSIFICATION=NON_REPETITIVE|RM_RECIPROCAL=NA|RM_TOTAL_SV_COVERAGE=0.5|TRF_CLASSIFICATION=NON_REPETITIVE|TRF_TOTAL_SV_COVERAGE=0.0|CONSENSUS_REPEAT=NA|FINAL_CLASSIFICATION=Repetitive/Mobile	GT:GQ:DR:DV:PS	0/0:59:50:8:5216322
 ```
+
+
+# FINAL_CLASSIFICATION
+
+`FINAL_CLASSSIFICATION` can be one of the following values:
+1. Repetitive/Tandem
+2. Repetitive/Tandem/HOMO
+3. Repetitive/Tandem/STR
+4. Repetitive/Tandem/VNTR
+5. Repetitive/Tandem/TR
+6. Repetitive/Mobile
+7. Repetitive/Mobile/SINE
+8. Repetitive/Mobile/LINE
+9. Repetitive/Mobile/LTR
+10. Repetitive/Mobile/DNA
+11. Repetitive/Mobile/Retroposon
+12. Repetitive/Mixed
+13. Repetitive/Mixed/HOMO
+14. Repetitive/Mixed/STR
+15. Repetitive/Mixed/VNTR
+16. Repetitive/Mixed/TR
+17. Repetitive/Mixed/SINE
+18. Repetitive/Mixed/LINE
+19. Repetitive/Mixed/LTR
+20. Repetitive/Mixed/DNA
+21. Repetitive/Mixed/Retroposon
+22. NON_REPETITIVE
+
+The process of determing the `FINAL_CLASSIFICATION` is explained in [repeat annotation process](docs/repeat_annotation_steps.md)
