@@ -73,4 +73,4 @@ chr21	5216247	Sniffles2.BND.A1CS14	G	G]chr20:30346078]	59	GT	PRECISE;SVTYPE=BND;
 21. Repetitive/Mixed/Retroposon
 22. NON_REPETITIVE
 
-The process of determing the `FINAL_CLASSIFICATION` is explained in [repeat annotation process](docs/repeat_annotation_steps.md)
+The process of determing the `FINAL_CLASSIFICATION` is explained in [repeat annotation process](repeat_annotation_steps.md)
