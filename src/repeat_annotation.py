@@ -856,12 +856,14 @@ def get_annot_info(args, sv_info, sv_id, strchive):
 
         return rm_picked_e_ids, trf_picked_e_ids
 
-    
-    def post_evaluation(pre_classification, trf_sv_cov, rm_sv_cov):
+    def post_evaluation(args, pre_classification, trf_sv_cov, rm_sv_cov):
         """
         Post evaluation logic for final classification based on pre_classification,
         trf_sv_cov (x), and rm_sv_cov (y).
         """
+        S = args.sv_coverage_cutoff
+        T = args.min_total_sv_coverage
+
         # Missing values → 0
         trf_sv_cov = 0 if trf_sv_cov == "." else float(trf_sv_cov)
         rm_sv_cov = 0 if rm_sv_cov == "." else float(rm_sv_cov)
@@ -871,37 +873,37 @@ def get_annot_info(args, sv_info, sv_id, strchive):
             raise ValueError("Error! Coverage out of bounds.")
 
         if pre_classification == "NON_REPETITIVE":
-            if 0 <= trf_sv_cov < 0.50 and 0 <= rm_sv_cov < 0.50:
+            if 0 <= trf_sv_cov < S and 0 <= rm_sv_cov < S:
                 return "NON_REPETITIVE"  # A
-            elif 0.50 <= trf_sv_cov <= 1 and 0 <= rm_sv_cov < 0.50:
+            elif S <= trf_sv_cov <= 1 and 0 <= rm_sv_cov < S:
                 return "Repetitive/Tandem"  # B,C
-            elif 0 <= trf_sv_cov < 0.50 and 0.50 <= rm_sv_cov < 0.75:
+            elif 0 <= trf_sv_cov < S and S <= rm_sv_cov < T:
                 return "Repetitive/Mobile"  # D
-            elif 0.50 <= trf_sv_cov < 0.75 and 0.50 <= rm_sv_cov < 0.75:
+            elif S <= trf_sv_cov < T and S <= rm_sv_cov < T:
                 return "Repetitive/Mixed"  # E
-            elif 0.75 <= trf_sv_cov <= 1 and 0.50 <= rm_sv_cov < 0.75:
+            elif T <= trf_sv_cov <= 1 and S <= rm_sv_cov < T:
                 return "Repetitive/Tandem"  # F
-            elif 0 <= trf_sv_cov < 0.75 and 0.75 <= rm_sv_cov <= 1:
+            elif 0 <= trf_sv_cov < T and T <= rm_sv_cov <= 1:
                 return "Repetitive/Mobile"  # G,H
-            elif 0.75 <= trf_sv_cov <= 1 and 0.75 <= rm_sv_cov <= 1:
+            elif T <= trf_sv_cov <= 1 and T <= rm_sv_cov <= 1:
                 return "Repetitive/Mixed"  # I
             else:
                 raise ValueError("Error! Invalid region for NON_REPETITIVE.")
 
         elif pre_classification in ["DNA", "LINE", "LTR", "Retroposon", "SINE"]:
             # M overlay: valid only in G,H,I
-            if 0 <= trf_sv_cov < 0.75 and 0.75 <= rm_sv_cov <= 1:
+            if 0 <= trf_sv_cov < T and T <= rm_sv_cov <= 1:
                 return "Repetitive/Mobile/" + pre_classification  # G,H
-            elif 0.75 <= trf_sv_cov <= 1 and 0.75 <= rm_sv_cov <= 1:
+            elif T <= trf_sv_cov <= 1 and T <= rm_sv_cov <= 1:
                 return "Repetitive/Mixed/" + pre_classification  # I
             else:
                 raise ValueError("Error! Invalid region for M overlay.")
 
         elif pre_classification in ["STR", "VNTR", "TR", "HOMO"]:
             # N overlay: valid in C,F,I
-            if 0.75 <= trf_sv_cov <= 1 and 0 <= rm_sv_cov < 0.75:
+            if T <= trf_sv_cov <= 1 and 0 <= rm_sv_cov < T:
                 return "Repetitive/Tandem/" + pre_classification  # C, F
-            elif 0.75 <= trf_sv_cov <= 1 and 0.75 <= rm_sv_cov <= 1:
+            elif T <= trf_sv_cov <= 1 and T <= rm_sv_cov <= 1:
                 return "Repetitive/Mixed/" + pre_classification  # I
             else:
                 raise ValueError("Error! Invalid region for N overlay.")
@@ -973,7 +975,7 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         max_trf_coverage, index = max((float(x), i) for i, x in enumerate(trf_data['TRF_SV_COVERAGE'].split(',')) if x != 'NA')
         pre_classification = trf_class[index]
 
-    final_classification = post_evaluation(pre_classification, trf_data['TRF_TOTAL_SV_COVERAGE'], rm_data['RM_TOTAL_SV_COVERAGE'])
+    final_classification = post_evaluation(args, pre_classification, trf_data['TRF_TOTAL_SV_COVERAGE'], rm_data['RM_TOTAL_SV_COVERAGE'])
     sv_data['RM_PICKED_E_IDS'] = rm_picked_e_ids
     sv_data['TRF_PICKED_E_IDS'] = trf_picked_e_ids
     sv_data['FINAL_CLASSIFICATION'] = final_classification
@@ -1573,7 +1575,8 @@ def argparser():
     optional_args = parser.add_argument_group("optional arguments")
     optional_args.add_argument('--min_sv_coverage', required=False, type=positive_float, default=0.05, help="The minimum intersection between a repeat element and SV (aka sv_coverage) e.g. 0.05 (5%) (0 < min_sv_coverage < 1)")
     optional_args.add_argument('--min_class_sv_coverage', required=False, type=positive_float, default=0.25, help="The minimum class sv coverage by repeat elements to be considered repetitive")
-    optional_args.add_argument('--min_total_sv_coverage', required=False, type=positive_float, default=0.75, help="The minimum total sv coverage by repeat elements to be considered repetitive")
+    optional_args.add_argument('--sv_coverage_cutoff', required=False, type=positive_float, default=0.5, help="The soft minimum total sv coverage by repeat elements to be considered repetitive")
+    optional_args.add_argument('--min_total_sv_coverage', required=False, type=positive_float, default=0.75, help="The tight minimum total sv coverage by repeat elements to be considered repetitive")
     optional_args.add_argument('--max_trf_overlap', required=False, type=positive_float, default=0.1, help="The maximum TRF element overlap to be considered non-overlapping (0 < max_trf_overlap < 1)")
     optional_args.add_argument('--div', required=False, type=positive_float, default=0.05, help="The chosen intervals to prioritise period size over intersection (0 < divisor < 1)")
     optional_args.add_argument('-l', '--len', required=False, type=positive_int, default=100, help="Diagram length")
@@ -1587,6 +1590,10 @@ if __name__ == "__main__":
     
     parser = argparser()
     args = parser.parse_args()
+
+    if args.min_total_sv_coverage < args.sv_coverage_cutoff:
+        print("Error: --min_total_sv_coverage must be greater than or equal to --sv_coverage_cutoff")
+        exit(1)
     
     # print(f"Info: VCF File: {args.vcf}")
     print(f"Info: RepeatMasker: {args.rm}")
@@ -1595,6 +1602,7 @@ if __name__ == "__main__":
     print(f"Info: strachive bed: {args.str}")
     print(f"Info: min_sv_coverage: {args.min_sv_coverage}")
     print(f"Info: min_total_sv_coverage: {args.min_total_sv_coverage}")
+    print(f"Info: sv_coverage_cutoff: {args.sv_coverage_cutoff}")
     print(f"Info: min_class_sv_coverage: {args.min_class_sv_coverage}")
     print(f"Info: max_trf_overlap: {args.max_trf_overlap}")
     print(f"Info: divisor: {args.div}")

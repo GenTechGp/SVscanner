@@ -57,32 +57,25 @@ DEFAULT_TRACEBACK_TYPES = [
 ]
 
 def read_cmd_args():
+    def positive_float(value):
+        ivalue = float(value)
+        if ivalue <= 0 or ivalue > 1:
+            raise argparse.ArgumentTypeError(f"{value} is an invalid. It must be a value between 0 and 1")
+        return ivalue
+    
     parser = argparse.ArgumentParser(
         description=(
             "Generate traceback scatter plots from a single TSV containing coverage, "
             "classification, transposition, and traceback."
         )
     )
-    parser.add_argument(
-        "--traceback",
-        required=True,
-        help="Path to traceback TSV. Lines starting with '#' are treated as comments and parsed as header annotations. "
+    parser.add_argument("--traceback", required=True, help="Path to traceback TSV. Lines starting with '#' are treated as comments and parsed as header annotations. "
              "Each data row must be: vcf_id, TRF_TOTAL_SV_COVERAGE, RM_TOTAL_SV_COVERAGE, FINAL_CLASSIFICATION, transposition, Traceback",
     )
     parser.add_argument("--output", required=True, help="Output pdf file path")
-    # New user-configurable cutoff arguments
-    parser.add_argument(
-        "--sv_coverage_cutoff",
-        type=float,
-        default=0.5,
-        help="Cutoff S for TRF/RM SV coverage (drawn as dashed lines). Default: 0.5",
-    )
-    parser.add_argument(
-        "--min_total_sv_coverage",
-        type=float,
-        default=0.75,
-        help="Cutoff T for minimum total SV coverage (drawn as dashed lines). Default: 0.75",
-    )
+    parser.add_argument('--sv_coverage_cutoff', required=False, type=positive_float, default=0.5, help="The soft minimum total sv coverage by repeat elements to be considered repetitive")
+    parser.add_argument('--min_total_sv_coverage', required=False, type=positive_float, default=0.75, help="The tight minimum total sv coverage by repeat elements to be considered repetitive")
+
     return parser.parse_args()
 
 def read_header_comments(path):
