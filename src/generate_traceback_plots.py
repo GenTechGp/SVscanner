@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.lines import Line2D
 import matplotlib
-from matplotlib import cm
+import matplotlib.cm as cm
 import numpy as np
 from collections import Counter
 from textwrap import wrap
@@ -58,7 +58,10 @@ DEFAULT_TRACEBACK_TYPES = [
 
 def read_cmd_args():
     parser = argparse.ArgumentParser(
-        description="Generate traceback scatter plots from a single TSV containing coverage, classification, transposition, and traceback."
+        description=(
+            "Generate traceback scatter plots from a single TSV containing coverage, "
+            "classification, transposition, and traceback."
+        )
     )
     parser.add_argument(
         "--traceback",
@@ -67,6 +70,19 @@ def read_cmd_args():
              "Each data row must be: vcf_id, TRF_TOTAL_SV_COVERAGE, RM_TOTAL_SV_COVERAGE, FINAL_CLASSIFICATION, transposition, Traceback",
     )
     parser.add_argument("--output", required=True, help="Output pdf file path")
+    # New user-configurable cutoff arguments
+    parser.add_argument(
+        "--sv_coverage_cutoff",
+        type=float,
+        default=0.5,
+        help="Cutoff S for TRF/RM SV coverage (drawn as dashed lines). Default: 0.5",
+    )
+    parser.add_argument(
+        "--min_total_sv_coverage",
+        type=float,
+        default=0.75,
+        help="Cutoff T for minimum total SV coverage (drawn as dashed lines). Default: 0.75",
+    )
     return parser.parse_args()
 
 def read_header_comments(path):
@@ -126,15 +142,16 @@ def load_traceback_tsv(path):
 
     return df
 
-def style_axes(ax):
+def style_axes(ax, s_cutoff, t_cutoff):
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.set_xticks(TICKS)
     ax.set_yticks(TICKS)
-    ax.axhline(0.5, ls="--", color="gray")
-    ax.axhline(0.75, ls="--", color="gray")
-    ax.axvline(0.5, ls="--", color="gray")
-    ax.axvline(0.75, ls="--", color="gray")
+    # Draw cutoff lines from user args
+    ax.axhline(s_cutoff, ls="--", color="gray")
+    ax.axhline(t_cutoff, ls="--", color="gray")
+    ax.axvline(s_cutoff, ls="--", color="gray")
+    ax.axvline(t_cutoff, ls="--", color="gray")
     ax.grid(False)
     ax.set_aspect("equal", adjustable="box")
 
@@ -142,9 +159,9 @@ def build_distinct_colors(labels):
     labels_sorted = sorted(labels)
     n = len(labels_sorted)
 
-    tab20  = matplotlib.colormaps.get_cmap('tab20')
-    tab20b = matplotlib.colormaps.get_cmap('tab20b')
-    tab20c = matplotlib.colormaps.get_cmap('tab20c')
+    tab20  = cm.get_cmap('tab20')
+    tab20b = cm.get_cmap('tab20b')
+    tab20c = cm.get_cmap('tab20c')
 
     colors = []
     for cmap in [tab20, tab20b, tab20c]:
@@ -160,6 +177,7 @@ def build_distinct_colors(labels):
         colors.extend([cm.hsv(h) for h in hues])
 
     return {lab: colors[i] for i, lab in enumerate(labels_sorted)}
+
 
 def add_legend_outside(ax, traceback_colors, counts, title="Traceback"):
     legend_elements = []
@@ -217,14 +235,14 @@ def scatter_points(ax, sub, traceback_colors):
             marker='^',
         )
 
-def plot_class_page(df, class_name, traceback_colors):
+def plot_class_page(df, class_name, traceback_colors, s_cutoff, t_cutoff):
     sub = df[df["FINAL_CLASSIFICATION"] == class_name]
     fig, ax = plt.subplots(figsize=(8.0, 5))  # wider for outside legend
 
     # Scatter with marker by transposition
     scatter_points(ax, sub, traceback_colors)
 
-    style_axes(ax)
+    style_axes(ax, s_cutoff, t_cutoff)
     count = len(sub)
     ax.set_title(f"{class_name} ({count})")
     ax.set_xlabel("TRF total SV coverage")
@@ -293,6 +311,10 @@ def main():
     traceback_colors_map = build_distinct_colors(all_types_ordered)
     traceback_colors = {lab: traceback_colors_map[lab] for lab in all_types_ordered}  # preserve order
 
+    # User-specified cutoffs
+    S = float(args.sv_coverage_cutoff)
+    T = float(args.min_total_sv_coverage)
+
     out_pdf = args.output
     with PdfPages(out_pdf) as pdf:
         # First page: header annotations (original order), with marker note
@@ -302,7 +324,7 @@ def main():
 
         # Subsequent pages: fixed order of classes
         for cls in CLASS_ORDER:
-            fig = plot_class_page(df, cls, traceback_colors)
+            fig = plot_class_page(df, cls, traceback_colors, S, T)
             pdf.savefig(fig, bbox_inches="tight")
             plt.close(fig)
 
