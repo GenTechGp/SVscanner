@@ -83,7 +83,7 @@ parse_args() {
             --ref)
                 REF=$(realpath "$2"); shift 2;;
             --prefix)
-                PREFIX="$2_"; shift 2;;
+                PREFIX="$2"; shift 2;;
             --str_bed)
                 STR_BED=$(realpath "$2"); shift 2;;
             --species)
