@@ -52,7 +52,7 @@ usage() {
     echo "  --vcf FILE     Path to SV VCF file"
     echo "  --ref FILE     Path to reference FASTA file"
     echo "Optional arguments:"
-    echo "  --prefix NAME           Prefix for output files (default: None)"
+    echo "  --prefix NAME           Prefix for output files (default: None; e.g. Project_, Project.)"
     echo "  --str_bed FILE          Path to STR BED file (default: $STR_BED)"
     echo "  --species NAME          Species name for RepeatMasker (default: $SPECIES)"
     echo "  --min_sv_coverage VAL   Minimum intersection between a repeat element and SV (aka sv_coverage) (default: $MIN_SV_COVERAGE)"
