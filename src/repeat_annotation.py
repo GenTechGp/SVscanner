@@ -44,6 +44,7 @@ def read_sv_info(sv_file):
     with open(sv_file, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
         next(reader)  # Skip the header line
+        count = 0
         for sv in reader:
             # if sv[6] != "DEL.0":
             #     continue
@@ -86,6 +87,8 @@ def read_sv_info(sv_file):
                 # 'REF': ref_seq,
                 # 'ALT': alt_seq,
             }
+            count += 1
+    print(f"Info: {count} SVs read.")
 
     return sv_info
 
@@ -146,10 +149,12 @@ def read_rm(args, sv_info):
         # elif strand == 'C':
             # proportion = (repeat_end - repeat_left) / ((repeat_begin + repeat_end) - repeat_left)
             # element_coverage = intersection / ((repeat_begin + repeat_end) - repeat_left)
-
+    
+    print(f"Info: Reading {args.rm} file...")
     with open(args.rm, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
         row_count = 0
+        appended_count = 0
         for row in reader:
             sv_id = row[4]
             te_start = int(row[5])
@@ -181,18 +186,15 @@ def read_rm(args, sv_info):
                     repeat_left = int(row[11].strip("()"))
 
                 sv = sv_info[sv_id]
-                # assert repeat_begin < repeat_end, f"row {row_count}: sv_id {sv_id} Repeat begin {repeat_begin} should be less than repeat end {repeat_end} for strand {strand}."
+                intersection = calculate_intersection_length(te_start, te_end, sv['rel_start'], sv['rel_end'])
+                sv_coverage = round(intersection / sv['sv_len'], 6)
                 if not repeat_begin < repeat_end:
-                    intersection = calculate_intersection_length(te_start, te_end, sv['rel_start'], sv['rel_end'])
-                    sv_coverage = round(intersection / sv['sv_len'], 6)
-                    print(f"{intersection},{sv_coverage} row {row_count}: sv_id {sv_id},{sv_info[sv_id]['callerID']} Repeat begin {repeat_begin} should be less than repeat end {repeat_end} for strand {strand}.")
+                    # print(f"{intersection},{sv_coverage} row {row_count}: sv_id {sv_id},{sv_info[sv_id]['callerID']} Repeat begin {repeat_begin} should be less than repeat end {repeat_end} for strand {strand}.")
                     continue
 
                 # print("query's matching len:{}, repeat's matching len:{}".format(te_end-te_start,repeat_end-repeat_begin))
                 
                 # Add if the transposable element overlaps with the SV
-                intersection = calculate_intersection_length(te_start, te_end, sv['rel_start'], sv['rel_end'])
-                sv_coverage = round(intersection / sv['sv_len'], 6)
                 element_proportion, element_coverage = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection)
             
                 # Add if the intersection is > min_intersect (e.g. 5%)
@@ -217,8 +219,10 @@ def read_rm(args, sv_info):
                         sv_info[sv_id]['RM'][classification] = []
                     
                     sv_info[sv_id]['RM'][classification].append(element)
-
+                    appended_count += 1
                     # print(sv_info[sv_id]['RM'])
+        
+        print(f"Info: {appended_count}/{row_count} ({round(appended_count/row_count*100, 2)}%) RepeatMasker entries were selected.")
 
     return sv_info
 
@@ -295,6 +299,7 @@ def read_trf(args, sv_info):
     entries = trf_text.strip().split('@')[1:]   
     
     row_count = 0
+    selected_count = 0
     for entry in entries:
         lines = entry.strip().split('\n')
         header = lines[0]
@@ -306,9 +311,9 @@ def read_trf(args, sv_info):
             sv = sv_info[sv_id]
             # Parse and add the TRFs that overlap 
             trf_result, row_count = parse_TRF_lines(args, trf_lines, sv, row_count)
-
+            selected_count += len(trf_result)
             sv_info[sv_id]['TRF'] = trf_result
-    
+    print(f"Info: {selected_count}/{row_count} ({round(selected_count/row_count*100, 2)}%) TRF entries were selected.")
     return sv_info
 
 def load_strchive(str_file):

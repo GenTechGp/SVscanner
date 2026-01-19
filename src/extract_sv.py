@@ -244,7 +244,6 @@ def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
     svtype = record.info.get("SVTYPE", None)
     svID = f'{svtype}.{i}'
 
-
     # Determine chrom:start-end values
     chrom = record.chrom
     start_fl = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
@@ -254,7 +253,6 @@ def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
     chrom_length = chrom_lengths.get(chrom, 0)
     end = record.stop+f_len-1 # End position of the REF allele
     end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
-
     try:
         seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
         seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
@@ -456,8 +454,8 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
     
     chrom = record.chrom
     chrom_length = chrom_lengths.get(chrom, 0)
-    if record.stop - 1 > chrom_length + 1:
-        print(f"Error: record (ID:{record.id}) stop ({record.stop}) exceeds chromosome length ({chrom_length}) for {chrom}")
+    if record.stop - 1 > chrom_length:
+        print(f"Error: record (ID:{record.id}) stop ({record.stop-1}) exceeds chromosome length ({chrom_length}) for {chrom}")
         return 15
 
     if "SVLEN" in record.info:
@@ -630,7 +628,7 @@ def process_vcf_records(args):
     
     # Iterate over each variant in the VCF file
     for i, record in enumerate(vcf):
-        # if record.id != "Sniffles2.INS.BS0":
+        # if record.id == "Sniffles2.DUP.33S60":
         #     continue
 
         # Perform error checks (you can add your custom checks here)
@@ -650,6 +648,9 @@ def process_vcf_records(args):
             if second is not None:
                 temp_record = record.copy()
                 temp_record.chrom = second[5]
+                # if second[6] is zero or negative, set to 1 (a workaround for sniffles v2.6+ bug https://github.com/fritzsedlazeck/Sniffles/issues/536)
+                if second[6] <= 0:
+                    second[6] = 1
                 temp_record.pos = second[6]
                 temp_record.stop = second[7]
                 record_stats_arr.append(second[:5])
