@@ -142,12 +142,14 @@ def create_temp_vcf_with_new_header(input_vcf: str, header_file: str, output_pat
                 out_hdr.add_line(line)
 
     # Step 4: write temp2 VCF duplicating records with the new header
-    suffix = ".vcf.gz" if input_vcf.endswith(".vcf.gz") else ".vcf"
-    temp2_vcf = f"{output_path}.temp2{suffix}"
-    mode = "wz" if temp2_vcf.endswith(".vcf.gz") else "w"
-    with pysam.VariantFile(input_vcf, "r") as invcf, pysam.VariantFile(temp2_vcf, mode, header=out_hdr) as outvcf:
-        for rec in invcf:
-            outvcf.write(rec)
+    temp2_vcf = f"{output_path}.temp2.vcf"
+    with pysam.VariantFile(temp2_vcf, "w", header=out_hdr) as outvcf:
+        pass
+    with pysam.VariantFile(input_vcf, "r") as invcf:
+        with open(temp2_vcf, "a") as outvcf:
+            for rec in invcf:
+                outvcf.write(str(rec)) # to preserve INFO/END filed which is dropped when writing rec directly with pysam; see https://github.com/pysam-developers/pysam/issues/973
+                # outvcf.write(rec)
 
     # Cleanup header-only intermediates
     for p in (header_only_path, cleaned_hdr_path):
@@ -291,35 +293,38 @@ def annotate_vcf(
     bnd_scalar_map = load_tsv_bnd_mate_blob_scalar(bnd_mate_tsv) if bnd_mate_tsv else {}
 
     # Pass 2
-    mode = "wz" if output_path.endswith(".vcf.gz") else "w"
-    with pysam.VariantFile(temp_vcf, "r") as invcf, pysam.VariantFile(output_path, mode, header=invcf.header) as outvcf:
-        for rec in invcf:
-            vid = rec.id
+    with pysam.VariantFile(temp_vcf, "r") as invcf:
+        with pysam.VariantFile(output_path, "w", header=invcf.header) as outvcf:
+            pass
+        with open(output_path, "a") as outvcf:
+            for rec in invcf:
+                vid = rec.id
+                # if vid != "0_Sniffles2.DEL.5624S0":
+                #     continue
+                if vid and vid in primary_map:
+                    tagvals = primary_map[vid]
+                    for tag in primary_tags:
+                        raw_val = tagvals.get(tag, "")
+                        val = cast_info_value_by_effective_header(tag, raw_val, invcf.header)
+                        if val is None:
+                            continue
+                        try:
+                            rec.info[tag] = val
+                        except KeyError:
+                            sys.stderr.write(f"Warning: skipping tag '{tag}' not present in header\n")
 
-            if vid and vid in primary_map:
-                tagvals = primary_map[vid]
-                for tag in primary_tags:
-                    raw_val = tagvals.get(tag, "")
-                    val = cast_info_value_by_effective_header(tag, raw_val, invcf.header)
-                    if val is None:
-                        continue
-                    try:
-                        rec.info[tag] = val
-                    except KeyError:
-                        sys.stderr.write(f"Warning: skipping tag '{tag}' not present in header\n")
-
-            if vid and vid in bnd_scalar_map:
-                blob = bnd_scalar_map[vid]  # single scalar string using pipe delimiter
-                if blob:
-                    try:
-                        rec.info["BND_MATE_INFO"] = blob
-                    except KeyError:
-                        sys.stderr.write(
-                            "Warning: BND_MATE_INFO not present in header; "
-                            "ensure Number=1,Type=String in --header\n"
-                        )
-
-            outvcf.write(rec)
+                if vid and vid in bnd_scalar_map:
+                    blob = bnd_scalar_map[vid]  # single scalar string using pipe delimiter
+                    if blob:
+                        try:
+                            rec.info["BND_MATE_INFO"] = blob
+                        except KeyError:
+                            sys.stderr.write(
+                                "Warning: BND_MATE_INFO not present in header; "
+                                "ensure Number=1,Type=String in --header\n"
+                            )
+                # outvcf.write(rec)
+                outvcf.write(str(rec)) # to preserve INFO/END filed which is dropped when writing rec directly with pysam; see https://github.com/pysam-developers/pysam/issues/973
 
     # Cleanup temp2
     try:
@@ -330,6 +335,10 @@ def annotate_vcf(
 
 def main():
     args = parse_args()
+    # if ouptut path doesn't end with .vcf or .vcf.gz, exit with error
+    if not (args.output.endswith(".vcf")):
+        sys.stderr.write("Error: Output path must end with .vcf\n")
+        sys.exit(2)
     annotate_vcf(
         vcf_path=args.vcf,
         info_header_path=args.header,
