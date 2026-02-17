@@ -46,16 +46,20 @@ def parse_args():
         "-o",
         "--output",
         required=True,
-        help="Output VCF path. Must end with .vcf or .vcf.gz to control compression.",
+        help="Output VCF path. Must end with .vcf.",
+    )
+    ap.add_argument(
+        "--write_method",
+        choices=["pysam", "pysam_str", "manual_str"],
+        default="manual_str",
+        help=(
+            "Method to write VCF records. "
+            "'pysam' uses VariantFile.write(rec) — may drop INFO/END for redundant records; "
+            "'pysam_str' modifies rec via pysam then writes str(rec) — END may still be dropped after mutation; "
+            "'manual_str' processes records as raw text without pysam parsing — fully preserves INFO/END."
+        ),
     )
     return ap.parse_args()
-
-
-def ensure_valid_output_suffix(path: str):
-    if path.endswith(".vcf") or path.endswith(".vcf.gz"):
-        return
-    sys.stderr.write("Error: Output path must end with .vcf or .vcf.gz\n")
-    sys.exit(2)
 
 
 def open_text(path: str):
@@ -84,14 +88,16 @@ def write_header_only_vcf(input_vcf: str, header_only_path: str) -> None:
     """
     with pysam.VariantFile(input_vcf, "r") as invcf:
         hdr = invcf.header.copy()
-    # Opening with header writes the header; closing without writing any records yields a header-only VCF
     with pysam.VariantFile(header_only_path, "w", header=hdr):
         pass
 
 
-def strip_overridden_info_ids_from_header_text(header_vcf_path: str, ids_to_remove: List[str], cleaned_path: str) -> None:
+def strip_overridden_info_ids_from_header_text(
+    header_vcf_path: str, ids_to_remove: List[str], cleaned_path: str
+) -> None:
     """
-    Read header-only VCF as text, remove lines for INFO IDs in ids_to_remove, and write to cleaned_path.
+    Read header-only VCF as text, remove lines for INFO IDs in ids_to_remove,
+    and write to cleaned_path.
     """
     with open(header_vcf_path, "rt") as f:
         lines = f.readlines()
@@ -105,32 +111,40 @@ def strip_overridden_info_ids_from_header_text(header_vcf_path: str, ids_to_remo
             if m:
                 info_id = m.group("ID")
                 if info_id in id_set:
-                    sys.stderr.write(f"Warning: INFO ID '{info_id}' overridden by provided header\n")
-                    continue  # skip this line
+                    sys.stderr.write(
+                        f"Warning: INFO ID '{info_id}' overridden by provided header\n"
+                    )
+                    continue
         kept.append(line)
 
     with open(cleaned_path, "wt") as out:
         out.writelines(kept)
 
 
-def create_temp_vcf_with_new_header(input_vcf: str, header_file: str, output_path: str) -> str:
+def create_temp_vcf_with_new_header(
+    input_vcf: str, header_file: str, output_path: str
+) -> Tuple[str, pysam.VariantHeader]:
     """
-    Header-editing pipeline without manual copying:
+    Header-editing pipeline:
     1) Write a header-only VCF from the input header to {output}.temp0.vcf.
     2) Remove overriding INFO IDs to {output}.temp1.vcf.
     3) Load cleaned header via pysam, then add the new INFO lines.
-    4) Use the resulting header to write {output}.temp2.(vcf|vcf.gz) duplicating input records unchanged.
-    Returns the path of temp2 VCF.
+    4) Write header to {output}.temp2.vcf, then append raw input records as text
+       (no pysam parsing) so INFO/END is fully preserved.
+    Returns (temp2_vcf_path, out_hdr).
     """
     header_only_path = f"{output_path}.temp0.vcf"
     cleaned_hdr_path = f"{output_path}.temp1.vcf"
+    temp2_vcf = f"{output_path}.temp2.vcf"
 
     # Step 1: header-only file from input header
     write_header_only_vcf(input_vcf, header_only_path)
 
     # Step 2: remove overridden INFO IDs
     override_ids = parse_info_ids_from_header_file(header_file)
-    strip_overridden_info_ids_from_header_text(header_only_path, override_ids, cleaned_hdr_path)
+    strip_overridden_info_ids_from_header_text(
+        header_only_path, override_ids, cleaned_hdr_path
+    )
 
     # Step 3: load cleaned header via pysam and add new INFO lines
     with pysam.VariantFile(cleaned_hdr_path, "r") as cleaned_vcf:
@@ -141,15 +155,16 @@ def create_temp_vcf_with_new_header(input_vcf: str, header_file: str, output_pat
             if line:
                 out_hdr.add_line(line)
 
-    # Step 4: write temp2 VCF duplicating records with the new header
-    temp2_vcf = f"{output_path}.temp2.vcf"
-    with pysam.VariantFile(temp2_vcf, "w", header=out_hdr) as outvcf:
+    # Step 4: write header via pysam, then append raw records as text
+    with pysam.VariantFile(temp2_vcf, "w", header=out_hdr):
         pass
-    with pysam.VariantFile(input_vcf, "r") as invcf:
-        with open(temp2_vcf, "a") as outvcf:
-            for rec in invcf:
-                outvcf.write(str(rec)) # to preserve INFO/END filed which is dropped when writing rec directly with pysam; see https://github.com/pysam-developers/pysam/issues/973
-                # outvcf.write(rec)
+
+    opener = gzip.open if input_vcf.endswith(".gz") else open
+    with opener(input_vcf, "rt") as in_fh, open(temp2_vcf, "a") as out_fh:
+        for line in in_fh:
+            if line.startswith("#"):
+                continue
+            out_fh.write(line)
 
     # Cleanup header-only intermediates
     for p in (header_only_path, cleaned_hdr_path):
@@ -158,7 +173,7 @@ def create_temp_vcf_with_new_header(input_vcf: str, header_file: str, output_pat
         except OSError:
             pass
 
-    return temp2_vcf
+    return temp2_vcf, out_hdr
 
 
 def load_tsv_primary(path: str) -> Tuple[Dict[str, Dict[str, str]], List[str]]:
@@ -218,13 +233,11 @@ def load_tsv_bnd_mate_blob_scalar(path: str) -> Dict[str, str]:
         if not vid:
             continue
         groups: List[str] = []
-        # Group all non-pos/id keys. Values may contain commas; we keep them as-is.
         for k, v in rec.items():
             if k in ("CHROM", "POS", "ID"):
                 continue
             if v == "." or v == "":
                 continue
-            # Use pipe to separate groups to avoid VCF semicolon/comma parsing issues.
             groups.append(f"{k}={v}")
         if groups:
             m[vid] = "|".join(groups)
@@ -232,7 +245,9 @@ def load_tsv_bnd_mate_blob_scalar(path: str) -> Dict[str, str]:
     return m
 
 
-def cast_info_value_by_effective_header(tag: str, value: str, hdr: pysam.VariantHeader):
+def cast_info_value_by_effective_header(
+    tag: str, value: str, hdr: pysam.VariantHeader
+):
     """
     Cast values using the effective header attached to the current VariantFile.
     Return None for '.' or empty.
@@ -241,7 +256,6 @@ def cast_info_value_by_effective_header(tag: str, value: str, hdr: pysam.Variant
         return None
 
     if tag not in hdr.info:
-        # Skip tags not present in header to avoid KeyError
         return None
 
     info_def = hdr.info[tag]
@@ -266,8 +280,42 @@ def cast_info_value_by_effective_header(tag: str, value: str, hdr: pysam.Variant
         parts = value.split(",")
         return tuple(cast_one(p) for p in parts if p != "")
     else:
-        # Number=1 scalar: commas inside are fine for String type
         return cast_one(value)
+
+
+def annotate_pysam_record(
+    rec,
+    primary_map: Dict[str, Dict[str, str]],
+    primary_tags: List[str],
+    bnd_scalar_map: Dict[str, str],
+    out_hdr: pysam.VariantHeader,
+):
+    """Annotate a pysam VariantRecord in-place with primary and BND mate tags."""
+    vid = rec.id
+    if vid and vid in primary_map:
+        tagvals = primary_map[vid]
+        for tag in primary_tags:
+            raw_val = tagvals.get(tag, "")
+            val = cast_info_value_by_effective_header(tag, raw_val, out_hdr)
+            if val is None:
+                continue
+            try:
+                rec.info[tag] = val
+            except KeyError:
+                sys.stderr.write(
+                    f"Warning: skipping tag '{tag}' not present in header\n"
+                )
+
+    if vid and vid in bnd_scalar_map:
+        blob = bnd_scalar_map[vid]
+        if blob:
+            try:
+                rec.info["BND_MATE_INFO"] = blob
+            except KeyError:
+                sys.stderr.write(
+                    "Warning: BND_MATE_INFO not present in header; "
+                    "ensure Number=1,Type=String in --header\n"
+                )
 
 
 def annotate_vcf(
@@ -276,55 +324,107 @@ def annotate_vcf(
     annotations_tsv: str,
     bnd_mate_tsv: str,
     output_path: str,
+    write_method: str = "manual_str",
 ):
     """
     Two-pass approach:
-    - Pass 1: create a temp VCF with updated INFO header (overrides applied via text header edit).
-    - Pass 2: reopen the temp VCF (effective header attached), assign annotations directly on rec.info,
-              and stream records to the final output VCF.
+    - Pass 1: create a temp VCF with updated INFO header (overrides applied via
+      text header edit) and raw-text records (END preserved).
+    - Pass 2: reopen the temp VCF, assign annotations, and stream records to the
+      final output VCF using the chosen write method.
     """
-    ensure_valid_output_suffix(output_path)
-
     # Pass 1
-    temp_vcf = create_temp_vcf_with_new_header(vcf_path, info_header_path, output_path)
+    temp_vcf, out_hdr = create_temp_vcf_with_new_header(
+        vcf_path, info_header_path, output_path
+    )
 
-    # Load maps
+    # Load annotation maps
     primary_map, primary_tags = load_tsv_primary(annotations_tsv)
-    bnd_scalar_map = load_tsv_bnd_mate_blob_scalar(bnd_mate_tsv) if bnd_mate_tsv else {}
+    bnd_scalar_map = (
+        load_tsv_bnd_mate_blob_scalar(bnd_mate_tsv) if bnd_mate_tsv else {}
+    )
 
-    # Pass 2
-    with pysam.VariantFile(temp_vcf, "r") as invcf:
-        with pysam.VariantFile(output_path, "w", header=invcf.header) as outvcf:
-            pass
-        with open(output_path, "a") as outvcf:
+    # Pass 2 — each branch writes its own header + records
+    if write_method == "pysam":
+        with pysam.VariantFile(output_path, "w", header=out_hdr) as outvcf, \
+             pysam.VariantFile(temp_vcf, "r") as invcf:
             for rec in invcf:
-                vid = rec.id
-                # if vid != "0_Sniffles2.DEL.5624S0":
-                #     continue
+                annotate_pysam_record(
+                    rec, primary_map, primary_tags, bnd_scalar_map, out_hdr
+                )
+                outvcf.write(rec)
+
+    elif write_method == "pysam_str":
+        # Write header via pysam, then append string-serialised records
+        with pysam.VariantFile(output_path, "w", header=out_hdr):
+            pass
+        with open(output_path, "a") as outvcf, \
+             pysam.VariantFile(temp_vcf, "r") as invcf:
+            for rec in invcf:
+                annotate_pysam_record(
+                    rec, primary_map, primary_tags, bnd_scalar_map, out_hdr
+                )
+                # WARNING: pysam_str still goes through htslib's internal
+                # serialization. If rec.info is modified (as we do here), END
+                # may still be dropped for records where
+                # END == POS + len(REF) - 1. Only manual_str fully avoids this.
+                # str(rec) from pysam already includes trailing newline.
+                outvcf.write(str(rec))
+
+    elif write_method == "manual_str":
+        # Write header via pysam, then append text-processed records.
+        # Records are never parsed by pysam/htslib, so INFO/END is fully preserved.
+        with pysam.VariantFile(output_path, "w", header=out_hdr):
+            pass
+        with open(output_path, "a") as outvcf, \
+             open(temp_vcf, "rt") as invcf:
+            for line in invcf:
+                if line.startswith("#"):
+                    continue
+                line = line.rstrip("\n")
+                cols = line.split("\t")
+                if len(cols) < 8:
+                    continue
+                chrom, pos, vid, ref, alt, qual, filt, info = cols[:8]
+                rest = cols[8:] if len(cols) > 8 else []
+
+                # Determine which tags need stripping (dedup on re-run)
+                tags_to_strip = set()
+                if vid and vid in primary_map:
+                    tags_to_strip.update(primary_tags)
+                if vid and vid in bnd_scalar_map:
+                    tags_to_strip.add("BND_MATE_INFO")
+
+                if tags_to_strip:
+                    info_fields = info.split(";")
+                    info_fields = [
+                        f
+                        for f in info_fields
+                        if f.split("=", 1)[0] not in tags_to_strip
+                    ]
+                    info = ";".join(info_fields)
+
+                # Append primary annotations
                 if vid and vid in primary_map:
                     tagvals = primary_map[vid]
                     for tag in primary_tags:
                         raw_val = tagvals.get(tag, "")
-                        val = cast_info_value_by_effective_header(tag, raw_val, invcf.header)
-                        if val is None:
+                        if raw_val == "" or raw_val == ".":
                             continue
-                        try:
-                            rec.info[tag] = val
-                        except KeyError:
-                            sys.stderr.write(f"Warning: skipping tag '{tag}' not present in header\n")
+                        if tag not in out_hdr.info:
+                            continue
+                        info += f";{tag}={raw_val}"
 
+                # Append BND mate annotation
                 if vid and vid in bnd_scalar_map:
-                    blob = bnd_scalar_map[vid]  # single scalar string using pipe delimiter
+                    blob = bnd_scalar_map[vid]
                     if blob:
-                        try:
-                            rec.info["BND_MATE_INFO"] = blob
-                        except KeyError:
-                            sys.stderr.write(
-                                "Warning: BND_MATE_INFO not present in header; "
-                                "ensure Number=1,Type=String in --header\n"
-                            )
-                # outvcf.write(rec)
-                outvcf.write(str(rec)) # to preserve INFO/END filed which is dropped when writing rec directly with pysam; see https://github.com/pysam-developers/pysam/issues/973
+                        info += f";BND_MATE_INFO={blob}"
+
+                record_str = "\t".join(
+                    [chrom, pos, vid, ref, alt, qual, filt, info] + rest
+                )
+                outvcf.write(record_str + "\n")
 
     # Cleanup temp2
     try:
@@ -335,16 +435,22 @@ def annotate_vcf(
 
 def main():
     args = parse_args()
-    # if ouptut path doesn't end with .vcf or .vcf.gz, exit with error
-    if not (args.output.endswith(".vcf")):
+    if not args.output.endswith(".vcf"):
         sys.stderr.write("Error: Output path must end with .vcf\n")
         sys.exit(2)
+    print(f"Info: VCF File: {args.vcf}")
+    print(f"Info: Header File: {args.header}")
+    print(f"Info: Annotations TSV: {args.tsv}")
+    print(f"Info: BND Mate TSV: {args.mate}")
+    print(f"Info: Output VCF: {args.output}")
+    print(f"Info: Write method: {args.write_method}")
     annotate_vcf(
         vcf_path=args.vcf,
         info_header_path=args.header,
         annotations_tsv=args.tsv,
         bnd_mate_tsv=args.mate,
         output_path=args.output,
+        write_method=args.write_method,
     )
     sys.stderr.write(f"Written annotated VCF: {args.output}\n")
 
