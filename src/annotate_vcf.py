@@ -153,7 +153,12 @@ def create_temp_vcf_with_new_header(
         for line in f:
             line = line.strip()
             if line:
-                out_hdr.add_line(line)
+                try:
+                    out_hdr.add_line(line)
+                except ValueError as e:
+                    sys.stderr.write(
+                        f"Warning: failed to add header line '{line}': {e}\n"
+                    )
 
     # Step 4: write header via pysam, then append raw records as text
     with pysam.VariantFile(temp2_vcf, "w", header=out_hdr):
@@ -346,8 +351,8 @@ def annotate_vcf(
 
     # Pass 2 — each branch writes its own header + records
     if write_method == "pysam":
-        with pysam.VariantFile(output_path, "w", header=out_hdr) as outvcf, \
-             pysam.VariantFile(temp_vcf, "r") as invcf:
+        with pysam.VariantFile(temp_vcf, "r") as invcf, \
+             pysam.VariantFile(output_path, "w", header=out_hdr) as outvcf:
             for rec in invcf:
                 annotate_pysam_record(
                     rec, primary_map, primary_tags, bnd_scalar_map, out_hdr
@@ -358,8 +363,8 @@ def annotate_vcf(
         # Write header via pysam, then append string-serialised records
         with pysam.VariantFile(output_path, "w", header=out_hdr):
             pass
-        with open(output_path, "a") as outvcf, \
-             pysam.VariantFile(temp_vcf, "r") as invcf:
+        with pysam.VariantFile(temp_vcf, "r") as invcf, \
+             open(output_path, "a") as outvcf:
             for rec in invcf:
                 annotate_pysam_record(
                     rec, primary_map, primary_tags, bnd_scalar_map, out_hdr
@@ -376,14 +381,15 @@ def annotate_vcf(
         # Records are never parsed by pysam/htslib, so INFO/END is fully preserved.
         with pysam.VariantFile(output_path, "w", header=out_hdr):
             pass
-        with open(output_path, "a") as outvcf, \
-             open(temp_vcf, "rt") as invcf:
+        with open(temp_vcf, "rt") as invcf, \
+             open(output_path, "a") as outvcf:
             for line in invcf:
                 if line.startswith("#"):
                     continue
                 line = line.rstrip("\n")
                 cols = line.split("\t")
                 if len(cols) < 8:
+                    print("Warning: skipping malformed VCF line (expected at least 8 columns): " + line, file=sys.stderr)
                     continue
                 chrom, pos, vid, ref, alt, qual, filt, info = cols[:8]
                 rest = cols[8:] if len(cols) > 8 else []
@@ -413,13 +419,19 @@ def annotate_vcf(
                             continue
                         if tag not in out_hdr.info:
                             continue
-                        info += f";{tag}={raw_val}"
+                        if info == "" or info == ".":
+                            info = f"{tag}={raw_val}"
+                        else:
+                            info += f";{tag}={raw_val}"
 
                 # Append BND mate annotation
                 if vid and vid in bnd_scalar_map:
                     blob = bnd_scalar_map[vid]
                     if blob:
-                        info += f";BND_MATE_INFO={blob}"
+                        if info == "" or info == ".":
+                            info = f"BND_MATE_INFO={blob}"
+                        else:
+                            info += f";BND_MATE_INFO={blob}"
 
                 record_str = "\t".join(
                     [chrom, pos, vid, ref, alt, qual, filt, info] + rest
