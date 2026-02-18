@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="SVscanner v0.1.0"
+VERSION="SVscanner v0.3.0"
 
 # set -x
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
