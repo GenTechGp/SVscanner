@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="SVscanner v0.1.0"
+VERSION="SVscanner v0.3.0"
 
 # set -x
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
@@ -344,7 +344,7 @@ show_output_paths() {
     else
         echo "Annotation outputs dir: ${ANNOTATIONS_OUT}"
         echo "Plots dir: ${ANNOTATIONS_OUT}/plots"
-        echo "SV VCF with repeats annotated: ${ANNOTATED_VCF}"
+        echo "SV VCF with repeats annotated: ${ANNOTATED_VCF}.gz"
     fi
 
 }
