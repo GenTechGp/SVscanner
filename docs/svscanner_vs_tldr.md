@@ -152,7 +152,33 @@ TLDR assigns NA when it cannot classify the insertion. For the 643 NA-family TLD
 | L1 | 49 | 3 |
 | ERV | 21 | 0 |
 
-1,449 TLDR calls have no matching Sniffles2 INS within ±50 bp. 1,144 are NA-family (all non-PASS). Among classified PASS calls, 66 ALU, 10 SVA, and 3 L1 are unmatched — these represent MEI calls that TLDR made confidently but Sniffles2 either missed or placed outside the ±50 bp window.
+1,449 TLDR calls have no matching Sniffles2 INS within ±50 bp. 1,144 are NA-family (all non-PASS).
+
+#### Positional displacement
+
+Widening the matching window resolves a portion of unmatched calls:
+
+| Wiggle | Matched | % of TLDR |
+|--------|---------|-----------|
+| ±50 bp | 2,147 | 59.7% |
+| ±100 bp | 2,267 | 63.0% |
+| ±200 bp | 2,358 | 65.6% |
+| ±500 bp | 2,434 | 67.7% |
+
+287 additional calls match when the window is expanded from ±50 bp to ±500 bp. 1,162 TLDR calls remain unmatched even at ±500 bp.
+
+#### Spanning read support — PASS classified calls
+
+For the 79 PASS classified TLDR-only calls (66 ALU, 10 SVA, 3 L1), SpanReads (reads spanning the insertion breakpoints as reported by TLDR) are substantially lower than for matched PASS calls of the same family:
+
+| Family | TLDR-only PASS | | | Matched PASS | | |
+|--------|---------------|---|---|-------------|---|---|
+| | n | median SpanReads | median LengthIns | n | median SpanReads | median LengthIns |
+| ALU | 66 | 4 | 302 | 1,123 | 20 | 305 |
+| L1 | 3 | 4 | 646 | 113 | 17 | 4,112 |
+| SVA | 10 | 2 | 252 | 22 | 20 | 633 |
+
+For ALU, insert sizes are similar between the two groups (median 302 bp vs 305 bp), so size is not a factor in the ALU mismatch. For SVA, unmatched PASS calls are substantially shorter (median 252 bp) than matched PASS calls (median 633 bp).
 
 ---
 
