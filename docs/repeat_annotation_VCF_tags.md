@@ -3,6 +3,8 @@
 | CALLER_ID               | Description                                                                                                                                                                                                 | Type         |
 |-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
 | RM_CLASSIFICATION       | Repeat class(es) overlapping the SV: SINE, LINE, LTR, DNA, Retroposon, NON-REPETITIVE.                                                                                                                      | list[string] |
+| RM_FAMILY               | RepeatMasker family for each hit, in the same order as RM_CLASSIFICATION (e.g. L1, Alu, ERVL-MaLR). '.' if no family sub-classification exists for that element.                                            | list[string] |
+| RM_SUBFAMILY            | RepeatMasker subfamily (repeat model name) for each hit, in the same order as RM_CLASSIFICATION (e.g. L1M4, AluYa5, MLT1D).                                                                                 | list[string] |
 | RM_SV_COVERAGE          | For each overlap, fraction of SV length covered (overlap_len / sv_len).                                                                                                                                     | list[float]  |
 | RM_ELEMENTS_COVERAGE    | For each overlap, fraction of the repeat element covered by the SV (overlap_len / element_len).                                                                                                             | list[float]  |
 | RM_ELEMENT_PROPORTION   | For each Repeat Masker hit, proportion of the query sequence (SV + flanks) aligning to that element.                                                                                                        | list[float]  |
@@ -27,6 +29,8 @@
 | CALLER_ID             | Record 1                | Record 2 | Record 3         | Record 4          | Note                                                                 |
 |-----------------------|-------------------------|----------|------------------|------------------|----------------------------------------------------------------------|
 | RM_CLASSIFICATION     | LINE,LINE,SINE          | LTR      | NON_REPETITIVE   | NA               | Always available (value or NA)                                       |
+| RM_FAMILY             | L1,L1,Alu               | ERVL-MaLR|                  |                  | Not available if RM_CLASSIFICATION is NON_REPETITIVE or NA; '.' per element if no family exists |
+| RM_SUBFAMILY          | L1M4,L1M4b,AluYa5       | MLT1D    |                  |                  | Not available if RM_CLASSIFICATION is NON_REPETITIVE or NA            |
 | RM_SV_COVERAGE        | 0.53,0.35,0.1           | 1        |                  |                  | Not available if RM_CLASSIFICATION is NON_REPETITIVE or NA            |
 | RM_ELEMENTS_COVERAGE  | 0.09,0.06,0.34          | 0.07     |                  |                  | Not available if RM_CLASSIFICATION is NON_REPETITIVE or NA            |
 | RM_ELEMENT_PROPORTION | 0.09,0.06,0.98          | 0.15     |                  |                  | Not available if RM_CLASSIFICATION is NON_REPETITIVE or NA            |
