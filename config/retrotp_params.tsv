@@ -1,0 +1,57 @@
+# Retrotransposition detection parameters
+# Each row defines one active subfamily and its per-subfamily detection thresholds.
+# Fields:
+#   subfamily            - RepeatMasker repeat name (col 10 of .out), matched against RM_SUBFAMILY
+#   class                - RM class: SINE, LINE, or Retroposon
+#   confidence           - HIGH or LOW; HIGH = well-established active subfamily
+#   min_rm_sv_coverage   - Minimum per-hit RM_SV_COVERAGE fraction for this hit to count
+#   svlen_min            - Minimum abs(SVLEN) in bp
+#   svlen_max            - Maximum abs(SVLEN) in bp
+#
+# References:
+#   Alu:  Konkel MK & Batzer MA (2010) Genome Res; Stewart C et al. (2011) Genome Res
+#   L1:   Beck CR et al. (2010) Cell; Brouha B et al. (2003) PNAS
+#   SVA:  Wang H et al. (2005) Genome Res; Hancks DC & Kazazian HH (2010) Hum Mutat
+subfamily	class	confidence	min_rm_sv_coverage	svlen_min	svlen_max
+AluYa5	SINE	HIGH	0.70	50	350
+AluYa8	SINE	HIGH	0.70	50	350
+AluYb8	SINE	HIGH	0.70	50	350
+AluYb9	SINE	HIGH	0.70	50	350
+AluYc	SINE	HIGH	0.70	50	350
+AluYc1	SINE	HIGH	0.70	50	350
+AluYd2	SINE	HIGH	0.70	50	350
+AluYd3	SINE	HIGH	0.70	50	350
+AluYd8	SINE	HIGH	0.70	50	350
+AluYe2	SINE	HIGH	0.70	50	350
+AluYe5	SINE	HIGH	0.70	50	350
+AluYe6	SINE	HIGH	0.70	50	350
+AluYf1	SINE	HIGH	0.70	50	350
+AluYg6	SINE	HIGH	0.70	50	350
+AluYh3	SINE	HIGH	0.70	50	350
+AluYh7	SINE	HIGH	0.70	50	350
+AluYh9	SINE	HIGH	0.70	50	350
+AluYi6	SINE	HIGH	0.70	50	350
+AluYj	SINE	HIGH	0.70	50	350
+AluYk2	SINE	HIGH	0.70	50	350
+AluYk3	SINE	HIGH	0.70	50	350
+AluYk4	SINE	HIGH	0.70	50	350
+AluYl2	SINE	HIGH	0.70	50	350
+AluYm1	SINE	HIGH	0.70	50	350
+AluYn1	SINE	HIGH	0.70	50	350
+AluYo3	SINE	HIGH	0.70	50	350
+AluSx	SINE	LOW	0.70	50	350
+AluSx1	SINE	LOW	0.70	50	350
+AluSx3	SINE	LOW	0.70	50	350
+AluSx4	SINE	LOW	0.70	50	350
+AluSp	SINE	LOW	0.70	50	350
+AluSq	SINE	LOW	0.70	50	350
+AluSq2	SINE	LOW	0.70	50	350
+AluSq10	SINE	LOW	0.70	50	350
+AluSz	SINE	LOW	0.70	50	350
+AluSz6	SINE	LOW	0.70	50	350
+L1Hs	LINE	HIGH	0.50	100	6500
+L1PA2	LINE	HIGH	0.50	100	6500
+L1PA3	LINE	LOW	0.50	100	6500
+SVA_E	Retroposon	HIGH	0.60	700	4500
+SVA_F	Retroposon	HIGH	0.60	700	4500
+SVA_D	Retroposon	LOW	0.60	700	4500

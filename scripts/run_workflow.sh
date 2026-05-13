@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="SVscanner v0.4.0"
+VERSION="SVscanner v0.5.0"
 
 # set -x
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
@@ -19,6 +19,8 @@ TRF_BINARY=""
 REPEAT_MASKER=""
 BCFTOOLS=""
 BGZIP=""
+
+FLAG_RETROTP=0  # Flag to run retrotransposition detection (0 = off, 1 = on)
 
 NSPLIT_FILES=500
 NTHREADS=$(nproc --all)
@@ -43,6 +45,9 @@ ANNOTATION=$(realpath src/repeat_annotation.py)
 PLOT=$(realpath src/generate_plots.py)
 TRACEBACK_PLOT=$(realpath src/generate_traceback_plots.py)
 VCF_ANNOTATE=$(realpath src/annotate_vcf.py)
+RETROTP_DETECTION=$(realpath src/retrotransposition_detection.py)
+RETROTP_CONFIG=$(realpath config/retrotp_params.tsv)
+RETROTP_HEADER=$(realpath config/retrotp_header.txt)
 
 # Function to show usage
 usage() {
@@ -66,6 +71,7 @@ usage() {
     echo "  --overwrite             Overwrite existing output files (default: no overwrite)"
     echo "  --nthread INT           Number of threads to use (default: all available threads)"
     echo "  --njob INT              Number of parallel jobs for RepeatMasker (default: $MAX_JOBS)"
+    echo "  --retrotp               Run retrotransposition detection (default: off)"
     echo "  --help                  Show this help message"
     echo "  --version               Show version information"
     echo "Version: $VERSION"
@@ -110,6 +116,8 @@ parse_args() {
                 NTHREADS="$2"; shift 2;;
             --njob)
                 MAX_JOBS="$2"; shift 2;;
+            --retrotp)
+                FLAG_RETROTP=1; shift;;
             --help)
                 usage;;
             --version)
@@ -306,6 +314,23 @@ apply_annotations() {
     echo "done"
 }
 
+apply_retrotp_annotations() {
+    echo "Running retrotransposition detection..."
+    RETROTP_TSV=${OUTPUT_DIR}/${PREFIX}retrotp_annotations.tsv
+    RETROTP_ANNOTATED_VCF=${ANNOTATED_VCF%.vcf}_retrotp.vcf
+    python3 ${RETROTP_DETECTION} \
+        --vcf ${ANNOTATED_VCF} \
+        --config ${RETROTP_CONFIG} \
+        --out ${RETROTP_TSV} || die "retrotransposition detection failed"
+    python3 ${VCF_ANNOTATE} \
+        --vcf ${ANNOTATED_VCF} \
+        --header ${RETROTP_HEADER} \
+        --tsv ${RETROTP_TSV} \
+        --output ${RETROTP_ANNOTATED_VCF} || die "retrotp VCF annotation failed"
+    mv ${RETROTP_ANNOTATED_VCF} ${ANNOTATED_VCF} || die "failed to update annotated VCF with retrotp tags"
+    echo "done"
+}
+
 sort_and_index_vcf() {
     # Sort and Index the annotated VCF
     echo "Sort and Index the annotated VCF..."
@@ -333,6 +358,7 @@ show_output_paths() {
         mv ${ANNOTATIONS_OUT}/traceback_plots.pdf ${OUTPUT_DIR}/${PREFIX}traceback_plots.pdf # only if generated
         mv ${ANNOTATIONS_OUT}/vcf_annotate.tsv ${OUTPUT_DIR}/${PREFIX}vcf_annotate.tsv || die "failed to move vcf_annotate.tsv to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/vcf_annotate_bnd_mate.tsv ${OUTPUT_DIR}/${PREFIX}vcf_annotate_bnd_mate.tsv || die "failed to move vcf_annotate_bnd_mate.tsv to ${OUTPUT_DIR}"
+        [[ ${FLAG_RETROTP} -eq 1 && -f ${RETROTP_TSV} ]] && mv ${RETROTP_TSV} ${OUTPUT_DIR}/${PREFIX}retrotp_annotations.tsv
 
         rm -rf ${ANNOTATIONS_OUT} || die "failed to remove ${ANNOTATIONS_OUT}"
         rm -rf ${EXTRACT_SV_FLANKS_OUT} || die "failed to remove ${EXTRACT_SV_FLANKS_OUT}"
@@ -362,6 +388,7 @@ annotation
 plot_classifications
 plot_tracebacks
 apply_annotations
+[[ ${FLAG_RETROTP} -eq 1 ]] && apply_retrotp_annotations
 sort_and_index_vcf
 show_output_paths
 

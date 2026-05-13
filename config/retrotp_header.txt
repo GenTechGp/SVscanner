@@ -1,0 +1,2 @@
+##INFO=<ID=RETROTP_CANDIDATE,Number=.,Type=String,Description="Retrotransposition candidate confidence tier per matched RM hit: HIGH or LOW. Parallel list to RETROTP_ELEMENT. Absent if no candidate hit found.">
+##INFO=<ID=RETROTP_ELEMENT,Number=.,Type=String,Description="Active retrotransposon subfamily per matched RM hit (from RM_SUBFAMILY). Parallel list to RETROTP_CANDIDATE. Absent if no candidate hit found.">

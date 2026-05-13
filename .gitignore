@@ -45,3 +45,4 @@ test/annotated*.vcf
 test/run*
 
 dont_delete/
+.claude/
