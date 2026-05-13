@@ -88,7 +88,9 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 
 1. Go through each row (element) of the `SAMPLE_rm.tab` file.
 
-2. Obtain the element's classification (also known as repeat class), e.g., SINE, LINE, LTR, DNA, Retroposon.
+2. Obtain the element's classification (also known as repeat class), e.g., SINE, LINE, LTR, DNA, Retroposon (col 11 of `.out`, part before `/`). Also extract:
+   - `rm_family`: col 11 part after `/` (e.g. `L1` from `LINE/L1`); set to `.` if col 11 has no `/` (bare class).
+   - `rm_subfamily`: col 10 repeat name (e.g. `L1M4`, `AluYa5`).
 
 3. Filter out elements that are not one of the following:
    - SINE, LINE, LTR, DNA, Retroposon
@@ -170,6 +172,8 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | Key                     | Value (comma-separated string) |
 |-------------------------|--------------------------------|
 | RM_CLASSIFICATION       | Classification (repeat class) of each element in the RM_LIST |
+| RM_FAMILY               | Family of each element in the RM_LIST (e.g. L1, Alu). `.` if no family sub-classification exists for that element. |
+| RM_SUBFAMILY            | Subfamily (repeat model name) of each element in the RM_LIST (e.g. L1M4, AluYa5). |
 | RM_SV_COVERAGE          | `sv_coverage` of each element in the RM_LIST (sum of these values can be > 1) |
 | RM_ELEMENT_COVERAGE     | `element_coverage` of each element in the RM_LIST (sum of these values can be > 1) |
 | RM_ELEMENT_PROPORTION   | `element_proportion` of each element in the RM_LIST (sum of these values can be > 1) |
