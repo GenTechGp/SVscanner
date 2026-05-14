@@ -316,8 +316,8 @@ apply_annotations() {
 
 apply_retrotp_annotations() {
     echo "Running retrotransposition detection..."
-    RETROTP_TSV=${OUTPUT_DIR}/${PREFIX}retrotp_annotations.tsv
-    RETROTP_ANNOTATED_VCF=${ANNOTATED_VCF%.vcf}_retrotp.vcf
+    RETROTP_TSV=${ANNOTATIONS_OUT}/retrotp_annotations.tsv
+    RETROTP_TMP_VCF=${ANNOTATED_VCF%.vcf}.retrotp_tmp.vcf
     python3 ${RETROTP_DETECTION} \
         --vcf ${ANNOTATED_VCF} \
         --config ${RETROTP_CONFIG} \
@@ -326,8 +326,8 @@ apply_retrotp_annotations() {
         --vcf ${ANNOTATED_VCF} \
         --header ${RETROTP_HEADER} \
         --tsv ${RETROTP_TSV} \
-        --output ${RETROTP_ANNOTATED_VCF} || die "retrotp VCF annotation failed"
-    mv ${RETROTP_ANNOTATED_VCF} ${ANNOTATED_VCF} || die "failed to update annotated VCF with retrotp tags"
+        --output ${RETROTP_TMP_VCF} || die "retrotp VCF annotation failed"
+    mv ${RETROTP_TMP_VCF} ${ANNOTATED_VCF} || die "failed to update annotated VCF with retrotp tags"
     echo "done"
 }
 
@@ -358,7 +358,7 @@ show_output_paths() {
         mv ${ANNOTATIONS_OUT}/traceback_plots.pdf ${OUTPUT_DIR}/${PREFIX}traceback_plots.pdf # only if generated
         mv ${ANNOTATIONS_OUT}/vcf_annotate.tsv ${OUTPUT_DIR}/${PREFIX}vcf_annotate.tsv || die "failed to move vcf_annotate.tsv to ${OUTPUT_DIR}"
         mv ${ANNOTATIONS_OUT}/vcf_annotate_bnd_mate.tsv ${OUTPUT_DIR}/${PREFIX}vcf_annotate_bnd_mate.tsv || die "failed to move vcf_annotate_bnd_mate.tsv to ${OUTPUT_DIR}"
-        [[ ${FLAG_RETROTP} -eq 1 && -f ${RETROTP_TSV} ]] && mv ${RETROTP_TSV} ${OUTPUT_DIR}/${PREFIX}retrotp_annotations.tsv
+        [[ ${FLAG_RETROTP} -eq 1 ]] && mv ${ANNOTATIONS_OUT}/retrotp_annotations.tsv ${OUTPUT_DIR}/${PREFIX}retrotp_annotations.tsv
 
         rm -rf ${ANNOTATIONS_OUT} || die "failed to remove ${ANNOTATIONS_OUT}"
         rm -rf ${EXTRACT_SV_FLANKS_OUT} || die "failed to remove ${EXTRACT_SV_FLANKS_OUT}"

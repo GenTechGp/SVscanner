@@ -46,3 +46,4 @@ test/run*
 
 dont_delete/
 .claude/
+test/svscanner_tldr

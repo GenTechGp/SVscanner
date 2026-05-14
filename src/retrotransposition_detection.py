@@ -91,16 +91,17 @@ def detect_retrotp(rec, config):
     Algorithm:
       1. SVTYPE must be INS.
       2. SVLEN must be present.
-      3. For each (RM_CLASSIFICATION[i], RM_SUBFAMILY[i], RM_SV_COVERAGE[i]):
+      3. For each i in zip(RM_SUBFAMILY, RM_SV_COVERAGE):
            - RM_SUBFAMILY[i] must be in config (known-active subfamily).
            - RM_SV_COVERAGE[i] >= config row's min_rm_sv_coverage.
            - abs(SVLEN) within [svlen_min, svlen_max] for that row.
-         If all pass, record (subfamily, confidence) as a hit.
-      4. Return parallel lists of matching subfamilies and confidence tiers,
-         or (None, None) if no hits.
+           Emit (subfamily, confidence) if all pass, else emit ('.', '.').
+      4. Return parallel lists of the same length as RM_SUBFAMILY, with '.'
+         at positions that did not qualify. Return (None, None) if no position
+         qualified (all entries would be '.').
 
-    No deduplication is applied — each RM hit that passes is reported independently,
-    consistent with the parallel-list structure of other SVscanner RM tags.
+    Output lists are parallel to RM_SUBFAMILY — positionally aligned with all
+    other RM_* tags in the SVscanner VCF.
     """
     # Gate: insertions only
     try:
@@ -126,27 +127,33 @@ def detect_retrotp(rec, config):
     rm_subfamily = rm_subfamily + [""] * (n - len(rm_subfamily))
     rm_coverage = list(rm_coverage) + [0.0] * (n - len(rm_coverage))
 
-    hits_subfamily = []
-    hits_confidence = []
+    out_subfamily = []
+    out_confidence = []
+    any_hit = False
 
     for sub, cov in zip(rm_subfamily, rm_coverage):
-        if sub not in config:
+        row = config.get(sub)
+        if row is None:
+            out_subfamily.append(".")
+            out_confidence.append(".")
             continue
-        row = config[sub]
         try:
             cov_f = float(cov)
         except (TypeError, ValueError):
+            out_subfamily.append(".")
+            out_confidence.append(".")
             continue
-        if cov_f < row["min_rm_sv_coverage"]:
+        if cov_f < row["min_rm_sv_coverage"] or not (row["svlen_min"] <= svlen <= row["svlen_max"]):
+            out_subfamily.append(".")
+            out_confidence.append(".")
             continue
-        if not (row["svlen_min"] <= svlen <= row["svlen_max"]):
-            continue
-        hits_subfamily.append(sub)
-        hits_confidence.append(row["confidence"])
+        out_subfamily.append(sub)
+        out_confidence.append(row["confidence"])
+        any_hit = True
 
-    if not hits_subfamily:
+    if not any_hit:
         return None, None
-    return hits_subfamily, hits_confidence
+    return out_subfamily, out_confidence
 
 
 def main():

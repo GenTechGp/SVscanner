@@ -4,6 +4,25 @@ SVscanner optionally flags insertion SVs that are likely retrotransposon inserti
 
 ---
 
+## Design philosophy
+
+RETROTP is a **high-specificity annotation flag**, not a MEI discovery tool. Its role is to add confident biological interpretation to variants already identified by an SV caller, based on RepeatMasker evidence present in the VCF.
+
+Dedicated MEI callers such as [TLDR](https://github.com/adamewing/tldr) achieve higher sensitivity by detecting sequence-level signatures — target site duplications (TSDs), poly-A tails, split-read mapping — that SVscanner cannot access from VCF tags alone. The intended division of labour is:
+
+| Tool | Role | Evidence base |
+|---|---|---|
+| Dedicated MEI caller (TLDR, PALMER, etc.) | MEI discovery | TSD, poly-A tail, sequence-level mapping |
+| SVscanner RETROTP | MEI annotation / confirmation | RM subfamily + SV body coverage + SVLEN |
+
+**Tag absent ≠ not an MEI.** Absence means SVscanner's RM-derived evidence did not meet the specificity threshold — not that the insertion is not a mobile element. For comprehensive MEI discovery, cross-validation with a dedicated MEI caller is recommended.
+
+**Tag present = strong RM evidence.** When `RETROTP_CANDIDATE=HIGH` is set, the variant has satisfied three independent RM-derived criteria: the RM hit matches a known active subfamily by name, SV body coverage meets the per-class threshold, and SVLEN falls within the expected size range for that element class.
+
+This design choice means RETROTP will not match the recall of a dedicated MEI caller. That is intentional.
+
+---
+
 ## Biological background
 
 ### Mechanism
@@ -51,7 +70,7 @@ Not all copies of a retrotransposon class are capable of transposition. Activity
 | Target site duplications (TSDs) | 7–20 bp direct repeats flanking the insertion | **No** — sequence-level, not in current VCF tags |
 | Poly-A tail | 3' poly-A from the RNA intermediate | **No** — positional sequence feature, not tagged |
 
-**Known limitation:** SVscanner cannot confirm TSDs or the poly-A tail position from existing VCF tags alone. Calls are therefore retrotransposition *candidates*, not definitive calls. Confirmation requires sequence-level inspection (e.g., IGV, or dedicated MEI callers such as TLDR).
+**Known limitation:** SVscanner cannot confirm TSDs or the poly-A tail position from existing VCF tags alone. Calls are therefore retrotransposition *candidates*, not definitive calls. This is a deliberate consequence of the high-specificity design: RETROTP only fires on evidence derivable from RM annotations; signatures requiring sequence-level analysis are outside its scope (see [Design philosophy](#design-philosophy)).
 
 ---
 
@@ -72,19 +91,24 @@ For each SV record in the annotated VCF:
        a. RM_SUBFAMILY[i] must be in the active subfamily config (retrotp_params.tsv)
        b. RM_SV_COVERAGE[i] >= config row's min_rm_sv_coverage
        c. abs(SVLEN) in [config row's svlen_min, config row's svlen_max]
-       If all conditions met: record (RM_SUBFAMILY[i], confidence) as a hit
+       If all conditions met: emit (RM_SUBFAMILY[i], confidence) at position i
+       Otherwise:            emit ('.', '.') at position i
 
-  4. If any hits found:
-       RETROTP_ELEMENT   = comma-joined hit subfamilies  (parallel list)
-       RETROTP_CANDIDATE = comma-joined confidence tiers (parallel list)
-     Else: both tags absent
+  4. If at least one position emitted a non-'.' value:
+       RETROTP_ELEMENT   = comma-joined values (same length as RM_SUBFAMILY)
+       RETROTP_CANDIDATE = comma-joined values (same length as RM_SUBFAMILY)
+     Else: both tags absent (record omitted from output TSV entirely)
 ```
 
 ### Notes on list handling
 
-`RM_SUBFAMILY` and `RM_SV_COVERAGE` are parallel lists — one entry per RepeatMasker hit. The algorithm evaluates each hit independently. No deduplication is performed: if RepeatMasker reports two hits of the same subfamily (e.g., fragmented annotation of a single Alu), both are reported in the output lists. This is consistent with the parallel-list convention of other SVscanner RM tags.
+`RETROTP_CANDIDATE` and `RETROTP_ELEMENT` are **parallel to `RM_SUBFAMILY`** — they always have the same number of entries as `RM_SUBFAMILY`. Positions where the RM hit did not qualify (inactive subfamily, coverage below threshold, or SVLEN outside range) receive `'.'` as a placeholder. This is consistent with the parallel-list convention of all other `RM_*` tags in the SVscanner VCF, and allows direct positional comparison between `RETROTP_ELEMENT[i]` and `RM_SUBFAMILY[i]`.
 
-If `RM_SUBFAMILY` and `RM_SV_COVERAGE` have unequal lengths (should not occur in well-formed SVscanner output), the shorter list is padded — coverage defaults to 0.0, which fails the threshold.
+The tag is absent entirely when no position in `RM_SUBFAMILY` qualifies — i.e., when all entries would be `'.'`. This preserves the "absent means no candidate" semantics at the record level.
+
+No deduplication is performed: if RepeatMasker reports two hits of the same active subfamily (e.g., fragmented annotation of a single Alu), both positions are evaluated independently and both report their result.
+
+If `RM_SUBFAMILY` and `RM_SV_COVERAGE` have unequal lengths (should not occur in well-formed SVscanner output), the shorter list is padded — coverage defaults to 0.0, which fails the threshold and emits `'.'`.
 
 ---
 
@@ -114,7 +138,10 @@ ID    RETROTP_CANDIDATE    RETROTP_ELEMENT
 SV001    HIGH                AluYa5
 SV002    HIGH,HIGH           AluYa5,AluYa5
 SV003    HIGH,LOW            L1Hs,L1PA3
+SV004    .,HIGH              .,AluYa5
 ```
+
+In SV004, the first RM hit (e.g. an inactive L1 fragment) did not qualify; the second hit (AluYa5) did. Both positions are emitted, keeping the lists parallel to `RM_SUBFAMILY`.
 
 Only records with at least one candidate hit are written. Absent records are not written (annotate_vcf.py leaves their tags absent).
 
@@ -158,6 +185,10 @@ bash scripts/run_workflow.sh --retrotp --out OUT_DIR --vcf INPUT.vcf.gz --ref RE
 
 ## Known false negative scenarios
 
+- **RepeatMasker reporting generic `AluY` instead of a specific active subfamily.** The RM library contains both the generic `AluY` consensus and specific subfamily consensuses (AluYa5, AluYb8, etc.). For many genuine AluY-clade insertions, RM scores the hit to the generic consensus rather than the specific subfamily, particularly when post-insertion mutations obscure the diagnostic positions. `AluY` is intentionally absent from `retrotp_params.tsv`: it is the ancestral consensus of the clade, not a characterised active lineage in its own right, and adding it would weaken the specificity guarantee of the `HIGH` tier. These cases are best detected by a dedicated MEI caller. Comparison with TLDR on a real long-read dataset shows this is the dominant source of false negatives for the ALU class.
+- **SVA composite annotation by RepeatMasker.** RepeatMasker routinely fragments SVA insertions into their component parts (VNTR domain, SINE-R/HERV-K-derived region, Alu-like domain), none of which carry `SVA_D`, `SVA_E`, or `SVA_F` as the RM repeat name. RETROTP therefore produces no call for SVA insertions even when coverage and SVLEN would otherwise pass. SVA detection is effectively a limitation of RM annotation rather than of the detection logic itself. Dedicated MEI callers handle SVA more reliably.
 - **Heavily 5'-truncated L1 insertions** shorter than `svlen_min` (100 bp) will not be called, even if the RM hit clearly identifies L1Hs.
 - **Young Alu subfamilies not yet in the config** will be missed. The `config/retrotp_params.tsv` should be updated as new active subfamilies are characterised in the literature.
 - **Low-quality SV calls** where RepeatMasker did not annotate the SV body (resulting in no `RM_SUBFAMILY` entries) will produce no call regardless of true content.
+
+**Note — ancient subfamily insertions are not false negatives.** A full-length, high-coverage AluJ or AluS insertion with no RETROTP tag is a correct non-call, not a missed event. Ancient elements cannot transpose: their internal RNA Pol III promoters have accumulated too many post-insertion mutations to support efficient transcription, and they are not competitive substrates for L1 ORF2p machinery. Such a variant most likely represents a segregating polymorphic locus (the insertion is inherited and population-level polymorphic, absent from the reference but present in this individual) or an Alu-mediated NAHR product (a genomic rearrangement, not retrotransposition). The exclusion of ancient subfamilies from `retrotp_params.tsv` is therefore a biological decision, not only a specificity trade-off.

@@ -96,11 +96,11 @@ class TestDetectRetrtp(unittest.TestCase):
         self.assertEqual(confs, ["HIGH", "HIGH"])
 
     def test_multi_hit_mixed_subfamily_one_active(self):
-        """One active hit, one inactive — only the active one passes."""
+        """One active hit, one inactive — active position qualifies, inactive gets '.'."""
         rec = MockRec("chr1", 100, "INS", 280, ["AluYa5", "AluJb"], [0.75, 0.20])
         subs, confs = detect_retrotp(rec, CONFIG)
-        self.assertEqual(subs, ["AluYa5"])
-        self.assertEqual(confs, ["HIGH"])
+        self.assertEqual(subs, ["AluYa5", "."])
+        self.assertEqual(confs, ["HIGH", "."])
 
     def test_multi_hit_mixed_confidence(self):
         """Two active subfamilies of different confidence tiers — both reported in order."""
@@ -115,6 +115,41 @@ class TestDetectRetrtp(unittest.TestCase):
         subs, confs = detect_retrotp(rec, CONFIG)
         self.assertEqual(subs, ["AluYa5", "L1Hs"])
         self.assertEqual(confs, ["HIGH", "HIGH"])
+
+    # --- '.' placeholder and list-length parity ---
+
+    def test_dot_placeholder_coverage_fail(self):
+        """Active subfamily but coverage below threshold — gets '.' not omitted."""
+        rec = MockRec("chr1", 100, "INS", 280, ["AluYa5", "AluSx"], [0.75, 0.50])
+        subs, confs = detect_retrotp(rec, CONFIG)
+        # AluSx cov 0.50 < 0.70 threshold → '.'
+        self.assertEqual(subs, ["AluYa5", "."])
+        self.assertEqual(confs, ["HIGH", "."])
+
+    def test_dot_placeholder_svlen_fail(self):
+        """Active subfamily but SVLEN outside its range — gets '.' not omitted."""
+        rec = MockRec("chr1", 100, "INS", 280, ["AluYa5", "SVA_F"], [0.75, 0.65])
+        subs, confs = detect_retrotp(rec, CONFIG)
+        # SVA_F requires svlen in [700, 4500]; 280 is outside → '.'
+        self.assertEqual(subs, ["AluYa5", "."])
+        self.assertEqual(confs, ["HIGH", "."])
+
+    def test_list_length_parity(self):
+        """Output lists are always the same length as RM_SUBFAMILY."""
+        rec = MockRec("chr1", 100, "INS", 280, ["AluYa5", "AluJb", "AluSx"], [0.75, 0.85, 0.80])
+        subs, confs = detect_retrotp(rec, CONFIG)
+        self.assertEqual(len(subs), 3)
+        self.assertEqual(len(confs), 3)
+        self.assertEqual(subs[0], "AluYa5")
+        self.assertEqual(subs[1], ".")    # AluJb not in config
+        self.assertEqual(subs[2], "AluSx")
+
+    def test_all_inactive_returns_none(self):
+        """All RM hits from inactive subfamilies — tag absent (None, None), not a list of '.'."""
+        rec = MockRec("chr1", 100, "INS", 280, ["AluJb", "AluJr"], [0.85, 0.85])
+        subs, confs = detect_retrotp(rec, CONFIG)
+        self.assertIsNone(subs)
+        self.assertIsNone(confs)
 
     # --- no-call cases ---
 
@@ -192,12 +227,13 @@ class TestDetectRetrtp(unittest.TestCase):
     # --- list padding edge case ---
 
     def test_coverage_list_shorter_than_subfamily_list(self):
-        """Mismatched list lengths are padded with 0.0 coverage — short coverage → no call."""
+        """Mismatched list lengths are padded with 0.0 — first passes, second gets '.'."""
         rec = MockRec("chr1", 100, "INS", 280, ["AluYa5", "AluYa5"], [0.80])
         subs, confs = detect_retrotp(rec, CONFIG)
-        # First hit passes (cov 0.80), second hit gets padded cov 0.0 → fails threshold
-        self.assertEqual(subs, ["AluYa5"])
-        self.assertEqual(len(subs), 1)
+        # First hit passes (cov 0.80), second hit gets padded cov 0.0 → '.'
+        self.assertEqual(subs, ["AluYa5", "."])
+        self.assertEqual(confs, ["HIGH", "."])
+        self.assertEqual(len(subs), 2)
 
 
 class TestLoadConfig(unittest.TestCase):
