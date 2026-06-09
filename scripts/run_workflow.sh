@@ -81,13 +81,13 @@ parse_args() {
             --out)
                 OUTPUT_DIR=$(realpath "$2"); shift 2;;
             --vcf)
-                VCF=$(realpath "$2"); shift 2;;
+                VCF=$(realpath -e "$2" 2>/dev/null) || die "VCF file not found: $2"; shift 2;;
             --ref)
-                REF=$(realpath "$2"); shift 2;;
+                REF=$(realpath -e "$2" 2>/dev/null) || die "Reference file not found: $2"; shift 2;;
             --prefix)
                 PREFIX="$2"; shift 2;;
             --str_bed)
-                STR_BED=$(realpath "$2"); shift 2;;
+                STR_BED=$(realpath -e "$2" 2>/dev/null) || die "STR BED file not found: $2"; shift 2;;
             --species)
                 SPECIES="$2"; shift 2;;
             --min_sv_coverage)
@@ -123,9 +123,13 @@ parse_args() {
         esac
     done
 
-    # Check required arguments
-    if [[ -z "$OUTPUT_DIR" || -z "$VCF" || -z "$REF" ]]; then
-        echo "Error: --out, --vcf and --ref are required."
+    # Check required arguments. --ref is only used to extract flanking regions, which --resume skips.
+    if [[ -z "$OUTPUT_DIR" || -z "$VCF" ]]; then
+        echo "Error: --out and --vcf are required."
+        usage
+    fi
+    if [[ ${RESUME} -ne 1 && -z "$REF" ]]; then
+        echo "Error: --ref is required for a full run."
         usage
     fi
 
@@ -174,7 +178,7 @@ check_required() {
     ${CHECK_REQUIRED} || die "Python version check failed"
 
     [ -z "$OUTPUT_DIR" ] && die "OUTPUT_DIR is not set"
-    [ -z "$REF" ] && die "REF is not set"
+    [[ ${RESUME} -ne 1 && -z "$REF" ]] && die "REF is not set"
     [ -z "$VCF" ] && die "VCF is not set"
     [ -z "$STR_BED" ] && die "STR_BED is not set"
 
