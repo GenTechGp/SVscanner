@@ -19,7 +19,7 @@ def parse_args():
     ap = argparse.ArgumentParser(
         description="Annotate a VCF with repeat-based INFO tags and optional BND mate annotations."
     )
-    ap.add_argument("--vcf", required=True, help="Input VCF (.vcf or .vcf.gz)")
+    ap.add_argument("--vcf", required=True, help="Input VCF (.vcf, .vcf.gz, or .vcf.bgz)")
     ap.add_argument(
         "--header",
         required=True,
@@ -62,10 +62,20 @@ def parse_args():
     return ap.parse_args()
 
 
+def is_gzipped(path: str) -> bool:
+    """Detect gzip/bgzip by magic bytes (0x1f 0x8b) rather than file extension,
+    so .gz, .bgz, or misnamed compressed VCFs are all handled correctly."""
+    try:
+        with open(path, "rb") as fh:
+            return fh.read(2) == b"\x1f\x8b"
+    except OSError:
+        return False
+
+
 def open_text(path: str):
     if not path or not os.path.exists(path):
         return None
-    return gzip.open(path, "rt") if path.endswith(".gz") else open(path, "rt")
+    return gzip.open(path, "rt") if is_gzipped(path) else open(path, "rt")
 
 
 def parse_info_ids_from_header_file(header_file: str) -> List[str]:
@@ -164,7 +174,7 @@ def create_temp_vcf_with_new_header(
     with pysam.VariantFile(temp2_vcf, "w", header=out_hdr):
         pass
 
-    opener = gzip.open if input_vcf.endswith(".gz") else open
+    opener = gzip.open if is_gzipped(input_vcf) else open
     with opener(input_vcf, "rt") as in_fh, open(temp2_vcf, "a") as out_fh:
         for line in in_fh:
             if line.startswith("#"):

@@ -11,6 +11,8 @@ BND_LEN_THRESHOLD=0.25
 
 ANNOTATE_TAGS_HEADER="\
 ##INFO=<ID=RM_CLASSIFICATION,Number=.,Type=String,Description=\"Repeat class(es) overlapping the SV: SINE, LINE, LTR, DNA, Retroposon, NON-REPETITIVE\">\n\
+##INFO=<ID=RM_FAMILY,Number=.,Type=String,Description=\"RepeatMasker family for each hit, in the same order as RM_CLASSIFICATION (e.g. L1, Alu, ERVL-MaLR). '.' if no family sub-classification exists for that element.\">\n\
+##INFO=<ID=RM_SUBFAMILY,Number=.,Type=String,Description=\"RepeatMasker subfamily (repeat model name) for each hit, in the same order as RM_CLASSIFICATION (e.g. L1M4, AluYa5, MLT1D).\">\n\
 ##INFO=<ID=RM_SV_COVERAGE,Number=.,Type=Float,Description=\"For each overlap, fraction of SV length covered (overlap_len/sv_len)\">\n\
 ##INFO=<ID=RM_ELEMENTS_COVERAGE,Number=.,Type=Float,Description=\"For each overlap, fraction of the repeat element covered by the SV (overlap_len/element_len)\">\n\
 ##INFO=<ID=RM_ELEMENT_PROPORTION,Number=.,Type=Float,Description=\"For each RepeatMasker hit, proportion of the query sequence (SV + flanks) aligning to that element\">\n\
@@ -32,7 +34,7 @@ ANNOTATE_TAGS_HEADER="\
 "
 
 ANNOTATE_COLS=["CHROM","POS","ID",\
-               "RM_CLASSIFICATION","RM_SV_COVERAGE","RM_ELEMENTS_COVERAGE","RM_ELEMENT_PROPORTION","RM_RECIPROCAL","RM_TOTAL_SV_COVERAGE",\
+               "RM_CLASSIFICATION","RM_FAMILY","RM_SUBFAMILY","RM_SV_COVERAGE","RM_ELEMENTS_COVERAGE","RM_ELEMENT_PROPORTION","RM_RECIPROCAL","RM_TOTAL_SV_COVERAGE",\
                 "TRF_CLASSIFICATION","TRF_SV_COVERAGE","TRF_PERIOD_SIZE","TRF_COPY_NUMBER","TRF_TOTAL_SV_COVERAGE",\
                 "CONSENSUS_REPEAT","FINAL_CLASSIFICATION","DISEASE_GENE","STRCHIVE_MOTIF","PATHOGENIC_MIN"]
 
@@ -161,7 +163,7 @@ def read_rm(args, sv_info):
             te_end = int(row[6])
             strand = row[8]
             repeat = row[9]
-            family = row[10]
+            family = row[10]  # misnomer: holds full CLASS/FAMILY string e.g. "LINE/L1" — too late to rename
             e_id = f"rm_{row_count}"
             row_count += 1
 
@@ -202,7 +204,8 @@ def read_rm(args, sv_info):
                     element = {
                         'repeat_start': te_start,
                         'repeat_end': te_end,
-                        'family': family,
+                        'family': family,  # CLASS/FAMILY string e.g. "LINE/L1"; see read_rm() note
+                        'rm_family': family.split('/')[1] if '/' in family else '.',
                         'repeat': repeat,
                         'element_coverage' : element_coverage,
                         'element_proportion' : element_proportion,
@@ -694,17 +697,23 @@ def get_annot_info(args, sv_info, sv_id, strchive):
         element_coverage = []
         classifications = []
         element_proportion = []
+        families = []
+        subfamilies = []
         e_id = []
-        
+
         for element in rm_data:
             sv_coverage.append(str(round(element['sv_coverage'], 2)))
             element_coverage.append(str(round(element['element_coverage'], 2)))
             classifications.append(element['classification'])
             element_proportion.append(str(round(element['element_proportion'], 2)))
+            families.append(element['rm_family'])
+            subfamilies.append(element['repeat'])
             e_id.append(element['e_id'])
 
         return {
             'RM_CLASSIFICATION': ','.join(classifications) if classifications else 'NA',
+            'RM_FAMILY': ','.join(families) if families else '.',
+            'RM_SUBFAMILY': ','.join(subfamilies) if subfamilies else '.',
             'RM_ELEMENTS_COVERAGE': ','.join(element_coverage) if element_coverage else '.',
             'RM_ELEMENT_PROPORTION': ','.join(element_proportion) if element_proportion else '.',
             'RM_SV_COVERAGE': ','.join(sv_coverage) if sv_coverage else '.',

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="SVscanner v0.3.0"
+VERSION="SVscanner v0.4.0"
 
 # set -x
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
@@ -34,6 +34,7 @@ DIAGRAM_LEN=100
 
 FLAG_DELETE_TMP_FILES=1 # Flag to delete temporary files (1 = yes, 0 = no)
 FLAG_OVERWRITE=0 # Flag to overwrite existing output files (1 = yes, 0 = no)
+RESUME=0 # Flag to resume from existing TRF/RepeatMasker outputs (1 = yes, 0 = no)
 PREFIX="" # Prefix for output files (default: None)
 
 # Python and bash scripts (keep as it is)
@@ -64,6 +65,7 @@ usage() {
     echo "  --nsplit_files INT      Number of split files (default: $NSPLIT_FILES)"
     echo "  --keep_tmp_files        Keep temporary files (default: delete)"
     echo "  --overwrite             Overwrite existing output files (default: no overwrite)"
+    echo "  --resume                Reuse existing info/rm/trf .tab files and skip TRF + RepeatMasker (default: full run)"
     echo "  --nthread INT           Number of threads to use (default: all available threads)"
     echo "  --njob INT              Number of parallel jobs for RepeatMasker (default: $MAX_JOBS)"
     echo "  --help                  Show this help message"
@@ -79,13 +81,13 @@ parse_args() {
             --out)
                 OUTPUT_DIR=$(realpath "$2"); shift 2;;
             --vcf)
-                VCF=$(realpath "$2"); shift 2;;
+                VCF=$(realpath -e "$2" 2>/dev/null) || die "VCF file not found: $2"; shift 2;;
             --ref)
-                REF=$(realpath "$2"); shift 2;;
+                REF=$(realpath -e "$2" 2>/dev/null) || die "Reference file not found: $2"; shift 2;;
             --prefix)
                 PREFIX="$2"; shift 2;;
             --str_bed)
-                STR_BED=$(realpath "$2"); shift 2;;
+                STR_BED=$(realpath -e "$2" 2>/dev/null) || die "STR BED file not found: $2"; shift 2;;
             --species)
                 SPECIES="$2"; shift 2;;
             --min_sv_coverage)
@@ -106,6 +108,8 @@ parse_args() {
                 FLAG_DELETE_TMP_FILES=0; shift;;
             --overwrite)
                 FLAG_OVERWRITE=1; shift;;
+            --resume)
+                RESUME=1; shift;;
             --nthread)
                 NTHREADS="$2"; shift 2;;
             --njob)
@@ -119,10 +123,19 @@ parse_args() {
         esac
     done
 
-    # Check required arguments
-    if [[ -z "$OUTPUT_DIR" || -z "$VCF" || -z "$REF" ]]; then
-        echo "Error: --out, --vcf and --ref are required."
+    # Check required arguments. --ref is only used to extract flanking regions, which --resume skips.
+    if [[ -z "$OUTPUT_DIR" || -z "$VCF" ]]; then
+        echo "Error: --out and --vcf are required."
         usage
+    fi
+    if [[ ${RESUME} -ne 1 && -z "$REF" ]]; then
+        echo "Error: --ref is required for a full run."
+        usage
+    fi
+
+    # --resume reuses the existing output dir; --overwrite would delete it. Disallow both.
+    if [[ ${RESUME} -eq 1 && ${FLAG_OVERWRITE} -eq 1 ]]; then
+        die "Error: --resume and --overwrite are mutually exclusive (--overwrite deletes the .tab files --resume needs)."
     fi
 
     # Internal directories (keep as it is)
@@ -165,7 +178,7 @@ check_required() {
     ${CHECK_REQUIRED} || die "Python version check failed"
 
     [ -z "$OUTPUT_DIR" ] && die "OUTPUT_DIR is not set"
-    [ -z "$REF" ] && die "REF is not set"
+    [[ ${RESUME} -ne 1 && -z "$REF" ]] && die "REF is not set"
     [ -z "$VCF" ] && die "VCF is not set"
     [ -z "$STR_BED" ] && die "STR_BED is not set"
 
@@ -177,17 +190,22 @@ check_required() {
     echo "Number of Threads: ${NTHREADS}"
     echo "Number of RepeatMasker jobs: ${MAX_JOBS}"
 
-    TRF_BINARY=$(check_binary "TRF" "trf" "trf409.linux64") || exit 1
-    REPEAT_MASKER=$(check_binary "RepeatMasker" "RepeatMasker" "RepeatMasker/RepeatMasker") || exit 1
+    # TRF and RepeatMasker are only needed for a full run; --resume reuses their .tab outputs.
+    if [[ ${RESUME} -ne 1 ]]; then
+        TRF_BINARY=$(check_binary "TRF" "trf" "trf409.linux64") || exit 1
+        REPEAT_MASKER=$(check_binary "RepeatMasker" "RepeatMasker" "RepeatMasker/RepeatMasker") || exit 1
+        parallel=$(command -v parallel) || die "parallel not found"
+        echo "REPEAT_MASKER: ${REPEAT_MASKER}"
+        echo "TRF_BINARY: ${TRF_BINARY}"
+        echo "parallel: ${parallel}"
+    else
+        echo "Resume mode: skipping TRF + RepeatMasker (reusing existing .tab files)"
+    fi
+
     BCFTOOLS=$(check_binary "bcftools" "bcftools" "bcftools-1.21/bcftools") || exit 1
     BGZIP=$(check_binary "bgzip" "bgzip" "htslib-1.21/bgzip") || exit 1
-    parallel=$(command -v parallel) || die "parallel not found"
-
-    echo "REPEAT_MASKER: ${REPEAT_MASKER}"
-    echo "TRF_BINARY: ${TRF_BINARY}"
     echo "BCFTOOLS: ${BCFTOOLS}"
     echo "BGZIP: ${BGZIP}"
-    echo "parallel: ${parallel}"
 
 }
 
@@ -201,6 +219,30 @@ create_output_dir() {
         fi
     fi
 	mkdir -p "${OUTPUT_DIR}" || die "Failed creating ${OUTPUT_DIR}"
+}
+
+check_resume_inputs() {
+    # Verify the checkpoint files from a previous run are present so we can skip TRF + RepeatMasker.
+    echo "Resume mode: validating existing checkpoint files in ${OUTPUT_DIR}..."
+
+    [[ -d "${OUTPUT_DIR}" ]] || die "Cannot resume: output directory ${OUTPUT_DIR} does not exist."
+
+    local missing=0
+    for f in "${INFO_FILE}" "${RM_FILE}" "${TRF_FILE}"; do
+        if [[ ! -s "$f" ]]; then
+            echo "  missing or empty: $f" >&2
+            missing=1
+        fi
+    done
+
+    if [[ ${missing} -eq 1 ]]; then
+        die "Cannot resume: required checkpoint file(s) above are missing or empty.\nThese are produced by a previous full run and must use the same --prefix ('${PREFIX}')."
+    fi
+
+    echo "  found: ${INFO_FILE}"
+    echo "  found: ${RM_FILE}"
+    echo "  found: ${TRF_FILE}"
+    echo "done"
 }
 
 extract_flanking_regions() {
@@ -353,11 +395,15 @@ T0=$(date +%s)
 
 parse_args "$@"
 check_required
-create_output_dir
-extract_flanking_regions
-run_trf
-run_repeatmasker
-process_trf_repeatmasker_output
+if [[ ${RESUME} -eq 1 ]]; then
+    check_resume_inputs
+else
+    create_output_dir
+    extract_flanking_regions
+    run_trf
+    run_repeatmasker
+    process_trf_repeatmasker_output
+fi
 annotation
 plot_classifications
 plot_tracebacks
