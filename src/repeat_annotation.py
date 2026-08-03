@@ -6,6 +6,7 @@ import csv
 import pandas as pd
 import math
 import re
+from rm_element_selection import select_strict, select_greedy, select_dp
 
 BND_LEN_THRESHOLD=0.25
 
@@ -14,9 +15,8 @@ ANNOTATE_TAGS_HEADER="\
 ##INFO=<ID=RM_FAMILY,Number=.,Type=String,Description=\"RepeatMasker family for each hit, in the same order as RM_CLASSIFICATION (e.g. L1, Alu, ERVL-MaLR). '.' if no family sub-classification exists for that element.\">\n\
 ##INFO=<ID=RM_SUBFAMILY,Number=.,Type=String,Description=\"RepeatMasker subfamily (repeat model name) for each hit, in the same order as RM_CLASSIFICATION (e.g. L1M4, AluYa5, MLT1D).\">\n\
 ##INFO=<ID=RM_SV_COVERAGE,Number=.,Type=Float,Description=\"For each overlap, fraction of SV length covered (overlap_len/sv_len)\">\n\
-##INFO=<ID=RM_ELEMENTS_COVERAGE,Number=.,Type=Float,Description=\"For each overlap, fraction of the repeat element covered by the SV (overlap_len/element_len)\">\n\
-##INFO=<ID=RM_ELEMENT_PROPORTION,Number=.,Type=Float,Description=\"For each RepeatMasker hit, proportion of the query sequence (SV + flanks) aligning to that element\">\n\
-##INFO=<ID=RM_RECIPROCAL,Number=1,Type=String,Description=\"Overlap class for the dominant RepeatMasker class: Full if ≥~75% of the SV is covered and each overlapped element is ≥75% covered; Partial if ≥~75% SV coverage but one or more elements are <75% covered; Minimal if <75% SV coverage\">\n\
+##INFO=<ID=RM_ELEMENT_PROPORTION,Number=.,Type=Float,Description=\"For each RepeatMasker hit, fraction of the element's consensus model covered by the alignment (consensus_aligned / consensus_length). Always in [0, 1]; values near 1 indicate a complete element insertion.\">\n\
+##INFO=<ID=RM_RECIPROCAL,Number=1,Type=String,Description=\"Completeness of the dominant RepeatMasker class: Full if the dominant class covers ≥75% of the SV and every element is ≥75% of its consensus model; Partial if ≥75% SV coverage but at least one element is <75% of its consensus; NA otherwise\">\n\
 ##INFO=<ID=RM_TOTAL_SV_COVERAGE,Number=1,Type=Float,Description=\"Proportion of the SV covered by RepeatMasker hits, with overlaps merged to avoid double-counting (0–1)\">\n\
 \
 ##INFO=<ID=TRF_CLASSIFICATION,Number=.,Type=String,Description=\"TRF repeat class(es) overlapping the SV: HOMO (homopolymer), STR, VNTR, TR, or NON-REPETITIVE\">\n\
@@ -34,7 +34,7 @@ ANNOTATE_TAGS_HEADER="\
 "
 
 ANNOTATE_COLS=["CHROM","POS","ID",\
-               "RM_CLASSIFICATION","RM_FAMILY","RM_SUBFAMILY","RM_SV_COVERAGE","RM_ELEMENTS_COVERAGE","RM_ELEMENT_PROPORTION","RM_RECIPROCAL","RM_TOTAL_SV_COVERAGE",\
+               "RM_CLASSIFICATION","RM_FAMILY","RM_SUBFAMILY","RM_SV_COVERAGE","RM_ELEMENT_PROPORTION","RM_RECIPROCAL","RM_TOTAL_SV_COVERAGE",\
                 "TRF_CLASSIFICATION","TRF_SV_COVERAGE","TRF_PERIOD_SIZE","TRF_COPY_NUMBER","TRF_TOTAL_SV_COVERAGE",\
                 "CONSENSUS_REPEAT","FINAL_CLASSIFICATION","DISEASE_GENE","STRCHIVE_MOTIF","PATHOGENIC_MIN"]
 
@@ -136,12 +136,10 @@ def read_rm(args, sv_info):
         
         """
         intersection_rep_cords = repeat_end - repeat_begin
-        intersection_sv_cords = intersection
         repeat_length = repeat_end + repeat_left
         element_proportion = intersection_rep_cords / repeat_length
-        element_coverage = intersection_sv_cords / repeat_length
         # print(f"repeat_length: {repeat_length}")
-        return element_proportion, element_coverage
+        return element_proportion
 
         # $12           #13         $14 
         # repeat_begin  repeat_end  repeat_left
@@ -197,7 +195,7 @@ def read_rm(args, sv_info):
                 # print("query's matching len:{}, repeat's matching len:{}".format(te_end-te_start,repeat_end-repeat_begin))
                 
                 # Add if the transposable element overlaps with the SV
-                element_proportion, element_coverage = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection)
+                element_proportion = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection)
             
                 # Add if the intersection is > min_intersect (e.g. 5%)
                 if sv_coverage and sv_coverage > args.min_sv_coverage:
@@ -207,7 +205,6 @@ def read_rm(args, sv_info):
                         'family': family,  # CLASS/FAMILY string e.g. "LINE/L1"; see read_rm() note
                         'rm_family': family.split('/')[1] if '/' in family else '.',
                         'repeat': repeat,
-                        'element_coverage' : element_coverage,
                         'element_proportion' : element_proportion,
                         'classification': classification, 
                         'sv_coverage' : sv_coverage, 
@@ -445,7 +442,7 @@ def calculate_total_coverage(sv_start, sv_end, element_list):
 
         return str(round(total_length / sv_length, 2))
 
-def filter_rm(sv_info):
+def filter_rm(args, sv_info):
     """
     Determines non-overlapping transposable elements within each element type e.g. SINE
     Input:
@@ -474,29 +471,21 @@ def filter_rm(sv_info):
                 element_list = sv_info[sv_id]['RM'][classification]
                 # pprint(element_list)
 
-                # 2. Sort elements in decreasing order of intersect length
-                sorted_elements = sorted(element_list, key=lambda x: x.get('sv_coverage', 0), reverse=True)
-
-                # 3. Initialize an empty list to hold non-overlapping TEs
-                non_overlapping = []
-
-                # Function to check overlap
-                def is_overlapping(te1, te2):
-                    assert te1['repeat_start'] < te1['repeat_end'], "Invalid interval for te1"
-                    assert te2['repeat_start'] < te2['repeat_end'], "Invalid interval for te2"
-                    return not (te1['repeat_end'] <= te2['repeat_start'] or te2['repeat_end'] <= te1['repeat_start'])
-
-                # 4. Iterate through sorted TEs and select non-overlapping ones
-                for te in sorted_elements:
-                    if all(not is_overlapping(te, existing_te) for existing_te in non_overlapping):
-                        non_overlapping.append(te)
+                # 2-4. Select elements using the chosen filter method
+                sv_length = sv_info[sv_id]['sv_len']
+                if args.rm_filter == 'greedy':
+                    non_overlapping = select_greedy(element_list, sv_length, args.min_sv_coverage)
+                elif args.rm_filter == 'dp':
+                    non_overlapping = select_dp(element_list)
+                else:  # strict (default, current behaviour)
+                    non_overlapping = select_strict(element_list)
                 
                 # Determine if transposition is Full/Partial/Minimal
                 total_sv_coverage = 0
                 element_coverage_complete = True
                 for te in non_overlapping:
                     total_sv_coverage += te['sv_coverage']
-                    if te['element_coverage'] < 0.75:
+                    if te['element_proportion'] < 0.75:
                         element_coverage_complete = False
                 
                 if total_sv_coverage >= 0.75 and element_coverage_complete:
@@ -630,12 +619,11 @@ def create_rm_tsv_record(sv_info, sv_id, tsv_out):
         rm_entries = sv_data['RM_FILTERED']
         for entry in rm_entries:
             sv_coverage = round(entry['sv_coverage'], 2)
-            element_coverage = round(entry['element_coverage'], 2)
-            element_proportion = round(entry['element_proportion'],2)
+            element_proportion = round(entry['element_proportion'], 2)
             classification = entry['classification']
             repeat_type = entry['repeat']
 
-            tsv_out.write(f'{sv_id}\t{chrom}\t{pos}\t{sv_len}\t{sv_type}\t{sv_coverage}\t{element_coverage}\t{element_proportion}\t{classification}\t{repeat_type}\n')
+            tsv_out.write(f'{sv_id}\t{chrom}\t{pos}\t{sv_len}\t{sv_type}\t{sv_coverage}\t{element_proportion}\t{classification}\t{repeat_type}\n')
 
 def create_trf_tsv_record(sv_info, sv_id, tsv_out):
     """
@@ -694,7 +682,6 @@ def get_annot_info(args, sv_info, sv_id, strchive):
     def prepare_rm_data(rm_data):
         """Extract repeat data fields from RepeatMasker records."""
         sv_coverage = []
-        element_coverage = []
         classifications = []
         element_proportion = []
         families = []
@@ -703,7 +690,6 @@ def get_annot_info(args, sv_info, sv_id, strchive):
 
         for element in rm_data:
             sv_coverage.append(str(round(element['sv_coverage'], 2)))
-            element_coverage.append(str(round(element['element_coverage'], 2)))
             classifications.append(element['classification'])
             element_proportion.append(str(round(element['element_proportion'], 2)))
             families.append(element['rm_family'])
@@ -714,7 +700,6 @@ def get_annot_info(args, sv_info, sv_id, strchive):
             'RM_CLASSIFICATION': ','.join(classifications) if classifications else 'NA',
             'RM_FAMILY': ','.join(families) if families else '.',
             'RM_SUBFAMILY': ','.join(subfamilies) if subfamilies else '.',
-            'RM_ELEMENTS_COVERAGE': ','.join(element_coverage) if element_coverage else '.',
             'RM_ELEMENT_PROPORTION': ','.join(element_proportion) if element_proportion else '.',
             'RM_SV_COVERAGE': ','.join(sv_coverage) if sv_coverage else '.',
             'e_id': ','.join(e_id) if e_id else 'NA'
@@ -1314,30 +1299,23 @@ def draw_diagrams(args, sv_info):
         genomic_trf_end = q_pos + element_end
         return genomic_trf_start, genomic_trf_end
     
-    def add_rm_diagrams(rm, rm_output_flanking, rm_output, diagram_length, flanking_scale, sv_scale, f_tsv, sv_tup, id_str, picked_elements):
+    def add_rm_diagrams(rm, rm_filtered, rm_output_flanking, rm_output, diagram_length, flanking_scale, sv_scale, f_tsv, sv_tup, id_str, picked_elements):
         start = sv_tup[0]
         sv_start = sv_tup[1]
         sv_end = sv_tup[2]
-        sv_len = sv_end - sv_start
         query = id_str.split('\t')[2]
         q_chr = query.split(':')[0]
-        q_pos = int(query.split(':')[1].split('-')[0])  # Extract position from query
-        q_end = int(query.split(':')[1].split('-')[1])  # Extract end position from query
+        q_pos = int(query.split(':')[1].split('-')[0])
         sv_type = id_str.split('.')[0]
 
-        
+        # SV & flanking: all raw hits; * = selected by filter_rm
         for classification in rm:
-            elements = rm[classification]
-            # Initialize diagrams for both flanking and SV regions
-            
-            for element in elements:
+            for element in rm[classification]:
                 rm_diagram_flanking = [' '] * diagram_length
-                rm_diagram_sv = [' '] * diagram_length
-                # Process flanking region
                 rm_diagram_flanking = create_rm(rm_diagram_flanking, element, diagram_length, flanking_scale, start)
                 intersection = round(element['sv_coverage'] * 100, 2)
-                element_coverage = round(element['element_coverage'] * 100, 2)
-                intersect_percentage = f'{intersection}%[{element_coverage}%]'
+                element_proportion = round(element['element_proportion'] * 100, 2)
+                intersect_percentage = f'{intersection}%[{element_proportion}%]'
 
                 e_id = element['e_id']
                 if e_id in picked_elements:
@@ -1345,86 +1323,35 @@ def draw_diagrams(args, sv_info):
 
                 rm_start = element['repeat_start']
                 rm_end = element['repeat_end']
-
                 genomic_trf_start, genomic_trf_end = find_genomic_cords(q_pos, sv_type, rm_start, rm_end)
-                
                 rm_element_boundary = f"{q_chr}:{genomic_trf_start}-{genomic_trf_end}"
                 f_tsv.write(f"{e_id}\t{id_str}{classification}\t{intersection}%\t{rm_element_boundary}\n")
 
-                # Process SV region
-                rm_diagram_sv = create_rm(rm_diagram_sv, element, diagram_length, sv_scale, sv_start)
-                repeat_name = element['repeat']
-
-                # Convert diagrams to string format
                 formatted_info = f' {classification}'
                 rm_diagram_flanking = format_trf_info(formatted_info, ''.join(rm_diagram_flanking), diagram_length)
-                rm_diagram_sv = format_trf_info(formatted_info, ''.join(rm_diagram_sv), diagram_length)
-
-                # Append results to respective outputs
                 rm_output_flanking.append(f'{rm_diagram_flanking}\t{intersect_percentage}\t{rm_element_boundary}\t{e_id}\n')
-                rm_output.append(f'{rm_diagram_sv}\t{repeat_name}\n')
 
-        # for classification in rm:
-        #     elements = rm[classification]
-        #     # Initialize diagrams for both flanking and SV regions
-        #     rm_diagram_flanking = [' '] * diagram_length
-        #     rm_diagram_sv = [' '] * diagram_length
-            
-        #     intersect_percentages = []
-        #     rm_elment_boundaries = []
-        #     e_ids = []
-        #     repeat_names = set()
+        # SV Diagram: only filter_rm-selected elements (mirrors VCF tags)
+        for element in rm_filtered:
+            rm_diagram_sv = [' '] * diagram_length
+            rm_diagram_sv = create_rm(rm_diagram_sv, element, diagram_length, sv_scale, sv_start)
+            classification = element['classification']
+            formatted_info = f' {classification}'
+            rm_diagram_sv = format_trf_info(formatted_info, ''.join(rm_diagram_sv), diagram_length)
+            rm_output.append(f'{rm_diagram_sv}\t{element["repeat"]}\n')
 
-        #     for element in elements:
-        #         # Process flanking region
-        #         rm_diagram_flanking = create_rm(rm_diagram_flanking, element, diagram_length, flanking_scale, start)
-        #         intersection = round(element['sv_coverage'] * 100, 2)
-        #         element_coverage = round(element['element_coverage'] * 100, 2)
-        #         intersect_percentages.append(f'{intersection}%[{element_coverage}%]')
-
-        #         e_id = element['e_id']
-        #         if e_id in picked_elements:
-        #             e_id = f"{e_id}*"
-        #         e_ids.append(e_id)
-
-        #         rm_start = element['repeat_start']
-        #         rm_end = element['repeat_end']
-
-        #         genomic_trf_start, genomic_trf_end = find_genomic_cords(q_pos, sv_type, rm_start, rm_end)
-                
-        #         rm_element_boundary = f"{q_chr}:{genomic_trf_start}-{genomic_trf_end}"
-        #         f_tsv.write(f"{e_id}\t{id_str}{classification}\t{intersection}%\t{rm_element_boundary}\n")
-        #         rm_elment_boundaries.append(rm_element_boundary)
-
-        #         # Process SV region
-        #         rm_diagram_sv = create_rm(rm_diagram_sv, element, diagram_length, sv_scale, sv_start)
-        #         repeat_names.add(element['repeat'])
-
-        #     # Convert diagrams to string format
-        #     formatted_info = f' {classification}'
-        #     rm_diagram_flanking = format_trf_info(formatted_info, ''.join(rm_diagram_flanking), diagram_length)
-        #     rm_diagram_sv = format_trf_info(formatted_info, ''.join(rm_diagram_sv), diagram_length)
-
-        #     # Append results to respective outputs
-        #     rm_output_flanking.append(f'{rm_diagram_flanking}\t{",".join(intersect_percentages)}\t{",".join(rm_elment_boundaries)}\t{",".join(e_ids)}\n')
-        #     rm_output.append(f'{rm_diagram_sv}\t{",".join(repeat_names)}\n')
-        
         return rm_output_flanking, rm_output
 
-    def add_trf_diagrams(trf, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, f_tsv, sv_tup, id_str, picked_elements, motif_length=80):
+    def add_trf_diagrams(trf, trf_filtered, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, f_tsv, sv_tup, id_str, picked_elements, motif_length=80):
         start = sv_tup[0]
         sv_start = sv_tup[1]
-        sv_end = sv_tup[2]
-        sv_len = sv_end - sv_start
         query = id_str.split('\t')[2]
         q_chr = query.split(':')[0]
-        q_pos = int(query.split(':')[1].split('-')[0])  # Extract position from query
-        q_end = int(query.split(':')[1].split('-')[1])  # Extract end position from query
+        q_pos = int(query.split(':')[1].split('-')[0])
         sv_type = id_str.split('.')[0]
 
+        # SV & flanking: all raw hits; * = selected by filter_trf
         for repeat in trf:
-            # print(id_str)
-            # Process flanking region
             trf_diagram_flanking = create_trf(repeat, diagram_length, flanking_scale, start)
             intersect = round(repeat['sv_coverage'] * 100, 2)
 
@@ -1436,17 +1363,16 @@ def draw_diagrams(args, sv_info):
                 e_id = f"{e_id}*"
 
             genomic_trf_start, genomic_trf_end = find_genomic_cords(q_pos, sv_type, trf_start, trf_end)
-
-            # Process SV region
             motif = repeat['motif']
-
             trf_boundary = f"{q_chr}:{genomic_trf_start}-{genomic_trf_end}"
             f_tsv.write(f"{e_id}\t{id_str}{repeat['period_size']}\t{intersect}%\t{trf_boundary}\t{motif}\n")
             trf_output_flanking.append(f'{trf_diagram_flanking}\t{intersect}%\t{trf_boundary}\t{e_id}\n')
 
+        # SV Diagram: only filter_trf-selected elements (mirrors VCF tags)
+        for repeat in trf_filtered:
+            motif = repeat['motif']
             if len(motif) > motif_length:
                 motif = f'*{motif_length}plus'
-
             trf_diagram_sv = create_trf(repeat, diagram_length, sv_scale, sv_start)
             trf_output.append(f'{trf_diagram_sv}\t{motif}\n')
 
@@ -1507,9 +1433,8 @@ def draw_diagrams(args, sv_info):
                 assert get_repeat_info(sv_data, 'total_trf_coverage') >= get_repeat_info(sv_data, 'total_trf_nonoverlap_coverage')
                 f_debug.write(f"{sv_id}\t{get_repeat_info(sv_data, 'FINAL_CLASSIFICATION')}\t{len(trf)}\t{get_repeat_info(sv_data, 'total_trf_coverage')}\t{get_repeat_info(sv_data, 'total_trf_nonoverlap_coverage')}\n")
 
-            picked_elements = get_repeat_info(sv_data, 'RM_PICKED_E_IDS')
-            picked_elements += get_repeat_info(sv_data, 'TRF_PICKED_E_IDS')
-            # print(picked_elements)
+            picked_elements = [e['e_id'] for e in sv_data.get('RM_FILTERED', [])]
+            picked_elements += [e['e_id'] for e in sv_data.get('TRF_FILTERED', [])]
             # Check if there is RepeatMasker and TRF
             if rm == [] and trf == []:
                 continue
@@ -1547,12 +1472,15 @@ def draw_diagrams(args, sv_info):
             sv_diagram = format_trf_info('SV Diagram', sv_diagram, diagram_length)
 
             # Create the diagrams for the RepeatMasker and TRF entries
-            rm_output_flanking, rm_output = add_rm_diagrams(rm, rm_output_flanking, rm_output, diagram_length, flanking_scale, sv_scale, f_rm, sv_tup, id_str, picked_elements)
-            trf_output_flanking, trf_output = add_trf_diagrams(trf, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, f_trf, sv_tup, id_str, picked_elements, motif_length=80)
+            rm_filtered = sv_data.get('RM_FILTERED', [])
+            trf_filtered = sv_data.get('TRF_FILTERED', [])
+            rm_output_flanking, rm_output = add_rm_diagrams(rm, rm_filtered, rm_output_flanking, rm_output, diagram_length, flanking_scale, sv_scale, f_rm, sv_tup, id_str, picked_elements)
+            trf_output_flanking, trf_output = add_trf_diagrams(trf, trf_filtered, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, f_trf, sv_tup, id_str, picked_elements, motif_length=80)
 
             # Output the diagrams
             if rm_output_flanking != [] or trf_output_flanking != [] or rm_output != [] or trf_output != []:
-                f.write(f">{id_str}\n")
+                final_class = sv_data.get('FINAL_CLASSIFICATION', '.')
+                f.write(f">{id_str}{final_class}\n")
                 if flanking_diagram:
                     write_flanking(f, flanking_diagram, rm_output_flanking, trf_output_flanking)
                 
@@ -1594,6 +1522,8 @@ def argparser():
     optional_args.add_argument('--max_trf_overlap', required=False, type=positive_float, default=0.1, help="The maximum TRF element overlap to be considered non-overlapping (0 < max_trf_overlap < 1)")
     optional_args.add_argument('--div', required=False, type=positive_float, default=0.05, help="The chosen intervals to prioritise period size over intersection (0 < divisor < 1)")
     optional_args.add_argument('-l', '--len', required=False, type=positive_int, default=100, help="Diagram length")
+    optional_args.add_argument('--rm_filter', required=False, choices=['strict', 'greedy', 'dp'], default='greedy',
+                               help="RM element selection method: greedy=accept element if its unique coverage contribution >= min_sv_coverage (default); strict=non-overlapping greedy; dp=minimum interval cover DP (optimal)")
     optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
     optional_args.add_argument('-h', '--help', action='help', help="Show this help message and exit")
 
@@ -1621,6 +1551,7 @@ if __name__ == "__main__":
     print(f"Info: max_trf_overlap: {args.max_trf_overlap}")
     print(f"Info: divisor: {args.div}")
     print(f"info: Output Directory: {args.out}")
+    print(f"Info: rm_filter: {args.rm_filter}")
     print(f"info: Output vcf header file: {args.out}/vcf_header.txt")
     print(f"info: Output vcf tsv file: {args.out}/vcf_annotate.tsv")
     print(f"info: Output plot tsv file: {args.out}/plot_annotate.tsv")
@@ -1648,7 +1579,7 @@ if __name__ == "__main__":
 
     # Filter overlaps
     divisor = calculate_divisor(args.div)
-    sv_info = filter_rm(sv_info)
+    sv_info = filter_rm(args, sv_info)
     sv_info = filter_trf(args, sv_info, divisor)
 
     # Write to files 

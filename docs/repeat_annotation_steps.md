@@ -7,7 +7,6 @@ The steps followed in annotating the vcf records using TRF and RM information ar
 ![Illustration](/images/annotation_tag_illustration.png)
 
 
-* RM\_ELEMENTS\_COVERAGE = `ri_sv_l/ri_L` e.g. [`r1_sv_l/r1_L`, `r2_sv_l/r2_L`]
 * RM\_ELEMENT\_PROPORTION = `ri_l/ri_L` e.g. [`r1_l/r1_L`, `r2_l/r2_L`]
 * RM\_SV\_COVERAGE = `ri_sv_l/sv_L` e.g. [`r1_sv_l/sv_L`, `r2_sv_l/sv_L`]
   - TRF_SV_COVERAGE is also calculated similarly.
@@ -29,6 +28,7 @@ The steps followed in annotating the vcf records using TRF and RM information ar
 | min_class_sv_coverage | 0.25 | The minimum class sv coverage by repeat elements to be considered repetitive. |
 | div | 0.05 | The chosen intervals to prioritise period size over intersection (0 < divisor < 1). |
 | max_trf_overlap | 0.1 | The maximum TRF element overlap to be considered non-overlapping (0 < max_trf_overlap < 1). |
+| rm_filter | greedy | RM element selection method within each class: `greedy` = accept element if its unique coverage contribution ≥ min_sv_coverage; `strict` = non-overlapping greedy; `dp` = minimum interval cover DP (optimal). |
 
 
 ## Step 1 (TRF preprocessing)
@@ -82,7 +82,7 @@ For **Tandem Repeat Finder (TRF)**, entries are determined by prioritising maxim
 
 
 ## Step 3 (RM preprocessing)
-For **RepeatMasker (RM)**, entries are determined by prioritising those with maximal intersection between the SV and repeat entry. Entries are grouped into their repeat class (e.g. SINE, LINE) and in order of priority non-overlapping entries are selected within each class. Based on the element coverage and SV coverage, the SV is classified as a Full/Partial RECIPROCAL or Minimal.
+For **RepeatMasker (RM)**, entries are determined by prioritising those with maximal intersection between the SV and repeat entry. Entries are grouped into their repeat class (e.g. SINE, LINE) and in order of priority entries are selected within each class using the method specified by `--rm_filter`. Based on the element proportion and SV coverage, each class is assigned a RECIPROCAL of Full, Partial, or Minimal (Minimal is used internally for classification decisions but is never written to the `RM_RECIPROCAL` VCF tag).
 
 ![Illustration](/images/RM_workflow.png)
 
@@ -99,7 +99,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 
 5. Filter out elements where `sv_coverage < args.min_sv_coverage`.
 
-6. Calculate the element's `element_coverage`.
+6. Calculate the element's `element_proportion` (consensus_aligned / consensus_length).
 
 7. Categorise and store elements in a dictionary:
    - Key: classification (e.g., "SINE", "LINE", etc.)
@@ -114,7 +114,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
    - Iterate through the sorted list and pick elements that do not overlap:
      - The element with the highest `sv_coverage` is always picked.
    - Calculate the total SV coverage (TC) using the selected non-overlapping elements for that classification.
-   - If every non-overlapping element's `element_coverage` >= 0.75, then Element Coverage Complete (ECC) is `True`.
+   - If every non-overlapping element's `element_proportion` >= 0.75, then Element Coverage Complete (ECC) is `True`.
    - Determine `RECIPROCAL` for the classification using **Table 1**.
    - Store `RECIPROCAL` for the classification.
 
@@ -175,8 +175,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 | RM_FAMILY               | Family of each element in the RM_LIST (e.g. L1, Alu). `.` if no family sub-classification exists for that element. |
 | RM_SUBFAMILY            | Subfamily (repeat model name) of each element in the RM_LIST (e.g. L1M4, AluYa5). |
 | RM_SV_COVERAGE          | `sv_coverage` of each element in the RM_LIST (sum of these values can be > 1) |
-| RM_ELEMENT_COVERAGE     | `element_coverage` of each element in the RM_LIST (sum of these values can be > 1) |
-| RM_ELEMENT_PROPORTION   | `element_proportion` of each element in the RM_LIST (sum of these values can be > 1) |
+| RM_ELEMENT_PROPORTION   | `element_proportion` of each element in the RM_LIST (always in [0, 1] per element) |
 | TRF_CLASSIFICATION      | Classification of each element in the TRF_LIST |
 | TRF_SV_COVERAGE         | `sv_coverage` of each element in the TRF_LIST |
 | TRF_PERIOD_SIZE         | Period size of each element in the TRF_LIST |
