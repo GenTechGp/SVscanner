@@ -46,3 +46,7 @@ test/run*
 
 dont_delete/
 .claude/
+test/bug0
+test/PAH001_svscanner_out
+test/svscanner_tldr
+test/bug0v2
