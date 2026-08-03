@@ -36,6 +36,8 @@ Although this is not an exhaustive benchmark, the following conclusions can be d
 | 700000                | 500                    | 790      | 161811  | 45:50:49      | 165049             | 98.03815837    |
 | 800000                | 500                    | 907      | exceeded 48 hours limit        |               |                    |                |
 
+*A different dataset with 800000 records (1000 split files) finished in 33 hours
+
 ### Runtime Scaling with Number of Splits (100k records)
 | number of vcf records | number of split files | TRF time (sec) | RM time (sec) | run time (sec) | RM time %     |
 |------------------------|------------------------|----------|---------|-------------------|----------------|
