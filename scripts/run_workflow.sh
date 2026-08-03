@@ -1,15 +1,19 @@
 #!/bin/bash
 
-VERSION="SVscanner v0.4.0"
+VERSION="SVscanner v0.5.1"
 
 # set -x
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
+
+# Repository root, resolved from this script's own location so the workflow can be
+# invoked from any working directory (e.g. via a module that puts it on $PATH).
+SVSCANNER_HOME=$(cd -- "$(dirname -- "$(realpath "${BASH_SOURCE[0]}")")/.." && pwd) || die "could not resolve SVscanner root"
 
 # Input/Output (change)
 #REF=$(realpath "/g/data/te53/ontsv/references/hg38_reference_files/hg38.analysisSet.fa")
 #REF="/g/data/te53/variantcall/referenceresource/genome/pipeface/chm13XX.fasta"
 #REF=$(realpath "/genome/hg38.analysisSet.fa")
-STR_BED=$(realpath "test/databases/STRchive-disease-loci.bed")
+STR_BED="${SVSCANNER_HOME}/test/databases/STRchive-disease-loci.bed"
 
 # Repeat Masker species (change)
 # SPECIES="mammalia"
@@ -38,12 +42,12 @@ RESUME=0 # Flag to resume from existing TRF/RepeatMasker outputs (1 = yes, 0 = n
 PREFIX="" # Prefix for output files (default: None)
 
 # Python and bash scripts (keep as it is)
-CHECK_REQUIRED=$(realpath scripts/check_required_python.sh)
-EXTRACT_SV_FLANKINGS=$(realpath src/extract_sv.py)
-ANNOTATION=$(realpath src/repeat_annotation.py)
-PLOT=$(realpath src/generate_plots.py)
-TRACEBACK_PLOT=$(realpath src/generate_traceback_plots.py)
-VCF_ANNOTATE=$(realpath src/annotate_vcf.py)
+CHECK_REQUIRED="${SVSCANNER_HOME}/scripts/check_required_python.sh"
+EXTRACT_SV_FLANKINGS="${SVSCANNER_HOME}/src/extract_sv.py"
+ANNOTATION="${SVSCANNER_HOME}/src/repeat_annotation.py"
+PLOT="${SVSCANNER_HOME}/src/generate_plots.py"
+TRACEBACK_PLOT="${SVSCANNER_HOME}/src/generate_traceback_plots.py"
+VCF_ANNOTATE="${SVSCANNER_HOME}/src/annotate_vcf.py"
 
 # Function to show usage
 usage() {
