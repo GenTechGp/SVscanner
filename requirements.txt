@@ -1,7 +1,7 @@
 numpy
 pysam
 pandas
-matplotlib
+matplotlib>=3.5  # matplotlib.colormaps[...] used by src/generate_traceback_plots.py
 h5py
 scipy
 pypdf

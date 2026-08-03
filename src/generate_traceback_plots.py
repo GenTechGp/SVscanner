@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.lines import Line2D
 import matplotlib
-import matplotlib.cm as cm
 import numpy as np
 from collections import Counter
 from textwrap import wrap
@@ -152,9 +151,9 @@ def build_distinct_colors(labels):
     labels_sorted = sorted(labels)
     n = len(labels_sorted)
 
-    tab20  = cm.get_cmap('tab20')
-    tab20b = cm.get_cmap('tab20b')
-    tab20c = cm.get_cmap('tab20c')
+    tab20  = matplotlib.colormaps['tab20']
+    tab20b = matplotlib.colormaps['tab20b']
+    tab20c = matplotlib.colormaps['tab20c']
 
     colors = []
     for cmap in [tab20, tab20b, tab20c]:
@@ -167,7 +166,8 @@ def build_distinct_colors(labels):
 
     if len(colors) < n:
         hues = np.linspace(0, 1, n - len(colors), endpoint=False)
-        colors.extend([cm.hsv(h) for h in hues])
+        hsv = matplotlib.colormaps['hsv']
+        colors.extend([hsv(h) for h in hues])
 
     return {lab: colors[i] for i, lab in enumerate(labels_sorted)}
 
