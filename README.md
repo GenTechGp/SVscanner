@@ -80,8 +80,8 @@ It will take about 10 minutes. The majority of time is taken by the RepeatMasker
 
 ```
 module use -a /g/data/if89/apps/modulefiles
-module load SVscanner/0.5.1
-svscanner --out [path_to_out] --vcf [path_to_vcf] --ref [path_to_ref] --nthread $PBS_NCPUS
+module load SVscanner/0.5.2
+svscanner --out [path_to_out] --vcf [path_to_vcf] --ref [path_to_ref]
 ```
 
 `svscanner` wraps [run_workflow.sh](scripts/run_workflow.sh) and takes the same arguments — run `svscanner --help` for the full list, or `module avail SVscanner` to see the installed versions.
@@ -98,9 +98,9 @@ Example job script:
 #PBS -l wd
 
 module use -a /g/data/if89/apps/modulefiles
-module load SVscanner/0.5.1
+module load SVscanner/0.5.2
 
-svscanner --out $OUT --vcf $VCF --ref $REF --nthread $PBS_NCPUS
+svscanner --out $OUT --vcf $VCF --ref $REF
 ```
 
 ```
@@ -108,18 +108,28 @@ qsub -N [job_name] -v OUT=[path_to_out],VCF=[path_to_vcf],REF=[path_to_ref] [job
 ```
 
 ### Notes
-1. **Pass `--nthread $PBS_NCPUS`.** By default the workflow sizes itself from the whole compute node rather than from your PBS allocation, which oversubscribes jobs on shared nodes. `--njob` controls how many RepeatMasker processes run in parallel.
+1. **Thread and job allocation.** The workflow sizes itself from your PBS allocation automatically — `$PBS_NCPUS`, falling back to the CPUs available to the process — so neither flag is normally needed. RepeatMasker is then run as `--njob` parallel processes of `--nthread / --njob` threads each (`-pa`), defaulting to one process per thread. Examples for a job requesting `#PBS -l ncpus=48`:
+
+    | flags | RepeatMasker processes | threads each (`-pa`) | total |
+    |---|---|---|---|
+    | *(none — default)* | 48 | 1 | 48 |
+    | `--njob 24` | 24 | 2 | 48 |
+    | `--njob 12` | 12 | 4 | 48 |
+    | `--njob 8` | 8 | 6 | 48 |
+    | `--nthread 24` | 24 | 1 | 24 |
+    | `--nthread 24 --njob 6` | 6 | 4 | 24 |
+
+    Fewer, wider processes (`--njob 12`) suit a small number of very long query sequences; the default suits many short ones. `--njob` is capped at `--nthread`, and each process always gets at least one thread, so the total never exceeds your allocation. **Versions before `0.5.2` sized themselves from the whole compute node**, so pass `--nthread` explicitly if you load an older module.
 2. Your job needs `storage=gdata/if89` in addition to whichever projects hold your VCF and reference.
 3. `TRF`, `RepeatMasker`, `bcftools`, `bgzip`, `tabix` and `GNU parallel` are loaded automatically as module dependencies, alongside a self-contained Python environment. Nothing needs installing.
 4. Bundled test data and the STRchive BED live under `$SVSCANNER_TESTDATA`. To confirm your setup works (~10 minutes, 100 records):
 ```
 svscanner --vcf $SVSCANNER_TESTDATA/HG002_subset_mini/HG002_subset_mini.vcf.gz \
-          --ref [human genome] --out ./svscanner_test --nthread $PBS_NCPUS
+          --ref [human genome] --out ./svscanner_test
 ```
 5. Database Dfam `3.9`; FamDB Format `2.0`; Partition `7` [dfam39_full.7.h5]: Mammalia (57 GB) is used with RepeatMasker module (`4.2.0`) [more info](https://www.dfam.org/releases/Dfam_3.9/families/FamDB/README.txt) 
 6. A simple workflow runtime benchmark done on NCI Gadi ([link](docs/nci_benchmark.md))
-7. The module installation script lives at `SVscanner/0.5.1/install.sh` in the [ABLeS software installations repository](https://git.nci.org.au/dsr900/ables-software-installations).
-8. To run a development checkout on Gadi instead of the module, use [scripts/nci_gadi_if89.sh](scripts/nci_gadi_if89.sh), which loads the same dependencies as modules.
+7. To run a development checkout on Gadi instead of the module, use [scripts/nci_gadi_if89.sh](scripts/nci_gadi_if89.sh), which loads the same dependencies as modules.
 
 ## Bug Reports
 
