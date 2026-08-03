@@ -1,6 +1,6 @@
 #!/bin/bash
 
-VERSION="SVscanner v0.5.1"
+VERSION="SVscanner v0.5.2"
 
 # set -x
 die() { echo -e "$1" >&2 ; echo ; exit 1 ; } # terminate script
@@ -25,8 +25,12 @@ BCFTOOLS=""
 BGZIP=""
 
 NSPLIT_FILES=500
-NTHREADS=$(nproc --all)
-MAX_JOBS=48          # Max number of RepeatMasker process to run in parallel 
+# Under a scheduler, use the allocation rather than the whole node. Plain `nproc`
+# (unlike `nproc --all`) honours the cpuset/affinity mask, so it is already
+# correct on a shared node; $PBS_NCPUS is preferred where set to make it explicit.
+NTHREADS=${PBS_NCPUS:-$(nproc)}
+MAX_JOBS=""          # Max number of RepeatMasker processes to run in parallel (default: NTHREADS)
+THREADS_PER_JOB=1    # Threads per RepeatMasker job; derived in resolve_thread_counts
 
 # Parameters (change if necessary)
 MIN_SV_COVERAGE=0.05 #The minimum intersection between a repeat element and SV (aka sv_coverage) e.g. 0.05 (5%) (0 < min_sv_coverage < 1)
@@ -70,8 +74,8 @@ usage() {
     echo "  --keep_tmp_files        Keep temporary files (default: delete)"
     echo "  --overwrite             Overwrite existing output files (default: no overwrite)"
     echo "  --resume                Reuse existing info/rm/trf .tab files and skip TRF + RepeatMasker (default: full run)"
-    echo "  --nthread INT           Number of threads to use (default: all available threads)"
-    echo "  --njob INT              Number of parallel jobs for RepeatMasker (default: $MAX_JOBS)"
+    echo "  --nthread INT           Number of threads to use (default: \$PBS_NCPUS if set, else all threads available to this process)"
+    echo "  --njob INT              Number of parallel jobs for RepeatMasker (default: same as --nthread)"
     echo "  --help                  Show this help message"
     echo "  --version               Show version information"
     echo "Version: $VERSION"
@@ -155,6 +159,21 @@ parse_args() {
     ANNOTATED_VCF=${OUTPUT_DIR}/${PREFIX}annotated.vcf
 }
 
+resolve_thread_counts() {
+    # One RepeatMasker process per available thread by default, matching the
+    # previous behaviour on a full node (48 jobs x 1 thread).
+    [[ -z "${MAX_JOBS}" ]] && MAX_JOBS=${NTHREADS}
+
+    # Never run more parallel jobs than we have threads, and never hand
+    # RepeatMasker '-pa 0', which integer division would otherwise produce
+    # whenever MAX_JOBS exceeds NTHREADS.
+    (( MAX_JOBS < 1 )) && MAX_JOBS=1
+    (( MAX_JOBS > NTHREADS )) && MAX_JOBS=${NTHREADS}
+
+    THREADS_PER_JOB=$(( NTHREADS / MAX_JOBS ))
+    (( THREADS_PER_JOB < 1 )) && THREADS_PER_JOB=1
+}
+
 check_binary() {
     local name=$1
     shift
@@ -192,7 +211,7 @@ check_required() {
     echo "Input BED: ${STR_BED}"
 
     echo "Number of Threads: ${NTHREADS}"
-    echo "Number of RepeatMasker jobs: ${MAX_JOBS}"
+    echo "Number of RepeatMasker jobs: ${MAX_JOBS} (${THREADS_PER_JOB} thread(s) each)"
 
     # TRF and RepeatMasker are only needed for a full run; --resume reuses their .tab outputs.
     if [[ ${RESUME} -ne 1 ]]; then
@@ -278,8 +297,8 @@ run_repeatmasker() {
     (( ${#fa_files[@]} == 0 )) && die "No FASTA files found in ${EXTRACT_SV_FLANKS_OUT}"
     shopt -u nullglob
 
-    # Run RepeatMasker in parallel with error sensitivity
-    THREADS_PER_JOB=$((NTHREADS / MAX_JOBS)) # Number of threads allocated to each RepeatMasker job (internal)
+    # Run RepeatMasker in parallel with error sensitivity.
+    # MAX_JOBS and THREADS_PER_JOB are set by resolve_thread_counts.
     find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | parallel --halt now,fail=1 -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} -species ${SPECIES} > {}.log 2>&1" || die "RepeatMasker failed"
 
     cd - || die "cd - failed"
@@ -398,6 +417,7 @@ show_output_paths() {
 T0=$(date +%s)
 
 parse_args "$@"
+resolve_thread_counts
 check_required
 if [[ ${RESUME} -eq 1 ]]; then
     check_resume_inputs
