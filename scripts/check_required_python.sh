@@ -23,9 +23,27 @@ modules=(
     scipy
 )
 
+# pysam bundles its own htslib and <0.24.0 resolves INFO/END against INFO/SVLEN
+# differently. src/extract_sv.py no longer depends on that (see get_sv_end), so
+# this is a warning rather than an error - but the version belongs in the log:
+# an unexplained change in extracted coordinates is almost always this.
+PYSAM_MIN="0.24.0"
+
 missing=()
+declare -A mod_version mod_path
+
 for mod in "${modules[@]}"; do
-    python3 -c "import $mod" 2>/dev/null || missing+=("$mod")
+    if ! info=$(python3 -c "
+import importlib
+m = importlib.import_module('${mod}')
+print(getattr(m, '__version__', 'unknown'))
+print(getattr(m, '__file__', 'unknown'))
+" 2>/dev/null); then
+        missing+=("$mod")
+        continue
+    fi
+    mod_version["$mod"]="${info%%$'\n'*}"
+    mod_path["$mod"]="${info#*$'\n'}"
 done
 
 if (( ${#missing[@]} )); then
@@ -38,6 +56,15 @@ if (( ${#missing[@]} )); then
     exit 1
 fi
 
-echo "Python version: $PY_VER"
-echo "Required modules are installed: ${modules[*]}"
+echo "Python version: $PY_VER ($(command -v python3))"
+echo "Required modules are installed:"
+for mod in "${modules[@]}"; do
+    printf '  %-12s %-10s %s\n' "$mod" "${mod_version[$mod]}" "${mod_path[$mod]}"
+done
+
+if [[ "$(printf '%s\n' "$PYSAM_MIN" "${mod_version[pysam]}" | sort -V | head -n1)" != "$PYSAM_MIN" ]]; then
+    echo "Warning: pysam ${mod_version[pysam]} is older than ${PYSAM_MIN}, which SVscanner is tested and deployed with." >&2
+    echo "Warning: SV spans are resolved by src/extract_sv.py, so results should be unaffected." >&2
+fi
+
 exit 0
