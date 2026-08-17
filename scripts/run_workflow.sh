@@ -415,7 +415,7 @@ show_output_paths() {
 }
 
 T0=$(date +%s)
-
+echo "SVscanner version: ${VERSION}"
 parse_args "$@"
 resolve_thread_counts
 check_required
@@ -438,7 +438,7 @@ show_output_paths
 T1=$(date +%s)
 ELAPSED_TIME=$((T1 - T0))
 echo "The SVscanner pipeline took ${ELAPSED_TIME} seconds"
-
+echo "SVscanner version: ${VERSION}"
 echo "$(date)"
 echo "Success!"
 exit 0

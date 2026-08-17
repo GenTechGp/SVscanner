@@ -1461,8 +1461,9 @@ def draw_diagrams(args, sv_info):
             # Don't generate the flanking diagram if sv ends after the flanking
             flanking_diagram = None
             if sv_end > end and sv_end_scaled > 100:
-                id_str = id_str.replace('\t', ' ')
-                print(f"Unable to generate sv + flanking diagram for {id_str}")
+                # Don't modify id_str itself: it stays tab-delimited for downstream parsing
+                id_str_msg = id_str.replace('\t', ' ')
+                print(f"Unable to generate sv + flanking diagram for {id_str_msg}")
             else:
                 flanking_diagram = create_diagram(diagram_length, sv_start_scaled, sv_end_scaled)
                 flanking_diagram = format_trf_info('SV & flanking', flanking_diagram, diagram_length)

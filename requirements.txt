@@ -1,5 +1,10 @@
 numpy
-pysam
+# pysam bundles its own htslib. <0.24.0 (htslib <1.22) sets a record's rlen from
+# INFO/END alone, >=0.24.0 from max(INFO/END, POS+|SVLEN|), so record.stop is not
+# comparable across the boundary. src/extract_sv.py resolves SV spans itself and
+# is version-independent (see get_sv_end), but 0.24.0 is what SVscanner is tested
+# and deployed with - the if89 module pins it.
+pysam>=0.24.0
 pandas
 matplotlib>=3.5  # matplotlib.colormaps[...] used by src/generate_traceback_plots.py
 h5py

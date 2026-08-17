@@ -60,10 +60,61 @@ def get_svlen(record):
     - If SVLEN is missing, return None.
     """
     svlen = record.info.get("SVLEN", None)
-    
-    if isinstance(svlen, tuple):  
+
+    if isinstance(svlen, tuple):
         return svlen[0]  # Take the first value if it's a tuple
     return svlen  # Return directly if it's an int or None
+
+def get_info_end(record):
+    """
+    Extracts INFO/END exactly as the caller wrote it, or None if absent.
+
+    pysam never exposes END through record.info on any version - htslib
+    consumes it into the record's rlen - but the formatted line still carries
+    the original value, so read it back from there. Needed because record.stop
+    is not a faithful report of what the caller wrote (see get_sv_end).
+    """
+    try:
+        info_col = str(record).split('\t')[7]
+    except IndexError:
+        return None
+
+    for field in info_col.split(';'):
+        if field.startswith("END="):
+            try:
+                return int(field[len("END="):])
+            except ValueError:
+                return None
+    return None
+
+def get_sv_end(record):
+    """
+    Returns the END coordinate of the SV on the reference used to size the
+    extracted query window.
+
+    Do not use record.stop directly. pysam derives it via its bundled htslib,
+    which changed how symbolic ALTs are resolved:
+
+        htslib <1.22 (pysam <=0.23.3): rlen from INFO/END
+        htslib >=1.22 (pysam >=0.24.0): rlen from max(INFO/END, POS+|SVLEN|)
+
+    So a caller that emits END and SVLEN inconsistently yields a different
+    window on each pysam version - e.g. Sniffles2.DEL.6022S16 (chrX:1,
+    END=23359, SVLEN=-29058) differs by 5700 bp, and the smaller window does
+    not contain its own SV, which repeat_annotation.py measures with SVLEN.
+
+    Taking the max here reproduces the pysam >=0.24.0 value on every version,
+    so the window always covers both interpretations. For well-formed records
+    it is exactly record.stop. INS consumes no reference bases - its SVLEN is
+    inserted sequence, not a span - so its END is POS.
+    """
+    if record.info.get("SVTYPE", None) == "INS":
+        return record.pos
+
+    svlen = get_svlen(record)
+    if svlen is None:
+        return record.stop
+    return max(record.stop, record.pos + abs(svlen))
 
 def process_fasta(input_fasta, output_fasta, new_title):
     """
@@ -108,7 +159,7 @@ def handle_vcf_types_using_bcftools(args, vcf, fasta, record, chrom_lengths, i, 
     # Determine chrom:start-end values
     chrom = record.chrom
     start = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
-    end = record.stop+f_len-1 # End position of the REF allele
+    end = get_sv_end(record)+f_len-1 # End position of the REF allele
     chrom_length = chrom_lengths.get(chrom, 0)
     end = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
     
@@ -150,15 +201,16 @@ def handle_vcf_types_ins(args, vcf, fasta, record, chrom_lengths, i):
     svID = f'{svtype}.{i}'
 
     assert record.pos == record.stop
+    sv_end = get_sv_end(record)
 
     # Determine chrom:start-end values
     chrom = record.chrom
     start_fl = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
     end_fl = record.pos-1 # End position of the REF allele
 
-    start_fr = record.stop+1
+    start_fr = sv_end+1
     chrom_length = chrom_lengths.get(chrom, 0)
-    end = record.stop+f_len-1 # End position of the REF allele
+    end = sv_end+f_len-1 # End position of the REF allele
     end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
     try:
@@ -214,7 +266,7 @@ def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
     # Determine chrom:start-end values
     chrom = record.chrom
     start_f = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
-    end = record.stop+f_len-1 # End position of the REF allele
+    end = get_sv_end(record)+f_len-1 # End position of the REF allele
     chrom_length = chrom_lengths.get(chrom, 0)
     end_f = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
@@ -222,7 +274,7 @@ def handle_vcf_types_del(args, vcf, fasta, record, chrom_lengths, i):
         seq = fasta.fetch(region=f"{chrom}:{start_f}-{end_f}")
     except Exception as e:
         print(f"Error fetching sequence for ({record.id}): {e}")
-        raise    
+        raise
     query_seq = seq
     seq_len = len(query_seq)
 
@@ -249,14 +301,15 @@ def handle_vcf_types_dup(args, vcf, fasta, record, chrom_lengths, i):
     start_fl = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
     end_fl = record.pos-1 # End position of the REF allele
 
-    start_fr = record.stop
+    sv_end = get_sv_end(record)
+    start_fr = sv_end
     chrom_length = chrom_lengths.get(chrom, 0)
-    end = record.stop+f_len-1 # End position of the REF allele
+    end = sv_end+f_len-1 # End position of the REF allele
     end_fr = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
     try:
         seq_fl = fasta.fetch(region=f"{chrom}:{start_fl}-{end_fl}")
         seq_fr = fasta.fetch(region=f"{chrom}:{start_fr}-{end_fr}")
-        seq = fasta.fetch(region=f"{chrom}:{record.pos}-{record.stop-1}")
+        seq = fasta.fetch(region=f"{chrom}:{record.pos}-{sv_end-1}")
     except Exception as e:
         print(f"Error fetching sequence for ({record.id}): {e}")
         raise
@@ -288,7 +341,7 @@ def handle_vcf_types_inv(args, vcf, fasta, record, chrom_lengths, i):
     # Determine chrom:start-end values
     chrom = record.chrom
     start_f = max(record.pos-f_len, 1) # Ensure start is >= 1 (1-based)
-    end = record.stop+f_len-1 # End position of the REF allele
+    end = get_sv_end(record)+f_len-1 # End position of the REF allele
     chrom_length = chrom_lengths.get(chrom, 0)
     end_f = min(end, chrom_length)  # Ensure end doesn't exceed chromosome length
 
@@ -454,9 +507,16 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
     
     chrom = record.chrom
     chrom_length = chrom_lengths.get(chrom, 0)
-    if record.stop - 1 > chrom_length:
-        print(f"Error: record (ID:{record.id}) stop ({record.stop-1}) exceeds chromosome length ({chrom_length}) for {chrom}")
+    sv_end = get_sv_end(record)
+    if sv_end - 1 > chrom_length:
+        print(f"Error: record (ID:{record.id}) stop ({sv_end-1}) exceeds chromosome length ({chrom_length}) for {chrom}")
         return 15
+
+    # Compare SVLEN against the caller's own INFO/END, not record.stop: on
+    # pysam >=0.24.0 record.stop is itself derived from SVLEN for symbolic
+    # ALTs, which silently turns this check into a tautology.
+    info_end = get_info_end(record)
+    reported_end = info_end if info_end is not None else record.stop
 
     if "SVLEN" in record.info:
         svlen = abs(get_svlen(record))
@@ -464,11 +524,11 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
             return 6
         if svlen > args.max:
             return 7
-        if svtype not in {"DEL", "INS"} and svlen != record.stop - record.pos:
+        if svtype not in {"DEL", "INS"} and svlen != reported_end - record.pos:
             return 13
-    
-    if svtype == "INS" and record.pos != record.stop:
-        print(f"Error: record (ID:{record.id}) is an INS with end ({record.end}) not equal to pos ({record.pos})")
+
+    if svtype == "INS" and record.pos != reported_end:
+        print(f"Error: record (ID:{record.id}) is an INS with end ({reported_end}) not equal to pos ({record.pos})")
         return 15
 
     # Check if the ALT allele is symbolic (e.g., "<INS>", "<DEL>")
@@ -604,8 +664,13 @@ def write_id_file(args, vcf_records_arr, record_stats_arr):
     with open(args.info, "a") as f:
         for record_stats in record_stats_arr:
             record = vcf_records_arr[record_stats_arr.index(record_stats)]
+            svID = record_stats[0]
+            # BND rows carry mate coordinates assigned onto a copied record, so
+            # keep their stop; everything else reports the same resolved end
+            # used to size the extracted window.
+            end = record.stop if svID.startswith("BND") else get_sv_end(record)
             # info="${chr}\t${startFlank}\t${endFlank}\t${pos}\t${end}\t${len}\t${id}\t${callerID}\t${ref}\t${alt}"
-            info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, record.stop, record_stats[1], record_stats[0], record.id)
+            info="{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(record.chrom, record_stats[3], record_stats[3]+record_stats[2], record.pos, end, record_stats[1], svID, record.id)
             # print(info)
             f.write(f"{info}\n")
 
