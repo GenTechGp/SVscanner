@@ -662,8 +662,7 @@ def concat_fasta(args, balanced_seq_bins):
 
 def write_id_file(args, vcf_records_arr, record_stats_arr):
     with open(args.info, "a") as f:
-        for record_stats in record_stats_arr:
-            record = vcf_records_arr[record_stats_arr.index(record_stats)]
+        for record, record_stats in zip(vcf_records_arr, record_stats_arr):
             svID = record_stats[0]
             # BND rows carry mate coordinates assigned onto a copied record, so
             # keep their stop; everything else reports the same resolved end
