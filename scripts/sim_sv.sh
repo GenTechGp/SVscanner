@@ -21,10 +21,9 @@ SAM="${OUTPUT_DIR}/mapped.sam"
 BAM="${OUTPUT_DIR}/mapped.bam"
 VCF="${OUTPUT_DIR}/sniffles.vcf"
 
-SVSCANNER_VENV_PATH="/data/hiruna/SVscanner/svscanner"
-SNIFFLES_VENV_PATH="/data/install/sniffles_260"
-# VISOR_VENV_PATH="/data/hiruna/SVtoolkit/VISOR-1.1.2.1/visor"
-VISOR_VENV_PATH="/data/hiruna/VISOR/visor_dev"
+SVSCANNER_VENV_PATH="/data/hirsam/SVscanner/svscanner"
+SNIFFLES_VENV_PATH="/data/install/sniffles_280"
+VISOR_VENV_PATH="/data/hirsam/VISOR/visor_dev"
 PACBIO_CCS="/data/install/ccs_v6.4.0/ccs"
 BCFTOOLS="bcftools"
 TABIX="tabix"
@@ -34,7 +33,8 @@ SIMULATE_SV="src/simulate_sv.py"
 PBSIM3="/data/install/pbsim3-3.0.5/src/pbsim"
 PBSIM3_DATA="/data/install/pbsim3-3.0.5/data"
 
-SVSCANNER="scripts/run_workflow.sh"
+SVSCANNER_IMAGE="ghcr.io/gentechgp/svscanner:0.7.0"
+DFAM_DIR="/data/hirsam/dfam39"
 
 TRF_BED="/genome/hg38.trf.bed"
 MOBILE_ELEMENTS="test/databases/dfam_selected_species.fasta"
@@ -112,8 +112,8 @@ variant_call_sniffles() {
         exit 1
     fi
     source "${SNIFFLES_VENV_PATH}/bin/activate"
-    # sniffles --reference ${base_ref} --input ${BAM} --vcf ${VCF} --phase --minsvlen 50 --allow-overwrite  --no-qc || die "sniffles failed"
-    sniffles --reference ${base_ref} --input ${BAM} --vcf ${VCF} --minsvlen 50 --allow-overwrite  --output-rnames || die "sniffles failed"
+    # Sniffles >=2.7.0 skips contigs <1Mbp by default. at low SV_COUNT; --all-contigs is required.
+    sniffles --reference ${base_ref} --input ${BAM} --vcf ${VCF} --minsvlen 50 --allow-overwrite --all-contigs --output-rnames || die "sniffles failed"
     deactivate
     rm -rf ${VCF}.gz && ${BGZIP} -c ${VCF} > ${VCF}.gz && ${TABIX} -p vcf ${VCF}.gz || die "bgzip and tabix failed"
 }
@@ -122,9 +122,18 @@ run_svscanner() {
     base_ref=$1
     vcf=$2
 
-    source "${SVSCANNER_VENV_PATH}/bin/activate"
-    ${SVSCANNER} --out ${OUTPUT_DIR}/svscanner --vcf ${vcf} --ref ${base_ref} > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
-    deactivate
+    # base_ref and vcf are always under OUTPUT_DIR; re-anchor them at /data so a
+    # single -v "${OUTPUT_DIR}:/data" mount covers both.
+    rel_ref=${base_ref#${OUTPUT_DIR}/}
+    rel_vcf=${vcf#${OUTPUT_DIR}/}
+
+    docker run --rm \
+      --user "$(id -u):$(id -g)" \
+      -v "${DFAM_DIR}:/dfam:ro" \
+      -v "${OUTPUT_DIR}:/data" \
+      "${SVSCANNER_IMAGE}" \
+      svscanner --dfam_dir /dfam --out /data/svscanner --vcf "/data/${rel_vcf}" --ref "/data/${rel_ref}" \
+      > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
 }
 
 create_output_dir

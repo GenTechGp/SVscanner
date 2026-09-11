@@ -22,6 +22,11 @@ STR_BED="${SVSCANNER_HOME}/test/databases/STRchive-disease-loci.bed"
 # SPECIES="mammalia"
 SPECIES="human"
 
+# RepeatMasker search engine (-e), e.g. rmblast, hmmer. Empty means RepeatMasker uses
+# its own configured default - HMMER on the NCI if89 install, RMBlast in the container
+# (see docs/docker.md).
+ENGINE=""
+
 TRF_BINARY=""
 REPEAT_MASKER=""
 BCFTOOLS=""
@@ -71,6 +76,7 @@ usage() {
     echo "  --prefix NAME           Prefix for output files (default: None; e.g. Project_, Project.)"
     echo "  --str_bed FILE          Path to STR BED file (default: $STR_BED)"
     echo "  --species NAME          Species name for RepeatMasker (default: $SPECIES)"
+    echo "  --engine NAME           RepeatMasker search engine, e.g. rmblast, hmmer (default: RepeatMasker's own configured default)"
     echo "  --dfam_dir DIR          Directory of Dfam FamDB partition files (dfam*.h5) for RepeatMasker to use"
     echo "                          in addition to those bundled with the RepeatMasker install."
     echo "                          Defaults to \$SVSCANNER_DFAM_DIR; unset means use the install's own libraries."
@@ -108,6 +114,8 @@ parse_args() {
                 STR_BED=$(realpath -e "$2" 2>/dev/null) || die "STR BED file not found: $2"; shift 2;;
             --species)
                 SPECIES="$2"; shift 2;;
+            --engine)
+                ENGINE="$2"; shift 2;;
             --dfam_dir)
                 DFAM_DIR=$(realpath -e "$2" 2>/dev/null) || die "Dfam directory not found: $2"; shift 2;;
             --min_sv_coverage)
@@ -400,10 +408,12 @@ warm_repeatmasker_cache() {
     echo "Preparing RepeatMasker libraries for species '${SPECIES}' (single process)..."
     local T_WARM_START T_WARM_END
     T_WARM_START=$(date +%s)
+    local engine_flag=""
+    [[ -n "${ENGINE}" ]] && engine_flag="-e ${ENGINE}"
     # Run from inside warm_dir: createTempDir uses cwd(), not -dir, so RepeatMasker would
     # otherwise scatter RM_<pid> directories through the caller's directory. Same reason
     # run_repeatmasker cds into RM_TMP before the fan-out.
-    if ! ( cd "${warm_dir}" && ${REPEAT_MASKER} "${warm_fa}" -pa 1 -dir "${warm_dir}" -species "${SPECIES}" > "${warm_log}" 2>&1 ); then
+    if ! ( cd "${warm_dir}" && ${REPEAT_MASKER} "${warm_fa}" -pa 1 -dir "${warm_dir}" -species "${SPECIES}" ${engine_flag} > "${warm_log}" 2>&1 ); then
         echo "RepeatMasker reported (${warm_log}):" >&2
         tail -n 20 "${warm_log}" | sed 's/^/  /' >&2
         die "RepeatMasker could not build its libraries for species '${SPECIES}'"
@@ -451,7 +461,9 @@ run_repeatmasker() {
 
     # Run RepeatMasker in parallel with error sensitivity.
     # MAX_JOBS and THREADS_PER_JOB are set by resolve_thread_counts.
-    if ! find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | parallel --halt now,fail=1 -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} -species ${SPECIES} > {}.log 2>&1"; then
+    local engine_flag=""
+    [[ -n "${ENGINE}" ]] && engine_flag="-e ${ENGINE}"
+    if ! find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | parallel --halt now,fail=1 -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} -species ${SPECIES} ${engine_flag} > {}.log 2>&1"; then
         # parallel reports only the failing command line; the reason is in that job's own
         # log. Surface it - most often a FamDB partition that does not cover --species.
         local last_log
@@ -538,7 +550,13 @@ apply_annotations() {
 sort_and_index_vcf() {
     # Sort and Index the annotated VCF
     echo "Sort and Index the annotated VCF..."
-    ${BCFTOOLS} sort -Oz -o ${ANNOTATED_VCF}.gz ${ANNOTATED_VCF} || die "${BCFTOOLS} sort failed"
+    # bcftools sort spills to --temp-dir once the annotated VCF exceeds its
+    # 768M in-memory buffer (routine for large cohorts). Default temp-dir is
+    # /tmp, which on HPC nodes (e.g. NCI Gadi) is often the same disk PBS
+    # tracks as jobfs - a quota jobs don't request by default, so runs get
+    # killed mid-sort. OUTPUT_DIR is already sized for this run's output, so
+    # point temp files there instead.
+    ${BCFTOOLS} sort --temp-dir ${OUTPUT_DIR}/sort_tmp -Oz -o ${ANNOTATED_VCF}.gz ${ANNOTATED_VCF} || die "${BCFTOOLS} sort failed"
     ${BCFTOOLS} index -t ${ANNOTATED_VCF}.gz || die "${BCFTOOLS} index failed"
     rm ${ANNOTATED_VCF}
     echo "done"
