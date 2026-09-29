@@ -15,7 +15,7 @@ ANNOTATE_TAGS_HEADER="\
 ##INFO=<ID=RM_FAMILY,Number=.,Type=String,Description=\"RepeatMasker family for each hit, in the same order as RM_CLASSIFICATION (e.g. L1, Alu, ERVL-MaLR). '.' if no family sub-classification exists for that element.\">\n\
 ##INFO=<ID=RM_SUBFAMILY,Number=.,Type=String,Description=\"RepeatMasker subfamily (repeat model name) for each hit, in the same order as RM_CLASSIFICATION (e.g. L1M4, AluYa5, MLT1D).\">\n\
 ##INFO=<ID=RM_SV_COVERAGE,Number=.,Type=Float,Description=\"For each overlap, fraction of SV length covered (overlap_len/sv_len)\">\n\
-##INFO=<ID=RM_ELEMENT_PROPORTION,Number=.,Type=Float,Description=\"For each RepeatMasker hit, fraction of the element's consensus model covered by the alignment (consensus_aligned / consensus_length). Always in [0, 1]; values near 1 indicate a complete element insertion.\">\n\
+##INFO=<ID=RM_ELEMENT_PROPORTION,Number=.,Type=Float,Description=\"For each RepeatMasker hit, fraction of the element's consensus model covered by the part of the alignment that overlaps the SV (consensus_aligned / consensus_length, scaled by the fraction of the alignment lying within the SV). Always in [0, 1]; values near 1 indicate a complete element insertion within the SV.\">\n\
 ##INFO=<ID=RM_RECIPROCAL,Number=1,Type=String,Description=\"Completeness of the dominant RepeatMasker class: Full if the dominant class covers ≥75% of the SV and every element is ≥75% of its consensus model; Partial if ≥75% SV coverage but at least one element is <75% of its consensus; NA otherwise\">\n\
 ##INFO=<ID=RM_TOTAL_SV_COVERAGE,Number=1,Type=Float,Description=\"Proportion of the SV covered by RepeatMasker hits, with overlaps merged to avoid double-counting (0–1)\">\n\
 \
@@ -128,18 +128,23 @@ def read_rm(args, sv_info):
 
         return None
     
-    def positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection):
+    def positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection, alignment_length):
         """
-        Calculates the sv in relation to the repeat
-        - Proportion (entire query)
-        - fraction (sv only)
-        
+        Calculates element_proportion, restricted to the part of the alignment that
+        actually overlaps the SV (rather than the full RM hit, which can extend into
+        flanking sequence).
+
+        - intersection_rep_cords / repeat_length is the fraction of the repeat's
+          consensus model spanned by the *whole* alignment (consensus-model coordinates).
+        - alignment_sv_fraction is the fraction of the alignment's own query span that
+          falls inside the SV (query coordinates) - it rescales the consensus-space
+          proportion without mixing bp counts across the two coordinate systems.
         """
         intersection_rep_cords = repeat_end - repeat_begin
         repeat_length = repeat_end + repeat_left
         element_proportion = intersection_rep_cords / repeat_length
-        # print(f"repeat_length: {repeat_length}")
-        return element_proportion
+        alignment_sv_fraction = intersection / alignment_length
+        return element_proportion * alignment_sv_fraction
 
         # $12           #13         $14 
         # repeat_begin  repeat_end  repeat_left
@@ -195,7 +200,8 @@ def read_rm(args, sv_info):
                 # print("query's matching len:{}, repeat's matching len:{}".format(te_end-te_start,repeat_end-repeat_begin))
                 
                 # Add if the transposable element overlaps with the SV
-                element_proportion = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection)
+                alignment_length = te_end - te_start
+                element_proportion = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection, alignment_length)
             
                 # Add if the intersection is > min_intersect (e.g. 5%)
                 if sv_coverage and sv_coverage > args.min_sv_coverage:

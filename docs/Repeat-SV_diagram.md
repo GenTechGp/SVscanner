@@ -84,7 +84,7 @@ Annotations from TRF and RM tools are listed below the flanking diagram. They in
 - **`[REPEAT_ALIGNMNET_SHAPE]`**: ASCII diagram of the repeat’s alignment position relative to the flanking/SV diagram
 - **`PERCENT`**:  
   - For TRF: `sv_coverage%`  
-  - For RM: `sv_coverage%[element_proportion%]`, e.g., `84.11%[39.73%]`. `element_proportion` is the fraction of the element's consensus model covered by the alignment (always ≤ 100%).
+  - For RM: `sv_coverage%[element_proportion%]`, e.g., `84.11%[39.73%]`. `element_proportion` is the fraction of the element's consensus model covered by the part of the alignment that overlaps the SV (always ≤ 100%).
 - **`REPEAT_ALIGNMNET_GENOMIC_RANGE`**: Start–end coordinates of the repeat's alignment
 - **`ID`**: Unique identifier (e.g., `rm_668`, `trf_216`)  
   - A trailing `*` means this repeat **was selected at the pre-classification stage**
