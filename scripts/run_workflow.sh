@@ -55,6 +55,8 @@ DIAGRAM_LEN=100
 FLAG_DELETE_TMP_FILES=1 # Flag to delete temporary files (1 = yes, 0 = no)
 FLAG_OVERWRITE=0 # Flag to overwrite existing output files (1 = yes, 0 = no)
 RESUME=0 # Flag to resume from existing TRF/RepeatMasker outputs (1 = yes, 0 = no)
+POPULATE_IDS=0 # Flag to let SVscanner fill missing/duplicated VCF IDs in a copy of the VCF (1 = yes, 0 = no)
+NEED_ID_REWRITE=0 # Set by check_vcf_ids when the input VCF needs its IDs rewritten
 PREFIX="" # Prefix for output files (default: None)
 
 # Python and bash scripts (keep as it is)
@@ -64,6 +66,7 @@ ANNOTATION="${SVSCANNER_HOME}/src/repeat_annotation.py"
 PLOT="${SVSCANNER_HOME}/src/generate_plots.py"
 TRACEBACK_PLOT="${SVSCANNER_HOME}/src/generate_traceback_plots.py"
 VCF_ANNOTATE="${SVSCANNER_HOME}/src/annotate_vcf.py"
+CHECK_VCF_IDS="${SVSCANNER_HOME}/src/check_vcf_ids.py"
 
 # Function to show usage
 usage() {
@@ -90,6 +93,9 @@ usage() {
     echo "  --keep_tmp_files        Keep temporary files (default: delete)"
     echo "  --overwrite             Overwrite existing output files (default: no overwrite)"
     echo "  --resume                Reuse existing info/rm/trf .tab files and skip TRF + RepeatMasker (default: full run)"
+    echo "  --populate_ids          Fill missing and duplicated IDs in the VCF ID column (default: exit with an error)."
+    echo "                          SVscanner joins its annotations onto the VCF by ID. The input VCF is never edited;"
+    echo "                          a repaired copy is written to the output directory and annotated instead."
     echo "  --nthread INT           Number of threads to use (default: \$PBS_NCPUS if set, else all threads available to this process)"
     echo "  --njob INT              Number of parallel jobs for RepeatMasker (default: same as --nthread)"
     echo "  --help                  Show this help message"
@@ -138,6 +144,8 @@ parse_args() {
                 FLAG_OVERWRITE=1; shift;;
             --resume)
                 RESUME=1; shift;;
+            --populate_ids)
+                POPULATE_IDS=1; shift;;
             --nthread)
                 NTHREADS="$2"; shift 2;;
             --njob)
@@ -179,6 +187,11 @@ parse_args() {
 
     # Final Outputs (change if necessary)
     ANNOTATED_VCF=${OUTPUT_DIR}/${PREFIX}annotated.vcf
+
+    # Repaired copy of the input VCF; only written when --populate_ids was needed.
+    # Kept after the run: --resume has to annotate this file, not the original.
+    POPULATED_VCF=${OUTPUT_DIR}/${PREFIX}ids_populated.vcf.gz
+    POPULATED_IDS_MAP=${OUTPUT_DIR}/${PREFIX}ids_populated.map.tsv
 }
 
 resolve_thread_counts() {
@@ -261,6 +274,53 @@ check_required() {
     echo "BCFTOOLS: ${BCFTOOLS}"
     echo "BGZIP: ${BGZIP}"
 
+}
+
+check_vcf_ids() {
+    # SVscanner joins its annotations back onto the VCF by the ID column, so every
+    # record needs a present, unique ID. Check the VCF now, before any output directory
+    # is created, so a failure leaves nothing behind that blocks the retry.
+    # check_vcf_ids.py exits 0 = usable, 1 = repairable, 2 = not repairable, 3 = I/O error.
+    local rc=0
+    echo "Checking the VCF ID column..."
+
+    if [[ ${RESUME} -eq 1 && -s "${POPULATED_VCF}" ]]; then
+        # The previous run annotated a repaired copy; the saved .tab files carry its IDs.
+        echo "Resume mode: using the VCF with populated IDs from the previous run: ${POPULATED_VCF}"
+        VCF="${POPULATED_VCF}"
+    fi
+
+    python3 "${CHECK_VCF_IDS}" --vcf "${VCF}" --mode check || rc=$?
+    case ${rc} in
+        0)
+            echo "done"
+            return 0;;
+        1)
+            if [[ ${RESUME} -eq 1 ]]; then
+                die "Cannot resume: the VCF ID column is not usable and --resume cannot repair it.\nRe-run without --resume (add --populate_ids to let SVscanner fill the IDs)."
+            elif [[ ${POPULATE_IDS} -eq 1 ]]; then
+                echo "Warning: the VCF ID column is not usable; --populate_ids is set, so a repaired copy will be written to ${POPULATED_VCF}" >&2
+                NEED_ID_REWRITE=1
+                return 0
+            fi
+            die "The VCF ID column is not usable (see above). SVscanner annotates the VCF by ID.\nAdd every missing or duplicated ID yourself, or re-run with --populate_ids to let SVscanner fill them in a copy of the VCF (the input is never edited).";;
+        2)
+            die "The VCF ID column is not usable and SVscanner will not rewrite it (see above), with or without --populate_ids.";;
+        *)
+            die "VCF ID check failed (exit code ${rc})";;
+    esac
+}
+
+populate_vcf_ids() {
+    # Second stage of check_vcf_ids, once the output directory exists: write the repaired
+    # copy, verify it, and annotate that from here on.
+    [[ ${NEED_ID_REWRITE} -eq 1 ]] || return 0
+    echo "Populating the VCF ID column in a copy of the VCF..."
+    python3 "${CHECK_VCF_IDS}" --vcf "${VCF}" --mode rewrite --out "${POPULATED_VCF}" --map "${POPULATED_IDS_MAP}" || die "failed to populate VCF IDs"
+    python3 "${CHECK_VCF_IDS}" --vcf "${POPULATED_VCF}" --mode check || die "the VCF with populated IDs still fails the ID check"
+    VCF="${POPULATED_VCF}"
+    echo "Input SV VCF is now: ${VCF}"
+    echo "done"
 }
 
 create_output_dir() {
@@ -606,8 +666,11 @@ resolve_thread_counts
 check_required
 if [[ ${RESUME} -eq 1 ]]; then
     check_resume_inputs
+    check_vcf_ids
 else
+    check_vcf_ids
     create_output_dir
+    populate_vcf_ids
     setup_dfam_library
     # Before extraction: a species the installed partitions cannot cover is fatal, and
     # there is no point spending an extraction and a TRF pass to find that out.

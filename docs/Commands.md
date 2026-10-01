@@ -4,6 +4,7 @@
 3. [repeat_annotatoin.py](#repeat_annotatoinpy)
 4. [generate_plot.py](#generate_plotpy)
 5. [simulate_sv.py](#simulate_svpy)
+6. [check_vcf_ids.py](#check_vcf_idspy)
 
 ## run_workflow.sh
 
@@ -36,12 +37,41 @@
 | `--nsplit_files`                | `int`          | `500`         | Number of files to split sequences into.                                   |
 | `--keep_tmp_files`             | flag           |                         | Keep intermediate files (default: delete after run).                       |
 | `--overwrite`                  | flag           |                         | Overwrite existing output files if present.                                |
+| `--populate_ids`               | flag           |                         | Fill missing and duplicated IDs in the VCF ID column, in a copy of the VCF. Without it the run exits when the ID column is unusable. See [VCF ID column](#vcf-id-column). |
 | `--nthread`                    | `int`          | all available threads   | Number of threads to use.                                                  |
 | `--njob`                       | `int`          | `48`             | Number of parallel jobs for RepeatMasker.                                  |
 | `--help`                       | flag           |                         | Show help message and exit.                                                |
 | `--version`                    | flag           |                         | Show version information and exit.                                         |
 
 ---
+
+### VCF ID column
+
+SVscanner adds its annotations back onto the VCF by the ID column, so every record needs an
+ID that is present (not `.`) and unique. Before anything else runs, `run_workflow.sh` checks
+this with [check_vcf_ids.py](#check_vcf_idspy):
+
+- **IDs fine:** the run continues unchanged.
+- **Missing or duplicated IDs, no `--populate_ids`:** the run exits with an error and creates
+  no output directory.
+- **Missing or duplicated IDs, with `--populate_ids`:** the input VCF is never edited. A
+  repaired copy is written to `<out>/<prefix>ids_populated.vcf.gz`, together with
+  `<out>/<prefix>ids_populated.map.tsv` (old ID to new ID), and that copy is annotated.
+  Existing unique IDs are kept; the first occurrence of a duplicated ID is kept. Every
+  missing ID and every later duplicate becomes `SVSCANNER_<CHROM>_<POS>_<SVTYPE>_<n>`, where
+  `<n>` is the 1-based record number. Renamed duplicates are reported as a warning. The
+  annotated VCF therefore carries these IDs.
+- **Not repairable, with or without the flag:** an ID containing whitespace, or missing or
+  duplicated IDs in a VCF whose records carry `MATEID`. Rewriting IDs would leave the
+  `MATEID` references pointing at the wrong records, so fix the IDs at the source.
+
+`--resume` only checks. If the previous run used `--populate_ids`, the repaired copy in the
+output directory is used automatically (it is what the saved `.tab` files were built from,
+so it is kept after the run); otherwise the VCF given in `--vcf` is checked and the run exits
+if its IDs are unusable.
+
+After annotation, `annotate_vcf.py` reports how many VCF records matched an annotation and
+warns when none did.
 
 ### External Dfam databases
 
@@ -176,3 +206,17 @@ FamDB format your RepeatMasker version expects (Dfam 3.9 / FamDB 2.0 for RepeatM
 | `--debug`          | flag          | Debug mode                                                                                    | False       |
 | `-h`, `--help`     | flag          | Show help message and exit     
 
+## check_vcf_ids.py
+
+Checks, and optionally repairs, the ID column of an SV VCF. Run by `run_workflow.sh`; see
+[VCF ID column](#vcf-id-column) for how the workflow uses it.
+
+| Argument  | Required | Description |
+|-----------|----------|-------------|
+| `--vcf`   | Yes      | Input VCF (plain or gzip/bgzip) |
+| `--mode`  | No       | `check` (default) reports missing IDs, duplicated IDs, IDs containing whitespace and records with `MATEID`, and never writes the VCF. `rewrite` writes a copy to `--out` with only the ID column changed. |
+| `--out`   | `rewrite` | Output VCF. A `.gz` name is bgzip-compressed. |
+| `--map`   | No       | `rewrite`: write a table of old ID to new ID here. |
+
+Exit codes: `0` ID column usable (or nothing to rewrite), `1` not usable but repairable,
+`2` not usable and not repairable, `3` input could not be read or written.

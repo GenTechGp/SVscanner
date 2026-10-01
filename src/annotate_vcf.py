@@ -333,6 +333,31 @@ def annotate_pysam_record(
                 )
 
 
+def report_match_stats(records: int, matched: int, annotated_ids: int) -> None:
+    """Say how many VCF records picked up an annotation.
+
+    Annotations are joined to the VCF by the ID column, so a mismatch there (IDs missing,
+    duplicated or changed since the annotation TSV was written) leaves records silently
+    unannotated. Not every unmatched record is an error - extract_sv.py skips records
+    that fail its checks - so only a total failure is loud."""
+    print(f"Info: {matched} of {records} VCF records matched an annotation "
+          f"({annotated_ids} annotated variant ID(s) in the annotation TSV)")
+    if records and matched == 0:
+        sys.stderr.write(
+            "WARNING: no VCF record matched an annotation, so the output VCF carries no "
+            "repeat annotations.\n"
+            "  Annotations are matched by the VCF ID column. Check that the IDs in --vcf are "
+            "present and are the ones SVscanner annotated (not missing '.', and not changed "
+            "since the annotation TSV was written).\n"
+        )
+    elif matched < records:
+        sys.stderr.write(
+            f"Warning: {records - matched} of {records} VCF records have no annotation. "
+            "Expected for records SVscanner skipped (see the extraction summary); otherwise "
+            "check the VCF ID column for missing or duplicated IDs.\n"
+        )
+
+
 def annotate_vcf(
     vcf_path: str,
     info_header_path: str,
@@ -359,11 +384,15 @@ def annotate_vcf(
         load_tsv_bnd_mate_blob_scalar(bnd_mate_tsv) if bnd_mate_tsv else {}
     )
 
+    stats = {"records": 0, "matched": 0}
+
     # Pass 2 — each branch writes its own header + records
     if write_method == "pysam":
         with pysam.VariantFile(temp_vcf, "r") as invcf, \
              pysam.VariantFile(output_path, "w", header=out_hdr) as outvcf:
             for rec in invcf:
+                stats["records"] += 1
+                stats["matched"] += bool(rec.id and rec.id in primary_map)
                 annotate_pysam_record(
                     rec, primary_map, primary_tags, bnd_scalar_map, out_hdr
                 )
@@ -376,6 +405,8 @@ def annotate_vcf(
         with pysam.VariantFile(temp_vcf, "r") as invcf, \
              open(output_path, "a") as outvcf:
             for rec in invcf:
+                stats["records"] += 1
+                stats["matched"] += bool(rec.id and rec.id in primary_map)
                 annotate_pysam_record(
                     rec, primary_map, primary_tags, bnd_scalar_map, out_hdr
                 )
@@ -403,6 +434,8 @@ def annotate_vcf(
                     continue
                 chrom, pos, vid, ref, alt, qual, filt, info = cols[:8]
                 rest = cols[8:] if len(cols) > 8 else []
+                stats["records"] += 1
+                stats["matched"] += bool(vid and vid in primary_map)
 
                 # Determine which tags need stripping (dedup on re-run)
                 tags_to_strip = set()
@@ -447,6 +480,8 @@ def annotate_vcf(
                     [chrom, pos, vid, ref, alt, qual, filt, info] + rest
                 )
                 outvcf.write(record_str + "\n")
+
+    report_match_stats(stats["records"], stats["matched"], len(primary_map))
 
     # Cleanup temp2
     try:
