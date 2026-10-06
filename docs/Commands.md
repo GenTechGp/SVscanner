@@ -5,6 +5,7 @@
 4. [generate_plot.py](#generate_plotpy)
 5. [simulate_sv.py](#simulate_svpy)
 6. [check_vcf_ids.py](#check_vcf_idspy)
+7. [check_ref.py](#check_refpy)
 
 ## run_workflow.sh
 
@@ -38,6 +39,7 @@
 | `--keep_tmp_files`             | flag           |                         | Keep intermediate files (default: delete after run).                       |
 | `--overwrite`                  | flag           |                         | Overwrite existing output files if present.                                |
 | `--populate_ids`               | flag           |                         | Fill missing and duplicated IDs in the VCF ID column, in a copy of the VCF. Without it the run exits when the ID column is unusable. See [VCF ID column](#vcf-id-column). |
+| `--skip_ref_check`             | flag           |                         | Do not check that `--ref` is the reference the VCF was called against. See [Reference check](#reference-check). |
 | `--nthread`                    | `int`          | all available threads   | Number of threads to use.                                                  |
 | `--njob`                       | `int`          | `48`             | Number of parallel jobs for RepeatMasker.                                  |
 | `--help`                       | flag           |                         | Show help message and exit.                                                |
@@ -72,6 +74,20 @@ if its IDs are unusable.
 
 After annotation, `annotate_vcf.py` reports how many VCF records matched an annotation and
 warns when none did.
+
+### Reference check
+
+`--ref` must be the reference the VCF was called against. A different build does not make
+the run fail: the DEL, DUP, INV and BND sequences, and the flanks of every SV, are fetched
+from it and annotated as if they were right (typically many DELs come out `NON_REPETITIVE`).
+Right after the ID check, and before the output directory is created, `run_workflow.sh`
+checks the reference with [check_ref.py](#check_refpy). The run exits with an error when:
+
+- a contig the records use (CHROM, or a BND mate in ALT) is not in the reference;
+- a `##contig` length in the VCF header differs from the reference length for that contig;
+- more than 5% of a random sample of REF alleles differ from the reference at their position.
+
+`--skip_ref_check` turns the check off. `--resume` does not run it (no sequence is extracted).
 
 ### External Dfam databases
 
@@ -220,3 +236,21 @@ Checks, and optionally repairs, the ID column of an SV VCF. Run by `run_workflow
 
 Exit codes: `0` ID column usable (or nothing to rewrite), `1` not usable but repairable,
 `2` not usable and not repairable, `3` input could not be read or written.
+
+## check_ref.py
+
+Checks that a reference FASTA is the one an SV VCF was called against. Run by
+`run_workflow.sh`; see [Reference check](#reference-check) for how the workflow uses it.
+
+| Argument   | Required | Description |
+|------------|----------|-------------|
+| `--vcf`    | Yes      | Input VCF (plain or gzip/bgzip) |
+| `--ref`    | Yes      | Reference FASTA (plain or bgzip; indexed with `samtools faidx`, or indexable) |
+| `--sample` | No       | Number of REF alleles to check (default: `200`) |
+
+The REF check uses multi-base REF alleles (e.g. sequence-resolved DELs) when the VCF has at
+least 20, and adds single-base REF alleles otherwise. An `N` on either side never counts as
+a mismatch, and REF alleles that are all `N` are skipped.
+
+Exit codes: `0` the reference matches (or nothing could be checked), `1` the reference does
+not match, `3` input could not be read.

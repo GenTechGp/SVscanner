@@ -57,6 +57,7 @@ FLAG_OVERWRITE=0 # Flag to overwrite existing output files (1 = yes, 0 = no)
 RESUME=0 # Flag to resume from existing TRF/RepeatMasker outputs (1 = yes, 0 = no)
 POPULATE_IDS=0 # Flag to let SVscanner fill missing/duplicated VCF IDs in a copy of the VCF (1 = yes, 0 = no)
 NEED_ID_REWRITE=0 # Set by check_vcf_ids when the input VCF needs its IDs rewritten
+SKIP_REF_CHECK=0 # Flag to skip checking that --ref is the reference the VCF was called against (1 = yes, 0 = no)
 PREFIX="" # Prefix for output files (default: None)
 
 # Python and bash scripts (keep as it is)
@@ -67,6 +68,7 @@ PLOT="${SVSCANNER_HOME}/src/generate_plots.py"
 TRACEBACK_PLOT="${SVSCANNER_HOME}/src/generate_traceback_plots.py"
 VCF_ANNOTATE="${SVSCANNER_HOME}/src/annotate_vcf.py"
 CHECK_VCF_IDS="${SVSCANNER_HOME}/src/check_vcf_ids.py"
+CHECK_REF="${SVSCANNER_HOME}/src/check_ref.py"
 
 # Function to show usage
 usage() {
@@ -96,6 +98,8 @@ usage() {
     echo "  --populate_ids          Fill missing and duplicated IDs in the VCF ID column (default: exit with an error)."
     echo "                          SVscanner joins its annotations onto the VCF by ID. The input VCF is never edited;"
     echo "                          a repaired copy is written to the output directory and annotated instead."
+    echo "  --skip_ref_check        Do not check that --ref is the reference the VCF was called against (default: check,"
+    echo "                          and exit with an error on a contig length or REF allele mismatch)"
     echo "  --nthread INT           Number of threads to use (default: \$PBS_NCPUS if set, else all threads available to this process)"
     echo "  --njob INT              Number of parallel jobs for RepeatMasker (default: same as --nthread)"
     echo "  --help                  Show this help message"
@@ -146,6 +150,8 @@ parse_args() {
                 RESUME=1; shift;;
             --populate_ids)
                 POPULATE_IDS=1; shift;;
+            --skip_ref_check)
+                SKIP_REF_CHECK=1; shift;;
             --nthread)
                 NTHREADS="$2"; shift 2;;
             --njob)
@@ -308,6 +314,28 @@ check_vcf_ids() {
             die "The VCF ID column is not usable and SVscanner will not rewrite it (see above), with or without --populate_ids.";;
         *)
             die "VCF ID check failed (exit code ${rc})";;
+    esac
+}
+
+check_reference() {
+    # A wrong reference does not make the run fail: DEL/DUP/INV/BND sequences and every
+    # flank are fetched from it and annotated as if they were right. Check it before any
+    # output directory is created, so a failure leaves nothing behind that blocks the retry.
+    # check_ref.py exits 0 = matches, 1 = does not match, 3 = I/O error.
+    if [[ ${SKIP_REF_CHECK} -eq 1 ]]; then
+        echo "Warning: --skip_ref_check is set; not checking that the reference matches the VCF" >&2
+        return 0
+    fi
+    local rc=0
+    echo "Checking the reference against the VCF..."
+    python3 "${CHECK_REF}" --vcf "${VCF}" --ref "${REF}" || rc=$?
+    case ${rc} in
+        0)
+            echo "done";;
+        1)
+            die "The reference (${REF}) does not match the VCF (see above).\nUse the reference the VCF was called against, or re-run with --skip_ref_check if you are sure it is right.";;
+        *)
+            die "Reference check failed (exit code ${rc})";;
     esac
 }
 
@@ -669,6 +697,7 @@ if [[ ${RESUME} -eq 1 ]]; then
     check_vcf_ids
 else
     check_vcf_ids
+    check_reference
     create_output_dir
     populate_vcf_ids
     setup_dfam_library
