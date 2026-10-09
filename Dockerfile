@@ -1,24 +1,23 @@
 # SVscanner container
 #
-# Built on the Dfam TE Tools image, which already supplies a correctly configured
-# RepeatMasker together with TRF, RMBlast and HMMER. The tag is pinned deliberately:
+# Built on the Dfam TE Tools image, which supplies TRF, RMBlast, HMMER and FamDB.
+# The tag is pinned deliberately:
 #
-#   dfam/tetools:1.99 -> RepeatMasker 4.2.3, TRF 4.09.1, RMBlast 2.17.0, HMMER 3.4
-#                        and the Dfam 3.9 root partition (FamDB 2.0 format).
+#   dfam/tetools:2.00 -> RepeatMasker 4.2.4, TRF 4.09.1, RMBlast 2.17.1, HMMER 3.4,
+#                        FamDB 3.0 with Dfam 4.0 (root + curated consensus partitions)
 #
-# Do not move to dfam/tetools:2.00 without testing: it switches to Dfam 4.0 / FamDB
-# 3.0, which does not read the Dfam 3.9 partitions SVscanner is deployed against on
-# NCI Gadi (dfam39_full.7.h5).
+# RepeatMasker itself is replaced with REPEATMASKER_VERSION below, because no TE Tools
+# image ships 4.2.5 yet. Dfam 4.0 uses the FamDB 3.0 format, which cannot read the
+# Dfam 3.9 partitions SVscanner is deployed against on NCI Gadi (dfam39_full.7.h5).
 #
-# The image ships no clade database. RepeatMasker's bundled root partition alone has
-# no human families, so `-species human` needs the Mammalia partition (~57 GB)
-# supplied at runtime via --dfam_dir / $SVSCANNER_DFAM_DIR. See docs/docker.md.
-FROM dfam/tetools:1.99
+# The curated consensus partition is all RMBlast needs: `-species human` resolves
+# 1,387 curated families from the image alone, with no --dfam_dir mount.
+FROM dfam/tetools:2.00
 
 LABEL org.opencontainers.image.title="SVscanner" \
       org.opencontainers.image.description="Annotate tandem repeats and mobile elements within structural variants using TRF and RepeatMasker" \
       org.opencontainers.image.source="https://github.com/GenTechGp/SVscanner" \
-      org.opencontainers.image.base.name="docker.io/dfam/tetools:1.99" \
+      org.opencontainers.image.base.name="docker.io/dfam/tetools:2.00" \
       org.opencontainers.image.licenses="MIT"
 
 ARG HTSLIB_VERSION=1.21
@@ -33,7 +32,37 @@ RUN apt-get -y update && apt-get -y install --no-install-recommends \
         liblzma-dev \
         libcurl4-openssl-dev \
         libssl-dev \
+        patch \
     && rm -rf /var/lib/apt/lists/*
+
+# RepeatMasker from the GitHub tag archive (repeatmasker.org's tarball is not always
+# reachable), configured the same way TE Tools configures its own copy.
+#
+# RM_SVA_PATCH=1 applies docker/repeatmasker-sva-lookahead.patch, a one-line fix for
+# ProcessRepeats reporting forward-strand SVAs as several fragments and reverse-strand
+# ones as a single element. Off by default: it changes RepeatMasker's output, so an
+# image built with it is not stock RepeatMasker.
+ARG REPEATMASKER_VERSION=4.2.5
+ARG REPEATMASKER_SHA256=2a863a62c01d631f733ee0e9d01278241a96dfc168dc8eb974c43a44bcf1d570
+ARG RM_SVA_PATCH=0
+COPY docker/repeatmasker-sva-lookahead.patch /tmp/repeatmasker-sva-lookahead.patch
+RUN cd /tmp \
+    && curl -fsSL -o repeatmasker.tar.gz "https://github.com/Dfam-consortium/RepeatMasker/archive/refs/tags/v${REPEATMASKER_VERSION}.tar.gz" \
+    && echo "${REPEATMASKER_SHA256}  repeatmasker.tar.gz" | sha256sum -c - \
+    && rm -rf /opt/RepeatMasker && mkdir /opt/RepeatMasker \
+    && tar -xzf repeatmasker.tar.gz -C /opt/RepeatMasker --strip-components=1 \
+    && rm repeatmasker.tar.gz \
+    && if [ "${RM_SVA_PATCH}" = "1" ]; then \
+           patch -d /opt/RepeatMasker -p1 < /tmp/repeatmasker-sva-lookahead.patch; \
+       fi \
+    && rm /tmp/repeatmasker-sva-lookahead.patch \
+    && cd /opt/RepeatMasker \
+    && perl configure \
+        -famdb_dir=/opt/FamDB-Dfam-4.0 \
+        -hmmer_dir=/opt/hmmer/bin \
+        -rmblast_dir=/opt/rmblast/bin \
+        -trf_prgm=/opt/trf \
+        -default_search_engine=rmblast
 
 # bcftools, bgzip and tabix. Built from source rather than taken from Debian 12
 # (which has 1.16) to match the 1.21 that scripts/install_tools.sh installs and the
@@ -101,7 +130,7 @@ RUN set -eu; \
     bgzip --version; \
     tabix --version; \
     RepeatMasker -v; \
-    python3 /opt/RepeatMasker/famdb.py -i /opt/RepeatMasker/Libraries/famdb info; \
+    python3 /opt/FamDB/famdb.py -i /opt/FamDB/Libraries/famdb info; \
     svscanner --version
 
 WORKDIR /data
