@@ -10,7 +10,7 @@ SAMTOOLS="./samtools-1.21/samtools"
 BCFTOOLS="./bcftools-1.21/bcftools"
 TABIX="./htslib-1.21/tabix"
 
-NO_RETURN_CODES=15
+NO_RETURN_CODES=16
 
 INFO_COLS = ["chrom", "querystart", "queryend", "pos", "end", "svlen", "relativeID", "callerID", "ref", "alt"]
 
@@ -503,6 +503,11 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
         print(f"Error: record (ID:{record.id}) is on contig {chrom}, which is not in the reference")
         return 15
     chrom_length = chrom_lengths[chrom]
+    # VCF allows POS 0 / N+1 for telomeres (cuteSV emits POS=0 for INS at a
+    # contig start); there is no reference base there to anchor flanks on
+    if record.pos < 1 or record.pos > chrom_length:
+        print(f"Warning: record (ID:{record.id}) POS ({record.pos}) is outside {chrom} (1-{chrom_length})")
+        return 16
     sv_end = get_sv_end(record)
     if sv_end - 1 > chrom_length:
         print(f"Error: record (ID:{record.id}) stop ({sv_end-1}) exceeds chromosome length ({chrom_length}) for {chrom}")
@@ -586,7 +591,8 @@ def print_vcf_summary(args, vcf_summary):
                             "INS has symbolic ALT", # 12
                             "malformed record SVLEN != END - POS", # 13
                             "unknown SVTYPE", #14
-                            "other"] # 15
+                            "other", # 15
+                            "POS outside contig (telomeric POS 0 or N+1)"] # 16
 
     code = 1
     summary_out = f"{args.out}/extract_sv.summary"
