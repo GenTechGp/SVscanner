@@ -51,3 +51,8 @@ test/PAH001_svscanner_out
 test/svscanner_tldr
 test/bug0v2
 *.sif
+docs/fragment_resolution_project_brief.md
+docs/sva_fragmentation_investigation.md
+scripts/docker_svscanner_test.sh
+test/ONT1KG/
+docs/rmblast_vs_hmmer.md

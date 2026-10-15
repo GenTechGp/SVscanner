@@ -28,7 +28,10 @@
 | `--prefix`                      | `str`          | `None`                  | Prefix for output files.                                                    |
 | `--str_bed`                     | `str`          | `None`              | Path to BED file containing STR (short tandem repeat) elements.            |
 | `--species`                     | `str`          | `human`              | Species name used by RepeatMasker.                                         |
-| `--dfam_dir`                    | `str`          | `$SVSCANNER_DFAM_DIR` | Directory of Dfam FamDB partition files (`dfam*.h5`) for RepeatMasker to use in addition to the ones bundled with the RepeatMasker install. See [External Dfam databases](#external-dfam-databases). |
+| `--engine`                      | `str`          | RepeatMasker's default (RMBlast in the container) | RepeatMasker search engine, e.g. `rmblast`, `hmmer`. |
+| `--dfam_db`                     | `str`          | `None`                  | A complete Dfam database (base file `dfamNN.0.h5` plus partitions) to use instead of the built-in one. See [Dfam databases](#dfam-databases). |
+| `--dfam_extra`                  | `str`          | `None`                  | Dfam partitions to add to the built-in database (same Dfam release, no base file). See [Dfam databases](#dfam-databases). |
+| `--uncurated`                   | flag           |                         | Use uncurated Dfam families as well as curated ones (RepeatMasker `-uncurated`). Needs uncurated partitions covering `--species`. See [Dfam databases](#dfam-databases). |
 | `--min_sv_coverage`             | `float`        | `0.05`      | Minimum intersection between a repeat element and SV.                      |
 | `--min_class_sv_coverage`       | `float`        | `0.25`| Minimum class-level SV coverage to be considered repetitive.               |
 | `--min_total_sv_coverage`       | `float`        | `0.75`| Minimum total SV coverage by repeats to be considered repetitive.          |
@@ -89,44 +92,102 @@ checks the reference with [check_ref.py](#check_refpy). The run exits with an er
 
 `--skip_ref_check` turns the check off. `--resume` does not run it (no sequence is extracted).
 
-### External Dfam databases
+### Dfam databases
 
-RepeatMasker reads its Dfam families from FamDB partition files (`dfam*.h5`) in the
-`Libraries/famdb` directory of its own installation. `--dfam_dir` (or the
-`SVSCANNER_DFAM_DIR` environment variable, which the flag overrides) lets you keep those
-partitions somewhere else — useful when the RepeatMasker installation is read-only, shared,
-or inside a container, and the database is not.
+RepeatMasker reads its Dfam families through FamDB. A Dfam release (4.0 onwards, FamDB
+3.0 format) is a set of `.h5` files:
 
-Point it at a directory containing the `.h5` files themselves; nothing else is required:
+- one **base file**, `dfamNN.0.h5` (e.g. `dfam40.0.h5`): family names and taxonomy, always
+  required;
+- **partitions** by component and taxon, e.g. `dfam40.curated.consensus.0.h5` (the curated
+  consensus sequences RMBlast searches), `dfam40.curated.hmm.*.h5` (profile HMMs for
+  HMMER), `dfam40.uncurated.*.h5` (uncurated families, mainly for species with little
+  curated data).
+
+Partitions only work with the base file of their own release. Downloads are on the
+[Dfam releases](https://www.dfam.org/releases/) page.
+
+The container has the Dfam 4.0 base file and curated consensus partition built in, which
+covers `--species human` with RMBlast. Two options change that, and they cannot be
+combined:
+
+| | `--dfam_extra DIR` | `--dfam_db DIR` |
+|---|---|---|
+| Effect | Adds `DIR`'s partitions to the built-in database | Uses `DIR` instead of the built-in database |
+| `DIR` must contain | Partitions of the built-in release only (`dfam40.*`), no base file | Exactly one base file, plus the partitions you need |
+| Typical use | `--engine hmmer` (add `dfam40.curated.hmm.*`), uncurated clades | A different Dfam release |
 
 ```
-export SVSCANNER_DFAM_DIR=/path/to/dfam
-./scripts/run_workflow.sh --vcf [vcf] --ref [ref] --out [out]
+# Another species with RMBlast: nothing to add, the built-in database has it
+svscanner --species "danio rerio" --vcf ... --ref ... --out ...
+
+# HMMER for human: add the curated HMM partitions to the built-in Dfam 4.0
+svscanner --engine hmmer --dfam_extra /data/dfam40_hmm --vcf ... --ref ... --out ...
+
+# A complete database of another release
+svscanner --dfam_db /data/dfam41 --species "mus musculus" --vcf ... --ref ... --out ...
 ```
 
-SVscanner assembles a valid RepeatMasker `Libraries` directory under the output directory,
-symlinking the installation's own files and overlaying your partitions on top, then exports
-`LIBDIR` so RepeatMasker picks it up. The partitions are never copied, so a 57 GB file costs
-nothing, and the assembled directory is removed with the other temporary files at the end of
-the run. Files in `--dfam_dir` take precedence over same-named files in the installation.
+The built-in curated consensus partition is not limited to human: it is Dfam 4.0's single
+root-level partition, holding all 30,659 curated families of every species. With RMBlast,
+`--species` alone is therefore enough for any species Dfam has curated families for; the
+run log shows how many were found (for `danio rerio`: `249/249 families in ancestor taxa;
+1717/1717 lineage-specific families`). HMMER is
+different, because its curated HMM partitions are split by taxon and none are built in.
 
-RepeatMasker derives a search library from the partitions the first time it is asked for a
-given species, and caches it. With `--dfam_dir` that cache is built inside the assembled
-directory, so it is **rebuilt on every run**. For `-species human` against the Dfam 3.9
-Mammalia partition that was measured at ~30 seconds with RMBlast and ~4 minutes with HMMER.
-The run log reports it as `Library preparation took N seconds`.
+#### Uncurated families
 
-The installation's own cache directories are deliberately *not* reused. Their names record
-the database title and version but not which partitions were present when they were built,
-and `--dfam_dir` exists precisely to add partitions the installation lacks — so an
-inherited cache would be stale, and RepeatMasker would reuse it without complaint.
+By default RepeatMasker uses curated Dfam families only. `--uncurated` adds Dfam's
+uncurated families too, which matters mainly for species with few curated ones. Not every
+species has any: in Dfam 4.0 human and `danio rerio` have none, `mus musculus` has 4,692
+and `drosophila melanogaster` 599. To check a species before downloading anything (the
+base file knows the totals even without the partitions):
 
-`-species human` needs the **Mammalia** partition (`dfam39_full.7.h5` for Dfam 3.9, ~57 GB)
-in addition to the root partition. RepeatMasker ships the root partition, so in practice only
-the clade partition needs to be downloaded — see the
-[Dfam releases](https://www.dfam.org/releases/) page. Make sure the partitions match the
-FamDB format your RepeatMasker version expects (Dfam 3.9 / FamDB 2.0 for RepeatMasker
-4.1.8–4.2.3).
+```
+famdb.py lineage "mus musculus" --uncurated --ancestors --descendants --model consensus -f totals
+```
+
+Uncurated families are in their own partitions, none of which are built in, so add the
+ones covering your species:
+
+| Search engine | Uncurated partitions to add | Size (Dfam 4.0, compressed) |
+|---|---|---|
+| RMBlast | `dfam40.uncurated.consensus.0.h5` and `.1.h5` | 0.3 MB and 4.1 GB |
+| HMMER | `dfam40.uncurated.hmm.N.h5` for your species' clades, plus the curated HMMs | 1–2.5 GB each |
+
+```
+# Mouse, RMBlast, curated + uncurated
+svscanner --species "mus musculus" --uncurated --dfam_extra /data/dfam40_uncurated \
+          --vcf ... --ref ... --out ...
+```
+
+The run log says which families were used (`Including curated and uncurated families:`).
+In two cases RepeatMasker would carry on with less than `--uncurated` asked for, and
+SVscanner stops the run instead:
+
+- Dfam has no uncurated families for the species (RepeatMasker notes this and runs
+  curated-only). Drop `--uncurated`; no partition can help.
+- The species has uncurated families but their partitions are not installed (RepeatMasker
+  warns that partitions are missing and runs with what is present). Add them with
+  `--dfam_extra`. The same check applies without `--uncurated`, e.g. `--engine hmmer`
+  with only some of the curated HMM partitions.
+
+With `--dfam_extra`, SVscanner links the built-in files and yours into one directory under
+the output directory (symlinks only, removed at the end of the run); a file of yours with
+the same name as a built-in one takes its place. With `--dfam_db`, RepeatMasker reads
+`DIR` directly. Either way RepeatMasker is pointed at the result through `FAMDB_DATA_DIR`.
+
+Before anything else runs, SVscanner stops with an explanation if:
+
+- `--dfam_extra` contains a base file (use `--dfam_db`), or a partition of a different
+  release than the built-in one;
+- `--dfam_db` has no base file (use `--dfam_extra`), or more than one;
+- FamDB does not actually load one of your files. FamDB skips files it cannot use (for
+  example Dfam 3.9 and earlier, which use the older FamDB 2.0 format) without an error, so
+  RepeatMasker would otherwise annotate against less than you asked for.
+
+The run log lists every FamDB file in use. As with the built-in database, the species
+search library is built per run under the output directory.
 
 ## extract_sv.py
 

@@ -23,7 +23,7 @@ BAM="${OUTPUT_DIR}/mapped.bam"
 VCF="${OUTPUT_DIR}/sniffles.vcf"
 
 # RepeatMasker 4.2.5 with Dfam 4.0 curated families built in: '-species human' under
-# RMBlast needs no --dfam_dir mount. Also supplies python+pysam for simulate_sv.py.
+# RMBlast needs no Dfam mount. Also supplies python+pysam for simulate_sv.py.
 SVSCANNER_SIF="svscanner_dev_691748e.sif"
 SNIFFLES_VENV_PATH="/home/hirsam/install/sniffles_281"
 VISOR_VENV_PATH="/home/hirsam/install/visor_dev"
