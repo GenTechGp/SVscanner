@@ -16,14 +16,19 @@ BOTH_REF=${OUTPUT_DIR}/both_ref.fa
 SV_COUNT=100
 
 READS="read_0.fasta"
-SIM_READS="${OUTPUT_DIR}/sim_reads.fq.gz"
+# SIM_READS="${OUTPUT_DIR}/sim_reads.fq.gz" # pbsim3 + ccs output
+SIM_READS="${OUTPUT_DIR}/sim_reads.fa" # squigulator -q output (FASTA, error-free)
 SAM="${OUTPUT_DIR}/mapped.sam"
 BAM="${OUTPUT_DIR}/mapped.bam"
 VCF="${OUTPUT_DIR}/sniffles.vcf"
 
-SVSCANNER_VENV_PATH="/data/hirsam/SVscanner/svscanner"
-SNIFFLES_VENV_PATH="/data/install/sniffles_280"
-VISOR_VENV_PATH="/data/hirsam/VISOR/visor_dev"
+# RepeatMasker 4.2.5 with Dfam 4.0 curated families built in: '-species human' under
+# RMBlast needs no --dfam_dir mount. Also supplies python+pysam for simulate_sv.py.
+SVSCANNER_SIF="svscanner_dev_691748e.sif"
+SNIFFLES_VENV_PATH="/home/hirsam/install/sniffles_281"
+VISOR_VENV_PATH="/home/hirsam/install/visor_dev"
+# VISOR HACk needs bedtools in PATH (static v2.31.0; v2.31.1 has no static release)
+export PATH="/home/hirsam/install/bedtools-2.31.0:${PATH}"
 PACBIO_CCS="/data/install/ccs_v6.4.0/ccs"
 BCFTOOLS="bcftools"
 TABIX="tabix"
@@ -32,9 +37,7 @@ BGZIP="bgzip"
 SIMULATE_SV="src/simulate_sv.py"
 PBSIM3="/data/install/pbsim3-3.0.5/src/pbsim"
 PBSIM3_DATA="/data/install/pbsim3-3.0.5/data"
-
-SVSCANNER_IMAGE="ghcr.io/gentechgp/svscanner:0.7.0"
-DFAM_DIR="/data/hirsam/dfam39"
+SQUIGULATOR="/home/hirsam/install/squigulator-v0.5.0/squigulator"
 
 TRF_BED="/genome/hg38.trf.bed"
 MOBILE_ELEMENTS="test/databases/dfam_selected_species.fasta"
@@ -42,6 +45,8 @@ REP_ELEMENTS="test/databases/trcatalog_bins.bed"
 
 READ_DEPTH=30
 PASS_NUM=20
+HIFI_READ_LEN=15000 # mean read length, typical PacBio HiFi
+THREADS=16
 
 create_output_dir() {
 	test -d "${OUTPUT_DIR}" && rm -r "${OUTPUT_DIR}"
@@ -50,9 +55,7 @@ create_output_dir() {
 
 create_visor_bed() {
     split=$1
-    source "${SVSCANNER_VENV_PATH}/bin/activate"
-    python ${SIMULATE_SV} --split ${split} --frac --simple -n ${SV_COUNT} --mob ${MOBILE_ELEMENTS} --rep ${REP_ELEMENTS} --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
-    deactivate
+    apptainer exec "${SVSCANNER_SIF}" python ${SIMULATE_SV} --split ${split} --frac --simple -n ${SV_COUNT} --mob ${MOBILE_ELEMENTS} --rep ${REP_ELEMENTS} --out ${OUTPUT_DIR}/base_ref --seed ${SEED} || die "sim ref failed"
 }
 
 # b_ref, sv_ref, bed_file, ref_name
@@ -69,29 +72,52 @@ simulate_sv_using_visor() {
     sed -i "1s/^>ref0$/>${ref_name}/" ${sv_ref} || die "renaming ref failed"
 }
 
-simulated_reads_pacbio_hifi() {
+# pbsim3 + ccs is overkill for perfect reads; replaced by simulate_reads_squigualator_pacbio_hifi
+# simulated_reads_pacbio_hifi() {
+#     ref_0=$1
+#     ref_1=$2
+#
+#     cat ${ref_0} ${ref_1} > ${BOTH_REF}
+#
+#     ${PBSIM3} --strategy wgs \
+#       --method qshmm \
+#       --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
+#       --depth ${READ_DEPTH} \
+#       --genome ${BOTH_REF} \
+#       --seed ${SEED} \
+#       --pass-num ${PASS_NUM}} \
+#       --accuracy-mean 1 \
+#       --accuracy-min 1 \
+#       --difference-ratio 0:0:0 \
+#       --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
+#
+#     samtools merge ${OUTPUT_DIR}/simulated_reads_*.bam -o ${OUTPUT_DIR}/merged_sim_reads.bam || die "samtools merge failed"
+#     rm ${OUTPUT_DIR}/simulated_reads_*.bam*
+#
+#     ${PACBIO_CCS} ${OUTPUT_DIR}/merged_sim_reads.bam ${SIM_READS} || die "pacbio ccs failed"
+#     rm ${OUTPUT_DIR}/merged_sim_reads.bam
+# }
+
+# squigulator samples error-free reads (-q) as a by-product of signal simulation.
+# Only the read length distribution and depth matter here; the profile (-x) only
+# affects the discarded signal. --ideal skips signal noise generation to save time.
+simulate_reads_squigualator_pacbio_hifi() {
     ref_0=$1
     ref_1=$2
-    
+
     cat ${ref_0} ${ref_1} > ${BOTH_REF}
 
-    ${PBSIM3} --strategy wgs \
-      --method qshmm \
-      --qshmm ${PBSIM3_DATA}/QSHMM-RSII.model \
-      --depth ${READ_DEPTH} \
-      --genome ${BOTH_REF} \
+    ${SQUIGULATOR} ${BOTH_REF} \
+      -x dna-r10-prom \
+      -f ${READ_DEPTH} \
+      -r ${HIFI_READ_LEN} \
       --seed ${SEED} \
-      --pass-num ${PASS_NUM}} \
-      --accuracy-mean 1 \
-      --accuracy-min 1 \
-      --difference-ratio 0:0:0 \
-      --prefix ${OUTPUT_DIR}/simulated_reads || die "pbsim3 failed"
+      --ideal \
+      -t ${THREADS} \
+      -o ${OUTPUT_DIR}/squigulator.blow5 \
+      -q ${SIM_READS} || die "squigulator failed"
 
-    samtools merge ${OUTPUT_DIR}/simulated_reads_*.bam -o ${OUTPUT_DIR}/merged_sim_reads.bam || die "samtools merge failed"
-    rm ${OUTPUT_DIR}/simulated_reads_*.bam*
-
-    ${PACBIO_CCS} ${OUTPUT_DIR}/merged_sim_reads.bam ${SIM_READS} || die "pacbio ccs failed"
-    rm ${OUTPUT_DIR}/merged_sim_reads.bam
+    rm ${OUTPUT_DIR}/squigulator.blow5
 }
 
 align_reads_pacbio_hifi() {
@@ -99,7 +125,7 @@ align_reads_pacbio_hifi() {
     ref2=$2
     # minimap2 -cx map-hifi ${ref2} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
     # minimap2 -cx map-hifi ${base_ref} -t32 --secondary=no ${SIM_READS} | awk '{print $10/$11}' | datamash mean 1 sstdev 1 q1 1 median 1 q3 1 count 1 || die "minimap2 accuracy metric failed"
-    minimap2 -ax map-hifi -Y ${base_ref} -t32 --secondary=no ${SIM_READS} > ${SAM} || die "minimap2 failed"
+    minimap2 -ax map-hifi -Y ${base_ref} -t${THREADS} --secondary=no ${SIM_READS} > ${SAM} || die "minimap2 failed"
     samtools sort ${SAM} -o ${BAM} && samtools index ${BAM} || die "samtools sort and index failed"
     # samtools view -h -F 0x800 ${SAM} | sed -E 's/\tSA:Z:[^\t]+//g' | samtools sort -o ${BAM} && samtools index ${BAM} || die "samtools sort and index failed"
 }
@@ -127,12 +153,10 @@ run_svscanner() {
     rel_ref=${base_ref#${OUTPUT_DIR}/}
     rel_vcf=${vcf#${OUTPUT_DIR}/}
 
-    docker run --rm \
-      --user "$(id -u):$(id -g)" \
-      -v "${DFAM_DIR}:/dfam:ro" \
-      -v "${OUTPUT_DIR}:/data" \
-      "${SVSCANNER_IMAGE}" \
-      svscanner --dfam_dir /dfam --out /data/svscanner --vcf "/data/${rel_vcf}" --ref "/data/${rel_ref}" \
+    apptainer exec \
+      --bind "${OUTPUT_DIR}:/data" \
+      "${SVSCANNER_SIF}" \
+      svscanner --engine rmblast --out /data/svscanner --vcf "/data/${rel_vcf}" --ref "/data/${rel_ref}" \
       > ${OUTPUT_DIR}/svclass_stdout || die "sv classifier script failed"
 }
 
@@ -140,7 +164,8 @@ create_output_dir
 create_visor_bed 2
 simulate_sv_using_visor ${BASE_REF} ${OUTPUT_DIR}/base_ref/ref_0.fa ${OUTPUT_DIR}/base_ref/visor_hack_0.bed ref_0
 simulate_sv_using_visor ${BASE_REF} ${OUTPUT_DIR}/base_ref/ref_1.fa ${OUTPUT_DIR}/base_ref/visor_hack_1.bed ref_1
-simulated_reads_pacbio_hifi ${OUTPUT_DIR}/base_ref/ref_0.fa ${OUTPUT_DIR}/base_ref/ref_1.fa
+# simulated_reads_pacbio_hifi ${OUTPUT_DIR}/base_ref/ref_0.fa ${OUTPUT_DIR}/base_ref/ref_1.fa
+simulate_reads_squigualator_pacbio_hifi ${OUTPUT_DIR}/base_ref/ref_0.fa ${OUTPUT_DIR}/base_ref/ref_1.fa
 align_reads_pacbio_hifi ${BASE_REF}
 variant_call_sniffles ${BASE_REF}
 run_svscanner ${BASE_REF} ${OUTPUT_DIR}/sniffles.vcf.gz
