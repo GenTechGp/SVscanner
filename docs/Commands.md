@@ -32,6 +32,7 @@
 | `--dfam_db`                     | `str`          | `None`                  | A complete Dfam database (base file `dfamNN.0.h5` plus partitions) to use instead of the built-in one. See [Dfam databases](#dfam-databases). |
 | `--dfam_extra`                  | `str`          | `None`                  | Dfam partitions to add to the built-in database (same Dfam release, no base file). See [Dfam databases](#dfam-databases). |
 | `--uncurated`                   | flag           |                         | Use uncurated Dfam families as well as curated ones (RepeatMasker `-uncurated`). Needs uncurated partitions covering `--species`. See [Dfam databases](#dfam-databases). |
+| `--rm_gc`                       | `int`          | not set (RepeatMasker chooses) | Background GC% for RepeatMasker's scoring matrices (RepeatMasker `-gc`, 1-100). `--rm_gc 43` makes annotations independent of how SVs are grouped into files; see the README Notes. |
 | `--min_sv_coverage`             | `float`        | `0.05`      | Minimum intersection between a repeat element and SV.                      |
 | `--min_class_sv_coverage`       | `float`        | `0.25`| Minimum class-level SV coverage to be considered repetitive.               |
 | `--min_total_sv_coverage`       | `float`        | `0.75`| Minimum total SV coverage by repeats to be considered repetitive.          |

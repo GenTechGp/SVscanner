@@ -145,6 +145,21 @@ A fuller version with input checks is in [scripts/nci_gadi_singularity.sh](scrip
    annotating (`Library preparation took N seconds` in the log). The library is built
    inside the run's output directory and removed at the end, so nothing is written into the
    image or your home directory, and concurrent runs never share it.
+3. **RepeatMasker scoring matrix and VCF size.** RepeatMasker chooses its scoring matrix
+   from GC content, per internal batch of about 60 kb: a batch of several sequences gets
+   the average 43% GC matrices, while a batch holding a single sequence longer than 2 kb
+   gets matrices for that sequence's own GC. SVscanner splits the SVs over `--nsplit_files`
+   (default 500) files, so a small VCF (up to about 500 SVs) puts each SV in its own file
+   and most SVs are scored with their own GC, while a large VCF packs many SVs per file and
+   nearly all are scored at 43%. The same SV can therefore be annotated slightly differently
+   depending on the VCF it is in. On 187 SVA/Alu-rich SVs, 42 records differed between the
+   two: slightly lower `RM_SV_COVERAGE` and `RM_TOTAL_SV_COVERAGE` under GC-rich matrices
+   (17 `RM_RECIPROCAL` Full → Partial), and some `RM_SUBFAMILY` calls (e.g. SVA_D vs
+   SVA_E/F, AluSp vs AluSx3). `RM_CLASSIFICATION`'s dominant class and
+   `FINAL_CLASSIFICATION` did not change. To make annotations independent of grouping,
+   fix the matrix with `--rm_gc 43` (RepeatMasker `-gc 43`, the same matrices a large VCF
+   already gets). A few Alu subfamily labels can still differ between groupings with a
+   fixed matrix.
 
 ## Releasing
 

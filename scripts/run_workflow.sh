@@ -47,6 +47,10 @@ DFAM_EXTRA=""
 # --uncurated: RepeatMasker -uncurated, uncurated Dfam families as well as curated ones.
 # They live in their own partitions (dfamNN.uncurated.*), none of which are built in.
 UNCURATED=0
+# --rm_gc: RepeatMasker -gc, the background GC% its scoring matrices are chosen for. Empty
+# leaves the choice to RepeatMasker, which picks per internal batch: 43% for a batch of
+# several sequences, the sequence's own GC for a lone one over 2 kb (see README Notes).
+RM_GC=""
 STOCK_FAMDB_DIR=""        # the FamDB package (famdb.py) RepeatMasker is configured with
 STOCK_FAMDB_DATA_DIR=""   # the directory of *.h5 files it reads by default
 
@@ -107,6 +111,9 @@ usage() {
     echo "  --uncurated             Use uncurated Dfam families as well as curated ones (RepeatMasker -uncurated)."
     echo "                          Needs uncurated partitions covering --species, added with --dfam_extra or present in"
     echo "                          --dfam_db: dfamNN.uncurated.consensus.* for RMBlast, dfamNN.uncurated.hmm.* for HMMER."
+    echo "  --rm_gc INT             Background GC% for RepeatMasker's scoring matrices (RepeatMasker -gc, 1-100), e.g. 43"
+    echo "                          so that annotations do not depend on how SVs are grouped into files (default: not set,"
+    echo "                          RepeatMasker chooses; see README Notes)"
     echo "  --min_sv_coverage VAL   Minimum intersection between a repeat element and SV (aka sv_coverage) (default: $MIN_SV_COVERAGE)"
     echo "  --min_class_sv_coverage VAL Minimum class sv coverage by repeat elements to be considered repetitive (default: $MIN_CLASS_SV_COVERAGE)"
     echo "  --min_total_sv_coverage VAL Minimum total sv coverage by repeat elements to be considered repetitive (default: $MIN_TOTAL_SV_COVERAGE)"
@@ -159,6 +166,8 @@ parse_args() {
                 DFAM_EXTRA=$(realpath -e "$2" 2>/dev/null) || die "Dfam partition directory not found: $2"; shift 2;;
             --uncurated)
                 UNCURATED=1; shift;;
+            --rm_gc)
+                RM_GC="$2"; shift 2;;
             --dfam_dir)
                 die "--dfam_dir has been removed. SVscanner now needs RepeatMasker ${RM_MIN_VERSION}+ (Dfam 4.0+, FamDB 3.0); use\n  --dfam_db DIR     for a complete Dfam database used instead of the built-in one, or\n  --dfam_extra DIR  for partitions added to the built-in database.\nThe container's built-in Dfam 4.0 covers -species human with RMBlast without either.";;
             --min_sv_coverage)
@@ -218,6 +227,10 @@ parse_args() {
     fi
     if [[ -n "${DFAM_DB}" && -n "${DFAM_EXTRA}" ]]; then
         die "Error: --dfam_db and --dfam_extra are mutually exclusive.\n--dfam_db replaces the built-in Dfam database; put any extra partitions in that same directory."
+    fi
+    # RepeatMasker treats -gc 0 as not given, so 0 would silently fall back to its own choice.
+    if [[ -n "${RM_GC}" ]] && ! [[ "${RM_GC}" =~ ^[0-9]+$ && "${RM_GC}" -ge 1 && "${RM_GC}" -le 100 ]]; then
+        die "Error: --rm_gc must be an integer from 1 to 100 (got '${RM_GC}')."
     fi
 
     # Internal directories (keep as it is)
@@ -326,6 +339,7 @@ check_required() {
     echo "Reference: ${REF}"
     echo "Input SV VCF: ${VCF}"
     echo "Input BED: ${STR_BED}"
+    echo "RepeatMasker matrix GC: ${RM_GC:-RepeatMasker default (43% for multi-sequence batches, own GC for a lone sequence >2 kb)}"
 
     echo "Number of Threads: ${NTHREADS}"
     echo "Number of RepeatMasker jobs: ${MAX_JOBS} (${THREADS_PER_JOB} thread(s) each)"
@@ -584,6 +598,7 @@ set_rm_search_args() {
     RM_SEARCH_ARGS=(-species "${SPECIES}")
     [[ -n "${ENGINE}" ]] && RM_SEARCH_ARGS+=(-e "${ENGINE}")
     (( UNCURATED )) && RM_SEARCH_ARGS+=(-uncurated)
+    [[ -n "${RM_GC}" ]] && RM_SEARCH_ARGS+=(-gc "${RM_GC}")
     return 0
 }
 
