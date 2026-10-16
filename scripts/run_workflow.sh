@@ -65,6 +65,8 @@ MIN_TOTAL_SV_COVERAGE=0.75 #The minimum total sv coverage by repeat elements to 
 MAX_TRF_OVERLAP=0.1 #The maximum TRF element overlap to be considered non-overlapping (0 < max_trf_overlap < 1)
 INTERVAL=0.05
 DIAGRAM_LEN=100
+RM_CHAIN=1 # Flag to chain RepeatMasker alignments per element for the RM chain diagram block (1 = yes, 0 = no)
+RM_CHAIN_JUMP_COST=30 # Cost (in matched bases) of each jump between RepeatMasker alignment blocks when chaining them per element
 
 FLAG_DELETE_TMP_FILES=1 # Flag to delete temporary files (1 = yes, 0 = no)
 FLAG_OVERWRITE=0 # Flag to overwrite existing output files (1 = yes, 0 = no)
@@ -77,6 +79,7 @@ PREFIX="" # Prefix for output files (default: None)
 # Python and bash scripts (keep as it is)
 CHECK_REQUIRED="${SVSCANNER_HOME}/scripts/check_required_python.sh"
 EXTRACT_SV_FLANKINGS="${SVSCANNER_HOME}/src/extract_sv.py"
+RM_ALIGN_CHAIN="${SVSCANNER_HOME}/src/rm_align_chain.py"
 ANNOTATION="${SVSCANNER_HOME}/src/repeat_annotation.py"
 PLOT="${SVSCANNER_HOME}/src/generate_plots.py"
 TRACEBACK_PLOT="${SVSCANNER_HOME}/src/generate_traceback_plots.py"
@@ -110,6 +113,11 @@ usage() {
     echo "  --max_trf_overlap VAL   Maximum TRF element overlap to be considered non-overlapping (default: $MAX_TRF_OVERLAP)"
     echo "  --interval VAL          Interval value (default: $INTERVAL)"
     echo "  --diagram_len VAL       Diagram length (default: $DIAGRAM_LEN)"
+    echo "  --no_rm_chain           Do not chain RepeatMasker alignments per element: RepeatMasker runs without -a and the"
+    echo "                          diagram has no RM chain block (default: chain)"
+    echo "  --rm_chain_jump_cost VAL Cost, in matched bases, of each jump between RepeatMasker alignment blocks when they are"
+    echo "                          chained into one alignment per element (default: $RM_CHAIN_JUMP_COST). --resume reuses the"
+    echo "                          existing rm_chain.tab, so a different value needs a full run."
     echo "  --nsplit_files INT      Number of split files (default: $NSPLIT_FILES)"
     echo "  --keep_tmp_files        Keep temporary files (default: delete)"
     echo "  --overwrite             Overwrite existing output files (default: no overwrite)"
@@ -165,6 +173,10 @@ parse_args() {
                 INTERVAL="$2"; shift 2;;
             --diagram_len)
                 DIAGRAM_LEN="$2"; shift 2;;
+            --no_rm_chain)
+                RM_CHAIN=0; shift;;
+            --rm_chain_jump_cost)
+                RM_CHAIN_JUMP_COST="$2"; shift 2;;
             --nsplit_files)
                 NSPLIT_FILES="$2"; shift 2;;
             --keep_tmp_files)
@@ -219,6 +231,8 @@ parse_args() {
     # File Intermediates (keep as it is)
     INFO_FILE=${OUTPUT_DIR}/${PREFIX}info.tab
     RM_FILE=${OUTPUT_DIR}/${PREFIX}rm.tab
+    # One chained alignment per RepeatMasker element, from the .align files (see chain_rm_alignments)
+    RM_CHAIN_FILE=${OUTPUT_DIR}/${PREFIX}rm_chain.tab
     TRF_FILE=${OUTPUT_DIR}/${PREFIX}trf.tab
 
     # Final Outputs (change if necessary)
@@ -529,6 +543,15 @@ check_resume_inputs() {
     echo "  found: ${INFO_FILE}"
     echo "  found: ${RM_FILE}"
     echo "  found: ${TRF_FILE}"
+    # Optional: runs made with --no_rm_chain or before the RepeatMasker chain step have no
+    # rm_chain.tab. Their .align files are gone, so the diagram has no RM chain block.
+    if (( RM_CHAIN )); then
+        if [[ -s "${RM_CHAIN_FILE}" ]]; then
+            echo "  found: ${RM_CHAIN_FILE}"
+        else
+            echo "  not found: ${RM_CHAIN_FILE} (the diagram will have no RM chain block; a full run makes it)"
+        fi
+    fi
     echo "done"
 }
 
@@ -668,8 +691,11 @@ run_repeatmasker() {
 
     # Run RepeatMasker in parallel with error sensitivity.
     # MAX_JOBS and THREADS_PER_JOB are set by resolve_thread_counts.
+    # -a writes the alignments (.align) that chain_rm_alignments reads; it leaves .out unchanged.
     set_rm_search_args
-    if ! find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | parallel --halt now,fail=1 -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} $(printf '%q ' "${RM_SEARCH_ARGS[@]}")> {}.log 2>&1"; then
+    local align_arg=""
+    (( RM_CHAIN )) && align_arg="-a"
+    if ! find ${EXTRACT_SV_FLANKS_OUT} -name "*.fa" | parallel --halt now,fail=1 -j "${MAX_JOBS}" "${REPEAT_MASKER} {} -pa ${THREADS_PER_JOB} ${align_arg} -html -gff -dir ${EXTRACT_SV_FLANKS_OUT} $(printf '%q ' "${RM_SEARCH_ARGS[@]}")> {}.log 2>&1"; then
         # parallel reports only the failing command line; the reason is in that job's own
         # log. Surface it - most often a FamDB partition that does not cover --species.
         local last_log
@@ -688,6 +714,20 @@ run_repeatmasker() {
     RM_TIME=$((T3 - T2)) || die "failed to calculate time"
     rm -r ${RM_TMP} || die "failed to remove ${RM_TMP}"
     echo "done. RepeatMasker took ${RM_TIME} seconds"
+}
+
+chain_rm_alignments() {
+    # RepeatMasker reports one element as several alignment blocks under one .out ID (e.g.
+    # one per copy of an expanded SVA VNTR). Chain them into one alignment per element and
+    # keep only the per-element table; the .align files go with the temporary files.
+    echo "Chaining RepeatMasker alignments per element..."
+    python3 ${RM_ALIGN_CHAIN} \
+        --rm_dir ${EXTRACT_SV_FLANKS_OUT} \
+        --info ${INFO_FILE} \
+        --out ${RM_CHAIN_FILE} \
+        --jump_cost ${RM_CHAIN_JUMP_COST} \
+        --threads ${NTHREADS} || die "failed to chain RepeatMasker alignments"
+    echo "done"
 }
 
 process_trf_repeatmasker_output() {
@@ -709,7 +749,11 @@ process_trf_repeatmasker_output() {
 annotation() {
     echo "Annotating..."
     test -d "${ANNOTATIONS_OUT}" && rm -r "${ANNOTATIONS_OUT}"
+    # Absent when --resume picks up a run made with --no_rm_chain or before the chain step.
+    local rm_chain_args=()
+    (( RM_CHAIN )) && [[ -s "${RM_CHAIN_FILE}" ]] && rm_chain_args=(--rm_chain "${RM_CHAIN_FILE}")
     python3 ${ANNOTATION} \
+        "${rm_chain_args[@]}" \
         --vcf ${VCF}\
         --rm ${RM_FILE}\
         --trf ${TRF_FILE}\
@@ -826,6 +870,9 @@ else
     extract_flanking_regions
     run_trf
     run_repeatmasker
+    if [[ ${RM_CHAIN} -eq 1 ]]; then
+        chain_rm_alignments
+    fi
     process_trf_repeatmasker_output
 fi
 annotation

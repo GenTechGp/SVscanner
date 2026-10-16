@@ -38,6 +38,8 @@
 | `--max_trf_overlap`             | `float`        | `0.1`      | Maximum TRF element overlap to be considered non-overlapping.              |
 | `--interval`                    | `int`          | `0.05`             | Interval value for binning or windowing.                                   |
 | `--diagram_len`                 | `int`          | `100`          | Length of the diagram generated for visualization.                         |
+| `--no_rm_chain`                 | flag           |                | Do not chain RepeatMasker alignments per element: RepeatMasker runs without `-a`, no `rm_chain.tab` is written and the diagram has no `RM chain` block. Default: chain. |
+| `--rm_chain_jump_cost`          | `float`        | `30`           | Cost, in matched bases, of each jump between RepeatMasker alignment blocks when they are chained into one alignment per element (the `RM chain` diagram block, see [rm_align_chain.py](#rm_align_chainpy)). `--resume` reuses the existing `rm_chain.tab`, so a different value needs a full run. |
 | `--nsplit_files`                | `int`          | `500`         | Number of files to split sequences into.                                   |
 | `--keep_tmp_files`             | flag           |                         | Keep intermediate files (default: delete after run).                       |
 | `--overwrite`                  | flag           |                         | Overwrite existing output files if present.                                |
@@ -244,8 +246,25 @@ search library is built per run under the output directory.
 | `--max_trf_overlap`      | float  | 0.1     | Maximum allowed TRF element overlap (0 < value < 1) |
 | `--div`                  | float  | 0.05    | Divisor used to prioritize period size over intersection (0 < value < 1) |
 | `-l`, `--len`            | int    | 100     | Diagram length (must be > 0) |
+| `--rm_chain`             | str    | None    | Chain table from `rm_align_chain.py`; adds the `RM chain` block to the diagrams |
 | `--debug`                | flag   | False   | Enable debug mode |
 | `-h`, `--help`           | flag   | -       | Show help message and exit |
+
+
+## rm_align_chain.py
+
+Chains RepeatMasker's alignment blocks (`.align`, from RepeatMasker `-a`) into one alignment per element and writes `rm_chain.tab`, which `repeat_annotation.py --rm_chain` draws as the `RM chain` diagram block. `run_workflow.sh` runs it straight after RepeatMasker; the `.align` files are removed with the other temporary files. The table and the block are described in [Repeat/SV Diagram](Repeat-SV_diagram.md#rm-chain-block).
+
+| Argument          | Type  | Required | Default | Description |
+|-------------------|-------|----------|---------|-------------|
+| `--rm_dir`        | str   | Yes      |         | Directory with the RepeatMasker `*.fa.out` and `*.fa.align` files |
+| `-i`, `--info`    | str   | Yes      |         | Path to the SV info file |
+| `-o`, `--out`     | str   | Yes      |         | Path to write the chain table |
+| `--jump_cost`     | float | No       | 30      | Cost, in matched bases, of each jump between alignment blocks |
+| `-t`, `--threads` | int   | No       | 1       | Number of RepeatMasker outputs to chain in parallel |
+| `-h`, `--help`    | flag  | No       |         | Show help message and exit |
+
+An `.out` file with hits but no `.align` is an error (RepeatMasker was run without `-a`).
 
 
 ## generate_plot.py

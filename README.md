@@ -11,11 +11,11 @@ A workflow to annotate tandem repeats and mobile elements within structural vari
 ### Process:
 1. Flanking sequences are extracted around each SV to form a query sequence (details about the [extraction process](docs/sv_extraction.md)):
     - query_sequence = left_flank + SV + right_flank
-2. These query sequences are annotated using TRF and RM.
+2. These query sequences are annotated using TRF and RM. RM's alignments are also chained into one alignment per element, for the diagrams.
 
 ### Outputs:
 1. A VCF file with repeat annotations embedded (details about [VCF INFO tags](docs/repeat_annotation_VCF_tags.md) and [annotation process](docs/repeat_annotation_steps.md)).
-2. Diagrams visualizing Repeat/SV annotations (details about the [diagram file format](docs/Repeat-SV_diagram.md)).
+2. Diagrams visualizing Repeat/SV annotations, including where an element carries sequence its consensus does not have, e.g. an SVA VNTR expansion (details about the [diagram file format](docs/Repeat-SV_diagram.md)).
 3. Histograms and density plots summarizing Repeat/SV annotations.
 
 ![Illustration](/images/SVscanner_workflow.png)
