@@ -8,7 +8,6 @@ repository root, as a bare `X.Y.Z`. Edit it by hand when cutting a release.
 | `VERSION` | Source of truth, edited by hand. |
 | `scripts/run_workflow.sh` (`--version`, run banner) | Reads `VERSION` at startup. Never hardcode it. |
 | git tag `vX.Y.Z` | Must match `VERSION` at the tagged commit — checked by CI and by the pre-push hook. |
-| `README.md` (`module load SVscanner/X.Y.Z`) | The version installed as an if89 module, which is not built for every tag. Checked as a warning only. |
 | Container image tag on GHCR | Built and pushed from the tag by [`docker-publish.yml`](../.github/workflows/docker-publish.yml). Nothing to edit. |
 | `README.md`, `docs/docker.md` (`ghcr.io/…/svscanner:X.Y.Z` examples) | Pinned versions in the usage examples. Checked as a warning only. |
 
@@ -34,25 +33,21 @@ git push origin dev
    fires it against the new tag; if it fails, the tag disagrees with `VERSION` and the
    release needs re-cutting (delete the release and its tag, fix `VERSION`, tag again).
 
-5. Install that version as an if89 module on Gadi and confirm the deployed copy
-   reports what you expect:
-
-```bash
-module use -a /g/data/if89/apps/modulefiles
-module load SVscanner/0.6.1
-svscanner --version          # must print: SVscanner v0.6.1
-```
-
-6. Update the `module load SVscanner/X.Y.Z` lines in the README to that version, now
-   that the module actually exists.
-
-7. **Check the `docker publish` run** under the Actions tab. It builds the image, runs
-   its smoke tests and pushes `ghcr.io/gentechgp/svscanner:X.Y.Z`, `:X.Y` and `:latest`.
-   The first push of a package creates it as **private** — set it to public once, under
+5. **Check the `docker publish` run** under the Actions tab. It builds the image, runs
+   its smoke tests (including RepeatMasker on an SVA in both orientations) and pushes
+   `ghcr.io/gentechgp/svscanner:X.Y.Z`, `:X.Y` and `:latest`. The first push of a package
+   creates it as **private** — set it to public once, under
    *Packages → svscanner → Package settings*, or nobody else can pull it.
 
-8. Update the `ghcr.io/…/svscanner:X.Y.Z` examples in the README and
-   [docs/docker.md](docker.md) to the new version.
+6. Pull the published image and confirm it reports what you expect:
+
+```bash
+singularity pull svscanner_0.6.1.sif docker://ghcr.io/gentechgp/svscanner:0.6.1
+singularity exec svscanner_0.6.1.sif svscanner --version   # must print: SVscanner v0.6.1
+```
+
+7. If the README or [docs/docker.md](docker.md) pin a `ghcr.io/…/svscanner:X.Y.Z`
+   example, update it to the new version.
 
 ## The two checks
 
@@ -85,8 +80,6 @@ Hard errors, which fail CI and block a local push:
 
 Warning only, never blocking:
 
-- the README's `module load` version differing from `VERSION`, since the if89 module
-  lags the repository between deployments;
 - a `ghcr.io/…/svscanner:X.Y.Z` example in the README or `docs/docker.md` differing from
   `VERSION`. An image *is* published for every tag, so this one is genuinely stale rather
   than legitimately lagging — but the check necessarily runs before the image it names
@@ -102,6 +95,5 @@ scripts/check_version.sh --rev <commit>  # any commit, without checking it out
 scripts/check_version.sh --expect 0.6.1  # as CI does for tag v0.6.1
 ```
 
-Only `module load SVscanner/<version>` lines in the README are compared, so prose that
-deliberately names an older release — such as the note that versions before `0.5.2`
-sized themselves from the whole compute node — is left alone.
+Only `ghcr.io/…/svscanner:X.Y.Z` image references are compared, so prose that names an
+older release, or the `X.Y.Z` placeholder in the usage examples, is left alone.

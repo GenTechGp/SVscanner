@@ -1,0 +1,10 @@
+   SW   perc perc perc  query     position in query    matching  repeat              position in repeat
+score   div. del. ins.  sequence  begin end   (left)   repeat    class/family      begin  end    (left)  ID
+
+  841   19.4  1.0  5.0  DEL.57      677   779 (6198) C L1M4      LINE/L1        (1090)   5483   5385  34  
+  841   19.4  1.0  5.0  DEL.57      944  1045 (5932) C L1M4      LINE/L1        (1189)   5384   5286  34 *
+ 2468   21.5  6.0  4.8  DEL.57     1035  1219 (5758) C L1M4      LINE/L1        (5423)   2094   1927  34  
+ 2468   21.5  6.0  4.8  DEL.57     1358  1869 (5108) C L1M4      LINE/L1        (5591)   1926   1389  34  
+ 2532    1.4  0.0  2.1  INS.119    4194  4505 (1999) C AluY       SINE/Alu          (0)    311      1 142  
+ 6021   12.7  2.5  0.1  DEL.96        1   886 (6189) C MSTA     LTR/ERVL-MaLR   (724)    907      1  56  
+ 2247   12.2 13.1  0.7  DEL.96      887  1267 (5808) C MSTA     LTR/ERVL-MaLR     (0)    428      1  56  

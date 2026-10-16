@@ -92,35 +92,53 @@ jobs:
           [[ "${reported}" == "SVscanner v${expected}" ]] \
             || { echo "::error::image reports '${reported}', expected 'SVscanner v${expected}'"; exit 1; }
 
-      # The container ships without a clade database, so --dfam_dir is the only way it
-      # can annotate anything. Exercise the library assembly directly: a full run needs
-      # a 57 GB partition and a reference genome, neither of which belongs in CI.
-      - name: Smoke test - external Dfam library assembly
+      # The image carries Dfam 4.0, so RepeatMasker can run for real. One SVA_F copy from
+      # hg38 (chr2:41746002-41748725) and its reverse complement: before RepeatMasker
+      # 4.2.6 the forward copy came back as 3 lines and the reverse as 1
+      # (Dfam-consortium/RepeatMasker#386). Both must be one SVA_F line. This also proves
+      # the built-in human library resolves and RMBlast runs.
+      - name: Smoke test - RepeatMasker on an SVA, both strands
         run: |
           set -euo pipefail
-          mkdir -p fake_dfam
-          echo "not a real partition" > fake_dfam/dfam39_full.7.h5
-          docker run --rm -v "${PWD}/fake_dfam:/dfam:ro" svscanner:ci bash -eu -c '
-            # Stand in a library cache of the kind a used RepeatMasker install accumulates.
-            # It must NOT be inherited: its name records the database version but not which
-            # partitions built it, so with --dfam_dir it is stale by construction and
-            # RepeatMasker would reuse it silently.
-            mkdir -p /opt/RepeatMasker/Libraries/CONS-Dfam_3.9/human
-            echo stale > /opt/RepeatMasker/Libraries/CONS-Dfam_3.9/human/specieslib
-
-            { echo "die() { echo -e \"\$1\" >&2; exit 1; }"
-              sed -n "/^setup_dfam_library()/,/^}/p" /opt/svscanner/scripts/run_workflow.sh
-            } > /tmp/harness.sh
-            REPEAT_MASKER=$(command -v RepeatMasker) DFAM_DIR=/dfam RM_LIBDIR=/tmp/rm_libraries \
-              bash -c "source /tmp/harness.sh; setup_dfam_library"
-
-            # The root partition must come from the image and the clade partition from the mount.
-            test -e /tmp/rm_libraries/famdb/dfam39_full.0.h5
-            test "$(readlink -f /tmp/rm_libraries/famdb/dfam39_full.7.h5)" = /dfam/dfam39_full.7.h5
-            test -e /tmp/rm_libraries/RepeatPeps.lib
-            # ... and the stale cache must have been left behind.
-            test ! -e /tmp/rm_libraries/CONS-Dfam_3.9
+          docker run --rm -v "${PWD}/test/sva_strand_reproducer.fa:/in/sva.fa:ro" svscanner:ci bash -eu -c '
+            mkdir -p /tmp/rm && cd /tmp/rm && cp /in/sva.fa .
+            RepeatMasker -e rmblast -species human -pa 2 sva.fa > rm.log 2>&1 || { tail -n 20 rm.log; exit 1; }
+            cat sva.fa.out
+            for strand in forward revcomp; do
+              n=$(awk -v s="_${strand}" "\$5 ~ s && \$10 == \"SVA_F\"" sva.fa.out | wc -l)
+              echo "${strand}: ${n} SVA_F line(s)"
+              [ "${n}" -eq 1 ] || { echo "expected 1 SVA_F line on the ${strand} strand" >&2; exit 1; }
+            done
           '
+
+      # The --dfam_db / --dfam_extra checks run before extraction and RepeatMasker, so a
+      # tiny VCF and a stand-in reference (with --skip_ref_check) reach them. Each must stop
+      # with its own message.
+      - name: Smoke test - Dfam option checks
+        run: |
+          set -euo pipefail
+          mkdir -p dfam_tests/complete dfam_tests/other_release
+          touch dfam_tests/complete/dfam40.0.h5 dfam_tests/other_release/dfam41.curated.hmm.1.h5
+          expect_failure() {
+            local want="$1"; shift
+            if out=$(docker run --rm -v "${PWD}/dfam_tests:/dfam:ro" -v "${PWD}/test:/t:ro" svscanner:ci \
+                       svscanner --vcf /t/HG002_subset_mini/HG002_subset_mini.vcf.gz --ref /t/sample.fa \
+                       --out /tmp/out --skip_ref_check "$@" 2>&1); then
+              echo "::error::expected failure for: $*"; exit 1
+            fi
+            grep -qF -- "${want}" <<< "${out}" || { echo "${out}"; echo "::error::missing message '${want}' for: $*"; exit 1; }
+            echo "ok: $* -> ${want}"
+          }
+          expect_failure "--dfam_dir has been removed" --dfam_dir /dfam/complete
+          expect_failure "mutually exclusive" --dfam_db /dfam/complete --dfam_extra /dfam/other_release
+          expect_failure "the base file of a complete Dfam database" --dfam_extra /dfam/complete
+          expect_failure "not from the built-in Dfam release" --dfam_extra /dfam/other_release
+          expect_failure "use --dfam_extra" --dfam_db /dfam/other_release
+          # These reach RepeatMasker's library preparation (~20 s each), where it would
+          # carry on curated-only; SVscanner must refuse. Human has no uncurated families
+          # in Dfam at all; mouse has 4,692, but their partitions are not built in.
+          expect_failure "Dfam has no uncurated families" --uncurated
+          expect_failure "is not installed" --uncurated --species "mus musculus"
 
       - name: Push to GHCR
         if: startsWith(github.ref, 'refs/tags/v')

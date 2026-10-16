@@ -9,9 +9,8 @@
 #   - scripts/run_workflow.sh hardcoding a version instead of reading VERSION
 #   - a release tag vX.Y.Z whose commit does not say X.Y.Z
 #
-# Warnings only (printed, never blocking), because the if89 module is not built for
-# every tag and so the documented module version may legitimately lag VERSION:
-#   - README.md `module load SVscanner/<version>` differing from VERSION
+# Warning only (printed, never blocking), because it necessarily runs before the image
+# it names is published:
 #   - a container image tag pinned in README.md or docs/docker.md differing from VERSION
 #
 # Usage:
@@ -82,20 +81,10 @@ if [[ -z $REV ]]; then
         err "run_workflow.sh --version reports '${reported}', expected 'SVscanner v${VERSION}'"
 fi
 
-# 3. The documented module version - a reminder, not a rule. Only `module load` lines
-#    are looked at, so prose that deliberately names an older release is left alone.
-readme_versions=$(read_file README.md |
-    grep -oE 'module load SVscanner/[0-9]+\.[0-9]+\.[0-9]+' | sed 's#.*/##' | sort -u)
-while read -r v; do
-    [[ -z $v || $v == "$VERSION" ]] ||
-        warn "README.md${WHERE} says 'module load SVscanner/${v}' but VERSION is ${VERSION}" \
-             "- update it if ${VERSION} is now the module installed on if89"
-done <<<"$readme_versions"
-
-# 3b. Container image tags named in the documentation. Unlike the if89 module, an image
-#     is published for every release tag, so a pinned example naming an older release is
-#     simply stale. Still a warning and not an error: the docs are not what a release is
-#     for, and this check necessarily runs before the image it names exists.
+# 3. Container image tags named in the documentation. An image is published for every
+#    release tag, so a pinned example naming an older release is simply stale. Still a
+#    warning and not an error: the docs are not what a release is for, and this check
+#    necessarily runs before the image it names exists.
 for doc in README.md docs/docker.md; do
     image_versions=$(read_file "$doc" |
         grep -oE 'ghcr\.io/[A-Za-z0-9._-]+/svscanner:[0-9]+\.[0-9]+\.[0-9]+' | sed 's#.*:##' | sort -u)

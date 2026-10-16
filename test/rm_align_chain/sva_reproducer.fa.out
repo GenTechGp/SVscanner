@@ -1,0 +1,6 @@
+   SW   perc perc perc  query                                position in query    matching repeat           position in repeat
+score   div. del. ins.  sequence                             begin end   (left)   repeat   class/family   begin  end    (left)  ID
+
+  348    0.0  0.0  0.0  hg38_chr2_41746002-41748725_forward     17    65 (2659) + SVA_E    Retroposon/SVA      1     49 (1333)   1 *
+ 7166    6.2  1.4  8.8  hg38_chr2_41746002-41748725_forward     53  2716    (8) + SVA_F    Retroposon/SVA      1   1375    (0)   2  
+ 7166    8.2  2.8  6.0  hg38_chr2_41746002-41748725_revcomp      9  2708   (16) C SVA_F    Retroposon/SVA    (0)   1375      1   3  
