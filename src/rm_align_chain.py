@@ -305,6 +305,64 @@ def chain_element(blocks, outs, sv_start, sv_end, jump_cost):
     }
 
 
+# --- blocks whose coordinates RepeatMasker got wrong ---
+
+def read_fasta(path):
+    """name -> sequence (upper case); the name is the header up to the first space."""
+    seqs, name = {}, None
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith(">"):
+                name = line[1:].split()[0]
+                seqs[name] = []
+            elif name is not None:
+                seqs[name].append(line.upper())
+    return {k: "".join(v) for k, v in seqs.items()}
+
+
+def rows_match(q_bases, seq, start):
+    """Do the block's query bases sit at 1-based start in seq? 'N' in the rows (masked by
+    RepeatMasker) matches any base."""
+    ref = seq[start - 1:start - 1 + len(q_bases)]
+    return start >= 1 and len(ref) == len(q_bases) and all(
+        a == b or a == "N" for a, b in zip(q_bases.upper(), ref))
+
+
+def check_block_coords(blocks, fasta_path):
+    """
+    Blocks whose rows hold as many query bases as the header's range, unchanged. RepeatMasker
+    4.2.6 occasionally writes a range one base off (seen: an AluSx block labelled 1001-1280
+    whose 281 bases sit at 1000-1280, in .out too). Such a block is placed where its bases
+    are in the query FASTA, keeping the header's end or its start; if neither fits, or the
+    FASTA is missing, it is left out. Both are reported on stderr.
+    """
+    seqs = None
+    kept = []
+    for b in blocks:
+        q_bases = b["q_row"].replace("-", "")
+        n = len(q_bases)
+        if n == b["qend"] - b["qbeg"] + 1:
+            kept.append(b)
+            continue
+        if seqs is None:
+            seqs = read_fasta(fasta_path) if os.path.exists(fasta_path) else {}
+        seq = seqs.get(b["query"])
+        where = f"{os.path.basename(fasta_path)}: {b['query']} ID {b['id']} {b['name']}"
+        header = f"{b['qbeg']}-{b['qend']}"
+        for start in (b["qend"] - n + 1, b["qbeg"]):
+            if seq is not None and rows_match(q_bases, seq, start):
+                b["qbeg"], b["qend"] = start, start + n - 1
+                print(f"Warning: {where}: RepeatMasker gives query {header} for {n} aligned bases; "
+                      f"they sit at {b['qbeg']}-{b['qend']}, used that", file=sys.stderr)
+                kept.append(b)
+                break
+        else:
+            print(f"Warning: {where}: RepeatMasker gives query {header} for {n} aligned bases, "
+                  f"which could not be placed; block left out", file=sys.stderr)
+    return kept
+
+
 # --- chain table ---
 
 def chain_rm_output(out_path, align_path, sv_regions, jump_cost):
@@ -312,10 +370,12 @@ def chain_rm_output(out_path, align_path, sv_regions, jump_cost):
     outs_by_id = defaultdict(list)
     for r in parse_out(out_path):
         outs_by_id[(r["query"], r["id"])].append(r)
+    blocks = [b for b in parse_align(align_path) if b["query"] in sv_regions]
+    # The query FASTA RepeatMasker was run on: N.fa next to N.fa.out
+    blocks = check_block_coords(blocks, out_path[:-len(".out")])
     blocks_by_id = defaultdict(list)
-    for b in parse_align(align_path):
-        if b["query"] in sv_regions:
-            blocks_by_id[(b["query"], b["id"])].append(b)
+    for b in blocks:
+        blocks_by_id[(b["query"], b["id"])].append(b)
     rows = []
     for (sv_id, rm_id), blocks in sorted(blocks_by_id.items()):
         sv_start, sv_end = sv_regions[sv_id]

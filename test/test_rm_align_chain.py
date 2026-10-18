@@ -6,12 +6,14 @@ reverse complement); elements.* holds three elements cut from the PB_human run: 
 over L1M4_5end/L1M4_orf2 (DEL.57 ID 34), an ERV joined from THE1D-int and its MSTA LTR
 (DEL.96 ID 56) and an AluY with a (T)n tail of another class and strand (INS.119 ID 142).
 """
+import io
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 from collections import defaultdict
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -206,6 +208,38 @@ class TableAndDiagram(unittest.TestCase):
         rows = rc.chain_block_rows(sv_chain, elements, 100, 100, 10)
         self.assertEqual(len(rows), 2)
         self.assertTrue(rows[0].startswith(" LINE"))
+
+
+class WrongBlockCoordinates(unittest.TestCase):
+    """rm_offbyone.*: an AluSx block (DEL.9856 ID 290, PB_human on Gadi) that RepeatMasker
+    4.2.6 labels 1001-1280 (header, rows and .out) but whose 281 bases sit at 1000-1280."""
+    PREFIX = os.path.join(FIXTURES, "rm_offbyone.fa")
+    WHOLE_SV = {"DEL.9856": (0, 2268)}
+
+    def chain(self, out_path):
+        with unittest.mock.patch("sys.stderr", new_callable=io.StringIO) as err:
+            rows = rc.chain_rm_output(out_path, self.PREFIX + ".align", self.WHOLE_SV, rc.DEFAULT_JUMP_COST)
+        return rows, err.getvalue()
+
+    def test_placed_from_the_query_sequence(self):
+        rows, err = self.chain(self.PREFIX + ".out")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["element_start"], rows[0]["element_end"]), (1000, 1280))
+        self.assertEqual(rows[0]["matched"], 281)
+        self.assertIn("they sit at 1000-1280", err)
+
+    def test_left_out_without_the_query_sequence(self):
+        # No N.fa next to the .out: the block cannot be placed, the run goes on without it.
+        with tempfile.TemporaryDirectory() as tmp:
+            out_path = os.path.join(tmp, "0.fa.out")
+            shutil.copy(self.PREFIX + ".out", out_path)
+            rows, err = self.chain(out_path)
+        self.assertEqual(rows, [])
+        self.assertIn("block left out", err)
+
+    def test_masked_bases_match_any_base(self):
+        self.assertTrue(rc.rows_match("ACNNT", "GACGTT", 2))
+        self.assertFalse(rc.rows_match("ACNNA", "GACGTT", 2))
 
 
 class Script(unittest.TestCase):
