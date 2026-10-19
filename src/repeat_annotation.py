@@ -229,7 +229,25 @@ def read_rm(args, sv_info):
                     sv_info[sv_id]['RM'][classification].append(element)
                     appended_count += 1
                     # print(sv_info[sv_id]['RM'])
-        
+                elif args.diagram_flank_dist > 0:
+                    # Drawing only ('-RM flank-' rows): a hit at least partly in the flanks,
+                    # within diagram_flank_dist bp of the SV, that is not selected above. Kept
+                    # under its own key, which no annotation step reads.
+                    dist = max(sv['rel_start'] - te_end, te_start - sv['rel_end'], 0)
+                    in_flank = te_start < sv['rel_start'] or te_end > sv['rel_end']
+                    if in_flank and dist <= args.diagram_flank_dist:
+                        sv_info[sv_id].setdefault('RM_FLANK', []).append({
+                            'repeat_start': te_start,
+                            'repeat_end': te_end,
+                            'repeat': repeat,
+                            'classification': classification,
+                            # Fraction of the consensus model the whole hit spans, not scaled to the SV
+                            'ref_cov': (repeat_end - repeat_begin) / (repeat_end + repeat_left),
+                            'e_id' : e_id,
+                            'rm_id': int(row[14]),
+                            'dist': dist,
+                        })
+
         print(f"Info: {appended_count}/{row_count} ({round(appended_count/row_count*100, 2)}%) RepeatMasker entries were selected.")
 
     return sv_info
@@ -1292,15 +1310,21 @@ def draw_diagrams(args, sv_info, rm_chain=None):
         return f"{info_str}{diagram_str}"
 
     def find_genomic_cords(q_pos, sv_type, element_start, element_end):
+        # An element starting at or after sv_end is a '-RM flank-' hit right of the SV.
         if sv_type in ["INS"]:
             if sv_start < element_start < sv_end:
                 element_start = sv_start
+            elif sv_end <= element_start:
+                element_start = element_start - sv_len
             if sv_start < element_end < sv_end:
                 element_end = sv_start
             elif sv_end <= element_end:
                 element_end = element_end - sv_len
         if sv_type in ["DUP"]:
-            assert element_start < sv_end
+            if sv_end < element_start < sv_end + sv_len:
+                element_start = sv_end
+            elif sv_end + sv_len <= element_start:
+                element_start = element_start - sv_len
             if sv_end < element_end < sv_end + sv_len:
                 element_end = sv_end
             elif sv_end + sv_len <= element_end:
@@ -1339,7 +1363,7 @@ def draw_diagrams(args, sv_info, rm_chain=None):
 
                 formatted_info = f' {classification}'
                 rm_diagram_flanking = format_trf_info(formatted_info, ''.join(rm_diagram_flanking), diagram_length)
-                rm_output_flanking.append(f'{rm_diagram_flanking}\t{intersect_percentage}\t{rm_element_boundary}\t{e_id}\n')
+                rm_output_flanking.append(f'{rm_diagram_flanking}\t{intersect_percentage}\t{rm_element_boundary}\t{e_id}\trm_id={element["rm_id"]}\n')
 
         # SV Diagram: only filter_rm-selected elements (mirrors VCF tags)
         for element in rm_filtered:
@@ -1351,6 +1375,27 @@ def draw_diagrams(args, sv_info, rm_chain=None):
             rm_output.append(f'{rm_diagram_sv}\t{element["repeat"]}\n')
 
         return rm_output_flanking, rm_output
+
+    def add_rm_flank_diagrams(rm_flank, diagram_length, flanking_scale, sv_tup, id_str):
+        """
+        '-RM flank-' rows: hits near the SV but not in the -RM- rows, drawn with ':'.
+        Not written to rm_diagram.tsv.
+        """
+        start = sv_tup[0]
+        query = id_str.split('\t')[2]
+        q_chr = query.split(':')[0]
+        q_pos = int(query.split(':')[1].split('-')[0])
+        sv_type = id_str.split('.')[0]
+
+        rm_flank_output = []
+        for element in sorted(rm_flank, key=lambda e: e['repeat_start']):
+            rm_diagram_flanking = create_rm([' '] * diagram_length, element, diagram_length, flanking_scale, start)
+            rm_diagram_flanking = ''.join(rm_diagram_flanking).replace('.', ':')
+            genomic_start, genomic_end = find_genomic_cords(q_pos, sv_type, element['repeat_start'], element['repeat_end'])
+            rm_diagram_flanking = format_trf_info(f" {element['classification']}", rm_diagram_flanking, diagram_length)
+            rm_flank_output.append(f"{rm_diagram_flanking}\t{q_chr}:{genomic_start}-{genomic_end}\t"
+                                   f"{element['e_id']}\trm_id={element['rm_id']}\t{element['repeat']}\tref_cov={round(element['ref_cov'] * 100, 2)}%\tdist={round(element['dist'])}bp\n")
+        return rm_flank_output
 
     def add_trf_diagrams(trf, trf_filtered, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, f_tsv, sv_tup, id_str, picked_elements, motif_length=80):
         start = sv_tup[0]
@@ -1388,13 +1433,16 @@ def draw_diagrams(args, sv_info, rm_chain=None):
 
         return trf_output_flanking, trf_output
 
-    def write_flanking(f, flanking_diagram, rm_output_flanking, trf_output_flanking):
+    def write_flanking(f, flanking_diagram, rm_output_flanking, rm_flank_output, trf_output_flanking):
         """
         Writes the SV and flanking diagram with RepeatMasker
-        and TRF entries 
+        and TRF entries
         """
-        if rm_output_flanking != [] or trf_output_flanking != []:
+        if rm_output_flanking != [] or rm_flank_output != [] or trf_output_flanking != []:
             f.write(f"{flanking_diagram}\n")
+            if rm_flank_output:
+                f.write(' -RM flank-\n')
+                f.writelines(rm_flank_output)
             if rm_output_flanking:
                 f.write(' -RM-\n')
                 f.writelines(rm_output_flanking)
@@ -1438,6 +1486,7 @@ def draw_diagrams(args, sv_info, rm_chain=None):
             id_str = sv_data['header']
             rm = get_repeat_info(sv_data, 'RM')
             trf = get_repeat_info(sv_data, 'TRF')
+            rm_flank = get_repeat_info(sv_data, 'RM_FLANK')
 
             if len(trf) > 0 and get_repeat_info(sv_data, 'FINAL_CLASSIFICATION') == 'NON_REPETITIVE' and float(get_repeat_info(sv_data, 'total_trf_coverage')) > args.min_total_sv_coverage:
                 assert get_repeat_info(sv_data, 'total_trf_coverage') >= get_repeat_info(sv_data, 'total_trf_nonoverlap_coverage')
@@ -1446,7 +1495,7 @@ def draw_diagrams(args, sv_info, rm_chain=None):
             picked_elements = [e['e_id'] for e in sv_data.get('RM_FILTERED', [])]
             picked_elements += [e['e_id'] for e in sv_data.get('TRF_FILTERED', [])]
             # Check if there is RepeatMasker and TRF
-            if rm == [] and trf == []:
+            if rm == [] and trf == [] and rm_flank == []:
                 continue
 
             rm_output_flanking = []
@@ -1487,13 +1536,15 @@ def draw_diagrams(args, sv_info, rm_chain=None):
             trf_filtered = sv_data.get('TRF_FILTERED', [])
             rm_output_flanking, rm_output = add_rm_diagrams(rm, rm_filtered, rm_output_flanking, rm_output, diagram_length, flanking_scale, sv_scale, f_rm, sv_tup, id_str, picked_elements)
             trf_output_flanking, trf_output = add_trf_diagrams(trf, trf_filtered, trf_output_flanking, trf_output, diagram_length, flanking_scale, sv_scale, f_trf, sv_tup, id_str, picked_elements, motif_length=80)
+            # Only drawn in the SV & flanking block
+            rm_flank_output = add_rm_flank_diagrams(rm_flank, diagram_length, flanking_scale, sv_tup, id_str) if flanking_diagram else []
 
             # Output the diagrams
-            if rm_output_flanking != [] or trf_output_flanking != [] or rm_output != [] or trf_output != []:
+            if rm_output_flanking != [] or rm_flank_output != [] or trf_output_flanking != [] or rm_output != [] or trf_output != []:
                 final_class = sv_data.get('FINAL_CLASSIFICATION', '.')
                 f.write(f">{id_str}{final_class}\n")
                 if flanking_diagram:
-                    write_flanking(f, flanking_diagram, rm_output_flanking, trf_output_flanking)
+                    write_flanking(f, flanking_diagram, rm_output_flanking, rm_flank_output, trf_output_flanking)
                 
                 write_SV(f, sv_diagram, rm_output, trf_output)
                 # RM chain: the same selected elements, as one chained alignment each
@@ -1510,7 +1561,13 @@ def argparser():
         if ivalue <= 0:
             raise argparse.ArgumentTypeError(f"{value} is an invalid. It must be greater than zero.")
         return ivalue
-    
+
+    def non_negative_int(value):
+        ivalue = int(value)
+        if ivalue < 0:
+            raise argparse.ArgumentTypeError(f"{value} is an invalid. It must be zero or greater.")
+        return ivalue
+
     def positive_float(value):
         ivalue = float(value)
         if ivalue <= 0 or ivalue > 1:
@@ -1543,6 +1600,8 @@ def argparser():
                                help="RM element selection method: greedy=accept element if its unique coverage contribution >= min_sv_coverage (default); strict=non-overlapping greedy; dp=minimum interval cover DP (optimal)")
     optional_args.add_argument('--rm_chain', required=False, type=str, default=None,
                                help="Chain table from rm_align_chain.py; adds an RM chain block to the diagrams (default: none)")
+    optional_args.add_argument('--diagram_flank_dist', required=False, type=non_negative_int, default=0,
+                               help="Draw RepeatMasker hits within this many bp of the SV that do not pass --min_sv_coverage in a '-RM flank-' section of the SV & flanking diagram (drawing only; 0: off, e.g. 100)")
     optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
     optional_args.add_argument('-h', '--help', action='help', help="Show this help message and exit")
 
@@ -1572,6 +1631,7 @@ if __name__ == "__main__":
     print(f"info: Output Directory: {args.out}")
     print(f"Info: rm_filter: {args.rm_filter}")
     print(f"Info: RM chain table: {args.rm_chain}")
+    print(f"Info: diagram_flank_dist: {args.diagram_flank_dist}")
     print(f"info: Output vcf header file: {args.out}/vcf_header.txt")
     print(f"info: Output vcf tsv file: {args.out}/vcf_annotate.tsv")
     print(f"info: Output plot tsv file: {args.out}/plot_annotate.tsv")
