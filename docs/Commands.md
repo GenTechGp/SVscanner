@@ -39,6 +39,7 @@
 | `--max_trf_overlap`             | `float`        | `0.1`      | Maximum TRF element overlap to be considered non-overlapping.              |
 | `--interval`                    | `int`          | `0.05`             | Interval value for binning or windowing.                                   |
 | `--diagram_len`                 | `int`          | `100`          | Length of the diagram generated for visualization.                         |
+| `--diagram_flank_dist`          | `int`          | `0`            | Draw RepeatMasker hits within this many bp of the SV, at least partly in the flanks and not annotated (below `--min_sv_coverage`), in a `-RM flank-` section of the SV & flanking diagram. Drawing only, annotations are unchanged. Off by default (`0`); e.g. `100`. |
 | `--no_rm_chain`                 | flag           |                | Do not chain RepeatMasker alignments per element: RepeatMasker runs without `-a`, no `rm_chain.tab` is written and the diagram has no `RM chain` block. Default: chain. |
 | `--rm_chain_jump_cost`          | `float`        | `30`           | Cost, in matched bases, of each jump between RepeatMasker alignment blocks when they are chained into one alignment per element (the `RM chain` diagram block, see [rm_align_chain.py](#rm_align_chainpy)). `--resume` reuses the existing `rm_chain.tab`, so a different value needs a full run. |
 | `--nsplit_files`                | `int`          | `500`         | Number of files to split sequences into.                                   |

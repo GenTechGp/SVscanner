@@ -69,6 +69,7 @@ MIN_TOTAL_SV_COVERAGE=0.75 #The minimum total sv coverage by repeat elements to 
 MAX_TRF_OVERLAP=0.1 #The maximum TRF element overlap to be considered non-overlapping (0 < max_trf_overlap < 1)
 INTERVAL=0.05
 DIAGRAM_LEN=100
+DIAGRAM_FLANK_DIST=0 # RepeatMasker hits within this many bp of the SV that are not annotated get '-RM flank-' diagram rows (0 = off, the default)
 RM_CHAIN=1 # Flag to chain RepeatMasker alignments per element for the RM chain diagram block (1 = yes, 0 = no)
 RM_CHAIN_JUMP_COST=30 # Cost (in matched bases) of each jump between RepeatMasker alignment blocks when chaining them per element
 
@@ -120,6 +121,8 @@ usage() {
     echo "  --max_trf_overlap VAL   Maximum TRF element overlap to be considered non-overlapping (default: $MAX_TRF_OVERLAP)"
     echo "  --interval VAL          Interval value (default: $INTERVAL)"
     echo "  --diagram_len VAL       Diagram length (default: $DIAGRAM_LEN)"
+    echo "  --diagram_flank_dist INT Draw RepeatMasker hits within INT bp of the SV that are not annotated (below --min_sv_coverage)"
+    echo "                          in a '-RM flank-' section of the SV & flanking diagram; drawing only, e.g. 100 (default: $DIAGRAM_FLANK_DIST, off)"
     echo "  --no_rm_chain           Do not chain RepeatMasker alignments per element: RepeatMasker runs without -a and the"
     echo "                          diagram has no RM chain block (default: chain)"
     echo "  --rm_chain_jump_cost VAL Cost, in matched bases, of each jump between RepeatMasker alignment blocks when they are"
@@ -182,6 +185,8 @@ parse_args() {
                 INTERVAL="$2"; shift 2;;
             --diagram_len)
                 DIAGRAM_LEN="$2"; shift 2;;
+            --diagram_flank_dist)
+                DIAGRAM_FLANK_DIST="$2"; shift 2;;
             --no_rm_chain)
                 RM_CHAIN=0; shift;;
             --rm_chain_jump_cost)
@@ -780,7 +785,8 @@ annotation() {
         --min_total_sv_coverage ${MIN_TOTAL_SV_COVERAGE}\
         --max_trf_overlap ${MAX_TRF_OVERLAP}\
         --div ${INTERVAL}\
-        --len ${DIAGRAM_LEN} || die "failed"
+        --len ${DIAGRAM_LEN}\
+        --diagram_flank_dist ${DIAGRAM_FLANK_DIST} || die "failed"
     echo "done"
 }
 

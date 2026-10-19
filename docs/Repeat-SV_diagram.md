@@ -88,6 +88,27 @@ Annotations from TRF and RM tools are listed below the flanking diagram. They in
 - **`REPEAT_ALIGNMNET_GENOMIC_RANGE`**: Start–end coordinates of the repeat's alignment
 - **`ID`**: Unique identifier (e.g., `rm_668`, `trf_216`)  
   - A trailing `*` means this repeat **was selected at the pre-classification stage**
+- **`rm_id=N`** (RM rows): RepeatMasker's own ID (column 15 of `rm.tab`). Rows with the same `rm_id` are fragments RepeatMasker joined into one element, e.g. the two halves of a reference element split by an insertion.
+
+### RM flank
+
+The `-RM-` rows list only hits that overlap the SV by more than `--min_sv_coverage`. A `-RM flank-` section before them lists the RepeatMasker hits near the SV that are left out: hits at least partly in the flanks and within `--diagram_flank_dist` bp of the SV (off by default; e.g. `--diagram_flank_dist 100`). These rows are drawn only. They are not used for any annotation and are not written to `rm_diagram.tsv`.
+
+```
+>INS.2350	(Sniffles2.INS.17BS1)	chr2:49634763-49636127	chr2:49635413-49635413	65	Repetitive/Tandem/VNTR
+ SV & flanking      -----------------------------------------------[####]----------------------------------------------- 
+ -RM flank-
+  LINE                                                                    [::::::::::::::::::::::::::::]                 	chr2:49635441-49635831	rm_114735	rm_id=318	L1PA15	ref_cov=6.42%	dist=28bp
+ -RM-
+  LINE                  [...........................................]                                                    	16.92%[0.18%]	chr2:49634822-49635413	rm_114734*	rm_id=318
+```
+
+- `:` instead of `.`: a flank hit.
+- Columns: genomic range, `ID`, `rm_id`, the subfamily name (there is no `SV Diagram` row for it), `ref_cov` and `dist`.
+- `ref_cov`: the fraction of the element's consensus model the whole hit spans. Unlike `element_proportion` in the `-RM-` rows, it is not scaled to the part inside the SV.
+- `dist`: the distance from the hit to the SV (0 if it reaches into the SV but covers too little of it).
+
+Here the VNTR insertion sits inside a reference L1PA15: the hit left of the SV and the one 28 bp right of it share `rm_id=318`, one element RepeatMasker joined across the insertion. Flank hits are also useful for `NON_REPETITIVE` SVs, BND breakpoints in particular, and for SVs flanked by homologous repeats (e.g. the same Alu subfamily on both sides), a pattern typical of non-allelic homologous recombination (NAHR).
 
 A second visualization shows a zoomed-in, **SV-only** view (no flanks) containing only the elements selected at the pre-classification stage (those marked `*` in the flanking section above):
 
