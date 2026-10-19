@@ -11,11 +11,11 @@ A workflow to annotate tandem repeats and mobile elements within structural vari
 ### Process:
 1. Flanking sequences are extracted around each SV to form a query sequence (details about the [extraction process](docs/sv_extraction.md)):
     - query_sequence = left_flank + SV + right_flank
-2. These query sequences are annotated using TRF and RM.
+2. These query sequences are annotated using TRF and RM. RM's alignments are also chained into one alignment per element, for the diagrams.
 
 ### Outputs:
 1. A VCF file with repeat annotations embedded (details about [VCF INFO tags](docs/repeat_annotation_VCF_tags.md) and [annotation process](docs/repeat_annotation_steps.md)).
-2. Diagrams visualizing Repeat/SV annotations (details about the [diagram file format](docs/Repeat-SV_diagram.md)).
+2. Diagrams visualizing Repeat/SV annotations, including where an element carries sequence its consensus does not have, e.g. an SVA VNTR expansion (details about the [diagram file format](docs/Repeat-SV_diagram.md)).
 3. Histograms and density plots summarizing Repeat/SV annotations.
 
 ![Illustration](/images/SVscanner_workflow.png)
@@ -25,115 +25,111 @@ A workflow to annotate tandem repeats and mobile elements within structural vari
 2. Usage of [run_workflow.sh](docs/Commands.md#run_workflowsh)
 3. Usage of workflow components: [extract_sv.py](docs/Commands.md#extrract_svpy), [repeat_annotation.py](docs/Commands.md#repeat_annotatoinpy), [generate_plots.py](docs/Commands.md#generate_plotpy)
 
-## Installation 
+## Running SVscanner
 
-1. Clone the repository
+SVscanner is distributed as a container image, published to the GitHub Container Registry
+on every release. It carries everything the workflow needs: RepeatMasker 4.2.6 with the
+Dfam 4.0 database, TRF, RMBlast, bcftools and the Python environment. Nothing needs
+cloning, compiling or downloading besides the image itself and your reference genome.
 
-```
-git clone git@github.com:GenTechGp/SVscanner.git
-```
+Replace `X.Y.Z` below with a release number (see the
+[releases](https://github.com/GenTechGp/SVscanner/releases) page). Pin an exact version
+for any analysis whose results you intend to keep.
 
-2. Set up Virtual Environment and install required packages. Tested with `python 3.8` and should work with higher versions as well.
-
-```
-cd SVscanner
-python3 -m venv svscanner
-source svscanner/bin/activate 
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-3. Follow instruction listed [here](docs/install_rm.md) to install `RepeatMasker` if not available already.
-
-    If you already have Dfam FamDB partition files (`dfam*.h5`) elsewhere, or your RepeatMasker
-    installation is read-only, point SVscanner at them instead of moving them into the install:
-
-    ```
-    export SVSCANNER_DFAM_DIR=/path/to/dfam   # or pass --dfam_dir
-    ```
-
-    See [External Dfam databases](docs/Commands.md#external-dfam-databases).
-
-4. Check if the following tools are available. If not install them.
- - `bcftools` (v1.21 or above recommended)
- - `bgzip` (v1.21 or above recommended)
- - `tabix` (v1.21 or above recommended)
- - `trf`
- - `parallel`
- 
-```
-./scripts/install_tools.sh [tools to be installed]
-e.g. ./scripts/install_tools.sh bcftools htslib
-```
-*`htslib` installs both `bgzip` and `tabix`
-
-5. Check if the workflow is working
-```
-./scripts/run_workflow.sh --help
-```
-`run_workflow.sh` resolves its own paths, so it can be invoked from any working directory — not just the repository root.
-
-## Quick example run
-
-The following example processes the `test/HG002_subset_mini/HG002_subset_mini.vcf.gz` dataset (100 records).
-
-It will take about 10 minutes. The majority of time is taken by the RepeatMasker step. Please provide the path to human genome after `--ref` argument.
+### Docker
 
 ```
-./scripts/run_workflow.sh --vcf test/HG002_subset_mini/HG002_subset_mini.vcf.gz --ref [human genome] --out test/output
+docker run --rm \
+  -v /path/to/reference:/ref:ro \
+  -v "$PWD":/data \
+  ghcr.io/gentechgp/svscanner:X.Y.Z \
+  svscanner --vcf /data/input.vcf.gz --ref /ref/hg38.fa --out /data/svscanner_out
 ```
 
-## SVscanner in a container
+### Singularity / Apptainer
 
-A prebuilt image is published to the GitHub Container Registry on every release, so nothing
-needs cloning or compiling:
-
-```
-docker run --rm -v /path/to/dfam:/dfam:ro -v "$PWD":/data \
-  ghcr.io/gentechgp/svscanner:0.7.0 \
-  svscanner --dfam_dir /dfam --vcf /data/[vcf] --ref /data/[ref] --out /data/[out]
-```
-
-The image carries RepeatMasker, TRF, bcftools and the Python environment, but **not** the
-Dfam database — `-species human` needs the ~57 GB Mammalia partition, which you download
-once and mount. Full details, including Singularity and Nextflow usage, are in
-[docs/docker.md](docs/docker.md).
-
-## SVscanner on NCI Gadi (project if89)
-
-`SVscanner` is available as an `if89` module, so nothing needs to be cloned or installed. You need membership of project `if89`.
+Convert the image to a `.sif` file once, then run that file:
 
 ```
-module use -a /g/data/if89/apps/modulefiles
-module load SVscanner/0.5.2
-svscanner --out [path_to_out] --vcf [path_to_vcf] --ref [path_to_ref]
+singularity pull svscanner_X.Y.Z.sif docker://ghcr.io/gentechgp/svscanner:X.Y.Z
+
+singularity exec \
+  --bind /path/to/reference:/ref:ro \
+  svscanner_X.Y.Z.sif \
+  svscanner --vcf input.vcf.gz --ref /ref/hg38.fa --out svscanner_out
 ```
 
-`svscanner` wraps [run_workflow.sh](scripts/run_workflow.sh) and takes the same arguments — run `svscanner --help` for the full list, or `module avail SVscanner` to see the installed versions.
+`svscanner` takes the same arguments everywhere; run `svscanner --help` for the full list,
+or see [run_workflow.sh](docs/Commands.md#run_workflowsh). More detail, including Nextflow
+and building the image yourself, is in [docs/docker.md](docs/docker.md).
 
-Example job script:
+### Quick test run
+
+The image includes a 54-record test VCF. With a human reference genome this takes a few
+minutes:
+
+```
+singularity exec --bind /path/to/reference:/ref:ro svscanner_X.Y.Z.sif \
+  svscanner --vcf /opt/svscanner/test/HG002_subset_mini/HG002_subset_mini.vcf.gz \
+            --ref /ref/hg38.fa --out ./svscanner_test
+```
+
+### Dfam database
+
+The image's built-in Dfam 4.0 holds all curated consensus sequences, so with the default
+RMBlast search engine `--species` alone covers human or any other species with curated
+Dfam families. Beyond that:
+
+- `--dfam_extra DIR` adds partitions of the same Dfam release, e.g. the curated HMM
+  partitions needed for `--engine hmmer`;
+- `--dfam_db DIR` replaces the built-in database with a complete one (base file plus
+  partitions), e.g. a different Dfam release;
+- `--uncurated` uses Dfam's uncurated families as well, for species with few curated ones.
+  Their partitions are not built in, so add them with `--dfam_extra`.
+
+See [Dfam databases](docs/Commands.md#dfam-databases).
+
+### On an HPC cluster (example: NCI Gadi)
+
+Compute nodes usually have no internet access, so pull the `.sif` once on a login or data
+transfer node (on Gadi, a `copyq` job or `gadi-dm.nci.org.au`) and keep it on project
+storage. Then submit jobs that run it:
 
 ```bash
 #!/bin/bash
 #PBS -P [your_project]
-#PBS -l storage=gdata/if89+gdata/[project_holding_your_data]
+#PBS -l storage=gdata/[project_holding_your_data]
 #PBS -l ncpus=48
 #PBS -l mem=128GB
 #PBS -l walltime=06:00:00
+#PBS -l jobfs=10GB
 #PBS -l wd
 
-module use -a /g/data/if89/apps/modulefiles
-module load SVscanner/0.5.2
+module load singularity
 
-svscanner --out $OUT --vcf $VCF --ref $REF
+singularity exec \
+  --bind "$(dirname "$VCF")":/vcfdir:ro \
+  --bind "$(dirname "$REF")":/refdir:ro \
+  --bind "$(dirname "$OUT")":/out \
+  "$SIF" \
+  svscanner --vcf "/vcfdir/$(basename "$VCF")" \
+            --ref "/refdir/$(basename "$REF")" \
+            --out "/out/$(basename "$OUT")" \
+            --nthread "$PBS_NCPUS"
 ```
 
 ```
-qsub -N [job_name] -v OUT=[path_to_out],VCF=[path_to_vcf],REF=[path_to_ref] [job_script]
+qsub -N [job_name] -v SIF=[path_to_sif],OUT=[path_to_out],VCF=[path_to_vcf],REF=[path_to_ref] [job_script]
 ```
+
+A fuller version with input checks is in [scripts/nci_gadi_singularity.sh](scripts/nci_gadi_singularity.sh).
 
 ### Notes
-1. **Thread and job allocation.** The workflow sizes itself from your PBS allocation automatically — `$PBS_NCPUS`, falling back to the CPUs available to the process — so neither flag is normally needed. RepeatMasker is then run as `--njob` parallel processes of `--nthread / --njob` threads each (`-pa`), defaulting to one process per thread. Examples for a job requesting `#PBS -l ncpus=48`:
+
+1. **Thread and job allocation.** Inside a container, pass `--nthread` explicitly (as above):
+   SVscanner otherwise falls back to `nproc`, which can report the whole host. RepeatMasker
+   is run as `--njob` parallel processes of `--nthread / --njob` threads each (`-pa`),
+   defaulting to one process per thread. Examples for `--nthread 48`:
 
     | flags | RepeatMasker processes | threads each (`-pa`) | total |
     |---|---|---|---|
@@ -141,20 +137,29 @@ qsub -N [job_name] -v OUT=[path_to_out],VCF=[path_to_vcf],REF=[path_to_ref] [job
     | `--njob 24` | 24 | 2 | 48 |
     | `--njob 12` | 12 | 4 | 48 |
     | `--njob 8` | 8 | 6 | 48 |
-    | `--nthread 24` | 24 | 1 | 24 |
-    | `--nthread 24 --njob 6` | 6 | 4 | 24 |
 
-    Fewer, wider processes (`--njob 12`) suit a small number of very long query sequences; the default suits many short ones. `--njob` is capped at `--nthread`, and each process always gets at least one thread, so the total never exceeds your allocation. **Versions before `0.5.2` sized themselves from the whole compute node**, so pass `--nthread` explicitly if you load an older module.
-2. Your job needs `storage=gdata/if89` in addition to whichever projects hold your VCF and reference.
-3. `TRF`, `RepeatMasker`, `bcftools`, `bgzip`, `tabix` and `GNU parallel` are loaded automatically as module dependencies, alongside a self-contained Python environment. Nothing needs installing.
-4. Bundled test data and the STRchive BED live under `$SVSCANNER_TESTDATA`. To confirm your setup works (~10 minutes, 100 records):
-```
-svscanner --vcf $SVSCANNER_TESTDATA/HG002_subset_mini/HG002_subset_mini.vcf.gz \
-          --ref [human genome] --out ./svscanner_test
-```
-5. Database Dfam `3.9`; FamDB Format `2.0`; Partition `7` [dfam39_full.7.h5]: Mammalia (57 GB) is used with RepeatMasker module (`4.2.0`) [more info](https://www.dfam.org/releases/Dfam_3.9/families/FamDB/README.txt) 
-6. A simple workflow runtime benchmark done on NCI Gadi ([link](docs/nci_benchmark.md))
-7. To run a development checkout on Gadi instead of the module, use [scripts/nci_gadi_if89.sh](scripts/nci_gadi_if89.sh), which loads the same dependencies as modules.
+    Fewer, wider processes (`--njob 12`) suit a small number of very long query sequences;
+    the default suits many short ones. `--njob` is capped at `--nthread`, and each process
+    always gets at least one thread.
+2. Each run spends about 20 seconds preparing RepeatMasker's search library before
+   annotating (`Library preparation took N seconds` in the log). The library is built
+   inside the run's output directory and removed at the end, so nothing is written into the
+   image or your home directory, and concurrent runs never share it.
+3. **RepeatMasker scoring matrix and VCF size.** RepeatMasker chooses its scoring matrix
+   from GC content, per internal batch of about 60 kb: a batch of several sequences gets
+   the average 43% GC matrices, while a batch holding a single sequence longer than 2 kb
+   gets matrices for that sequence's own GC. SVscanner splits the SVs over `--nsplit_files`
+   (default 500) files, so a small VCF (up to about 500 SVs) puts each SV in its own file
+   and most SVs are scored with their own GC, while a large VCF packs many SVs per file and
+   nearly all are scored at 43%. The same SV can therefore be annotated slightly differently
+   depending on the VCF it is in. On 187 SVA/Alu-rich SVs, 42 records differed between the
+   two: slightly lower `RM_SV_COVERAGE` and `RM_TOTAL_SV_COVERAGE` under GC-rich matrices
+   (17 `RM_RECIPROCAL` Full → Partial), and some `RM_SUBFAMILY` calls (e.g. SVA_D vs
+   SVA_E/F, AluSp vs AluSx3). `RM_CLASSIFICATION`'s dominant class and
+   `FINAL_CLASSIFICATION` did not change. To make annotations independent of grouping,
+   fix the matrix with `--rm_gc 43` (RepeatMasker `-gc 43`, the same matrices a large VCF
+   already gets). A few Alu subfamily labels can still differ between groupings with a
+   fixed matrix.
 
 ## Releasing
 

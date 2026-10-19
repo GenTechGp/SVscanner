@@ -1,0 +1,1883 @@
+348 0.00 0.00 0.00 hg38_chr2_41746002-41748725_forward 17 65 (2659) SVA_E#Retroposon/SVA 1 49 (1333) m_b1s502i0 1
+
+  hg38_chr2_417         17 CTCTCCCTCTCCCTCTCCCTCTCCCTCTCCCTCTCCCTCTCCCTCTCCC 65
+                                                                            
+  SVA_E#Retropo          1 CTCTCCCTCTCCCTCTCCCTCTCCCTCTCCCTCTCCCTCTCCCTCTCCC 49
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 0.00
+CpG sites = 0, Kimura (unadjusted) = 0.00
+Transitions / transversions = 1.00 (0/0)
+Gap_init rate = 0.00 (0 / 48), avg. gap size = 0.0 (0 / 0)
+
+
+5471 8.27 2.71 1.87 hg38_chr2_41746002-41748725_forward 53 902 (1822) SVA_F#Retroposon/SVA 1 857 (518) m_b1s502i1 2
+
+  hg38_chr2_417         53 CTCTCCCTCTCCCTCTCCGTCCCTCCCTCTCCGTCTCCGTCTCCGTCTCC 102
+                                             -- i          v     v     v     
+  SVA_F#Retropo          1 CTCTCCCTCTCCCTCTCC--CTCTCCCTCTCCCTCTCCCTCTCCCTCTCC 48
+
+  hg38_chr2_417        103 GTCTCCCTCTCCCCACGGTCTCCCTCTCATGCGGAGCCGAAGCTGGACTG 152
+                           -----     ii                                      
+  SVA_F#Retropo         49 -----CCTCTTTCCACGGTCTCCCTCTCATGCGGAGCCGAAGCTGGACTG 93
+
+  hg38_chr2_417        153 TACTGCTGCCATCTCGGCTCACTGCAACCTCCCTGCCTGATTCTCCTGCC 202
+                                                                             
+  SVA_F#Retropo         94 TACTGCTGCCATCTCGGCTCACTGCAACCTCCCTGCCTGATTCTCCTGCC 143
+
+  hg38_chr2_417        203 TCAGCCTGCCGAGTGCCTGCGATTGCAGGCACGCGCCGCCACGCCTGACT 252
+                                                                             
+  SVA_F#Retropo        144 TCAGCCTGCCGAGTGCCTGCGATTGCAGGCACGCGCCGCCACGCCTGACT 193
+
+  hg38_chr2_417        253 GGTTTTGGTGGAGACGGGGTTTCGCTGTGTTGGCCGGACCGGTCTCCAGC 302
+                                                                i            
+  SVA_F#Retropo        194 GGTTTTGGTGGAGACGGGGTTTCGCTGTGTTGGCCGGGCCGGTCTCCAGC 243
+
+  hg38_chr2_417        303 CCCTAACCGCGAGTGATCCGCCAACCTCGGCCTCCCGAGGTGCCGGGATT 352
+                                                  i                          
+  SVA_F#Retropo        244 CCCTAACCGCGAGTGATCCGCCAGCCTCGGCCTCCCGAGGTGCCGGGATT 293
+
+  hg38_chr2_417        353 GCAGACGGAGTCTCGTTCACTCAGTGCTCAATGGTGCCCAGGCTGGAGTG 402
+                                                                             
+  SVA_F#Retropo        294 GCAGACGGAGTCTCGTTCACTCAGTGCTCAATGGTGCCCAGGCTGGAGTG 343
+
+  hg38_chr2_417        403 CAGTGGCGTGATCTCGGCTCACTACAACCTCCACCTCCCAGCCGCCTGCC 452
+                                               i         v                   
+  SVA_F#Retropo        344 CAGTGGCGTGATCTCGGCTCGCTACAACCTACACCTCCCAGCCGCCTGCC 393
+
+  hg38_chr2_417        453 TTGGCCTCCCAAAGTGCCGAGATTGCAGCCTCTGCCCGGCCGCCACCCCG 502
+                                                                       i     
+  SVA_F#Retropo        394 TTGGCCTCCCAAAGTGCCGAGATTGCAGCCTCTGCCCGGCCGCCGCCCCG 443
+
+  hg38_chr2_417        503 TCTGGGAAGTGAGGAGTGTCTCTGCCTGGCCGCCCATCGTCTGGGATGTG 552
+                                  i        i i       i                   ?   
+  SVA_F#Retropo        444 TCTGGGAGGTGAGGAGCGCCTCTGCCCGGCCGCCCATCGTCTGGGANGTG 493
+
+  hg38_chr2_417        553 AGGAGCCCCTCTGCCCGGCCGCCCAGTCTGGGAAGTGAGGAGCGTCTCCG 602
+                                                   v        i          i     
+  SVA_F#Retropo        494 AGGAGCCCCTCTGCCCGGCCGCCCCGTCTGGGAGGTGAGGAGCGCCTCCG 543
+
+  hg38_chr2_417        603 CCCGGCCGCCATCCCATCTAGGAAGTGAGGAGCGCCTCTTCCCAGCCGCC 652
+                                     ii   i  ii   i          i   iv   i      
+  SVA_F#Retropo        544 CCCGGCCGCCGCCCCGTCCGGGAGGTGAGGAGCGTCTCCGCCCGGCCGCC 593
+
+  hg38_chr2_417        653 ATCACATCTAGGAAGTGAGGAGCGTCTCTGCCCGGCCGCCCATCGTCTGA 702
+                           v? - i  ii   ?          i   i            --    i i
+  SVA_F#Retropo        594 CNC-CGTCCGGGANGTGAGGAGCGCCTCCGCCCGGCCGCCC--CGTCCGG 640
+
+  hg38_chr2_417        703 GATGTGGGGAGCGCCTCTGCC---TCA-CCGCCCCATCTGGGATGTGAGG 748
+                             ?   i          i   ---i  -       i  i    v   i  
+  SVA_F#Retropo        641 GANGTGAGGAGCGCCTCCGCCCGGCCAGCCGCCCCGTCCGGGAGGTGGGG 690
+
+  hg38_chr2_417        749 -----AGCGCCTCTGCCCGGCCGAG--ACCCCGTCTG---GGAGGTGAGG 788
+                           -----   -  i i        -  --i       i ---       i  
+  SVA_F#Retropo        691 GGGTCAGC-CCCCCGCCCGGCC-AGCCGCCCCGTCCGGGAGGAGGTGGGG 738
+
+  hg38_chr2_417        789 -----AGCGTCTCTGCCCG----GCCGCCCCGTCTGAGAAGTGAGGAGAC 829
+                           -----   -i i i     ----           i i  i      i vv
+  SVA_F#Retropo        739 GGGTCAGC-CCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCG 787
+
+  hg38_chr2_417        830 CCTCTGCCTGGCAACCACCCCGTCTGAGAAGTGAGGAGCCCCTCCGCCCG 879
+                                   i  ---  i    vv   i                 i     
+  SVA_F#Retropo        788 CCTCTGCCCGG---CCGCCCCTACTGGGAAGTGAGGAGCCCCTCTGCCCG 834
+
+  hg38_chr2_417        880 GCAGCTGCCCCGTCTGAGAAGTG 902
+                             vi i        i i  i   
+  SVA_F#Retropo        835 GCCACCGCCCCGTCCGGGAGGTG 857
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 5.84
+CpG sites = 56, Kimura (unadjusted) = 8.96
+Transitions / transversions = 4.31 (56/13)
+Gap_init rate = 0.03 (23 / 849), avg. gap size = 1.70 (39 / 23)
+
+1770 17.84 9.76 6.93 hg38_chr2_41746002-41748725_forward 314 1030 (1694) SVA_A#Retroposon/SVA 135 870 (517) m_b1s502i2 2
+
+  hg38_chr2_417        314 AGTGATCCGCCAACCTCGGCCTCCCGAGGTGCC-GGGATTGCAGACGGA- 361
+                             i     v  vi               -    -          i  vi-
+  SVA_A#Retropo        135 AGCGATCCTCCTGCCTCGGCCTCCCGAG-TGCCTGGGATTGCAGGCGCGC 183
+
+  hg38_chr2_417        362 ---GTCTCGT-TCACTCAGTGCTCAAT----GGTGCCCAGGCTGGAGTGC 403
+                           --- i v  i- v   viv vi vv  ----    v--  i -  i  vi
+  SVA_A#Retropo        184 GCCGCCACGCCTGACTGGTTTTTGTATTTTTGGTGG--AGAC-GGGGTCT 230
+
+  hg38_chr2_417        404 AGTGGCGTGATCTCGGCTCACTACAACCTCC--ACCTC---CCAGCCGCC 448
+                           v iv i  vi? iv    viiiv ? v    --i    --- v v     
+  SVA_A#Retropo        231 CGCCGTGTTGNCCGGGCTGGTCTCNAGCTCCTGGCCTCGAGCGATCCGCC 280
+
+  hg38_chr2_417        449 TGCCTTGGCCTCCCAAAGTGCCGAGATTGC------AGCCTC-------- 484
+                           i    i        i i    i i      ------  i   --------
+  SVA_A#Retropo        281 CGCCTCGGCCTCCCGAGGTGCTGGGATTGCAGACGGAGTCTCGCTCACTC 330
+
+  hg38_chr2_417        485 --TGCCCGGCCGCCACCCCGTCTGGGAAGTGA---GGAGTG-TCTCTGCC 528
+                           --   i iii- i i   v v    --    v---  v   -    v  -
+  SVA_A#Retropo        331 AATGCTCAAT-GTCGCCCAGGCTGG--AGTGCAGTGGCGTGATCTCGGC- 376
+
+  hg38_chr2_417        529 TGGCCGC-----CCATCGTCTGGGATGTGAGGAGCCCCTCTGCCC-GGCC 572
+                            v  ii -----   i vi i-----------    v -     i-    
+  SVA_A#Retropo        377 TCGCTACAACCTCCACCTCCC-----------AGCCGC-CTGCCTTGGCC 414
+
+  hg38_chr2_417        573 GCCCAGTCTGGGAAGTG--AGGA--GC-GTCTCCGCCCGGCCGCCATCCC 617
+                           v    -------     --    --  - i   i            i   
+  SVA_A#Retropo        415 TCCCA-------AAGTGCTAGGATTGCAGCCTCTGCCCGGCCGCCACCCC 457
+
+  hg38_chr2_417        618 ATCTAGGAAGTGAGGAGCGCCTCTTCCCAGCCGCCATCA-CATCTAGGAA 666
+                           i   i              i    v   i      --  - i   i   ?
+  SVA_A#Retropo        458 GTCTGGGAAGTGAGGAGCGTCTCTGCCCGGCCGCC--CATCGTCTGGGAN 505
+
+  hg38_chr2_417        667 GTGAGGAGCGTCTCTGCCCGGCCGCCCATCGTCTGAGATGTGGGGAGCGC 716
+                                     i                --      i  v   i       
+  SVA_A#Retropo        506 GTGAGGAGCGCCTCTGCCCGGCCGCCC--CGTCTGGGAAGTGAGGAGCGC 553
+
+  hg38_chr2_417        717 CTCTGCC---TCACCGCCCCATCTGGGATGTGAGGAGCGCCTCTGCCCGG 763
+                                  ---i i       i       v                     
+  SVA_A#Retropo        554 CTCTGCCCGGCCGCCGCCCCGTCTGGGAAGTGAGGAGCGCCTCTGCCCGG 603
+
+  hg38_chr2_417        764 CCGAGACCC--CGTCTGGGAGGTGAGGAGCGTCTCTGCCCGGCCGCCCCG 811
+                              ---   --         ?          i   i              
+  SVA_A#Retropo        604 CCG---CCCNTCGTCTGGGANGTGAGGAGCGCCTCCGCCCGGCCGCCCCG 650
+
+  hg38_chr2_417        812 TCTGAGAAGTGAGGAGACCCTCTGCCTGG-CAACCACCCCGTCTGAGAAG 860
+                               i  ?        vv    i   i  -  i  i       i i  i 
+  SVA_A#Retropo        651 TCTGGGANGTGAGGAGCGCCTCCGCCCGGCCAGCCGCCCCGTCCGGGAGG 700
+
+  hg38_chr2_417        861 TGAGG-----AGCCCCTCCGCCCGG-CAGCTGCCCCGTCTG---AGAAGT 901
+                             i  -----      -        -    i        i ---i  i  
+  SVA_A#Retropo        701 TGGGGGGGTCAGCCCC-CCGCCCGGCCAGCCGCCCCGTCCGGGAGGAGGT 749
+
+  hg38_chr2_417        902 GAGG-----AGCCTCTCCGCCCAG-CAGCCACCCCATCTGGGAAGTGAGG 945
+                            i  -----    - i      i -     i    i  i    i      
+  SVA_A#Retropo        750 GGGGGGGTCAGCC-CCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGG 798
+
+  hg38_chr2_417        946 AGCATCTCCGCCCGGCAGCCACCCCATCCGGGAGGGAGGTGAGGGGGGGT 995
+                           i  ii   i     ---   i    ?? i----    i      ------
+  SVA_A#Retropo        799 GGCGCCTCTGCCCG---GCCGCCCCNNCT----GGGAAGTGAGG------ 835
+
+  hg38_chr2_417        996 CAGCCC--CCGCCCGGCCAGCCGCCCCATCCGGGAGG 1030
+                           -     -- i        -        i         
+  SVA_A#Retropo        836 -AGCCCCTCTGCCCGGCC-GCCGCCCCGTCCGGGAGG 870
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 16.33
+CpG sites = 84, Kimura (unadjusted) = 21.22
+Transitions / transversions = 2.40 (84/35)
+Gap_init rate = 0.11 (78 / 716), avg. gap size = 1.55 (121 / 78)
+
+1954 14.31 5.91 3.64 hg38_chr2_41746002-41748725_forward 524 980 (1744) SVA_B#Retroposon/SVA 399 865 (518) m_b1s502i3 2
+
+  hg38_chr2_417        524 CTGCCT-GGCCGCCCATCGT-CTGGGATGTGAGGAGCCCCTCTGCCCGGC 571
+                                 -    v    vv  - i i   -  vi ----            
+  SVA_B#Retropo        399 CTGCCTTGGCCTCCCAAAGTGCCGAGAT-TGCAG----CCTCTGCCCGGC 443
+
+  hg38_chr2_417        572 CGCC---CAGTCTGGGAAGTGAGGAGCGTCTCCGCCCGGCCGCC-ATCCC 617
+                               --- v                       i   i       -   --
+  SVA_B#Retropo        444 CGCCACCCCGTCTGGGAAGTGAGGAGCGTCTCTGCCTGGCCGCCCATC-- 491
+
+  hg38_chr2_417        618 ATCTAGGAAGTGAGGAGCGCCTCTTCCCAGCCGCCATCACATCTAGGAAG 667
+                           i   i   v         v     v   i      --  -i   i     
+  SVA_B#Retropo        492 GTCTGGGATGTGAGGAGCCCCTCTGCCCGGCCGCC--CA-GTCTGGGAAG 538
+
+  hg38_chr2_417        668 TGAGGAGCGTCTCTGCCCGGCCGCCCATC--GTCTGAGATGTGGGGAGCG 715
+                                    i    v          -   --     i  v   i      
+  SVA_B#Retropo        539 TGAGGAGCGCCTCTTCCCGGCCGCC-ATCCCGTCTGGGAAGTGAGGAGCG 587
+
+  hg38_chr2_417        716 CCTCTGCCTCACCGCCC--CATCTGGGATGTGAGGAGCGCCTCTGCCCGG 763
+                           i       ivi      -- i           i               v 
+  SVA_B#Retropo        588 TCTCTGCCCGGCCGCCCATCGTCTGGGATGTGGGGAGCGCCTCTGCCCCG 637
+
+  hg38_chr2_417        764 CCGAGACCCCGTCTGGGAGGTGAGGAGCGTCTCTGCCCGGCC----GCCC 809
+                              ---            ?          i            ----    
+  SVA_B#Retropo        638 CCG---CCCCGTCTGGGANGTGAGGAGCGCCTCTGCCCGGCCAGCCGCCC 684
+
+  hg38_chr2_417        810 CGTCTGAGAAGTGAGGAGA----CCCTCTGCCTGGC-AACCACCCCGTCT 854
+                                 i  i        i----   i i   i   - i  i       i
+  SVA_B#Retropo        685 CGTCTGGGAGGTGAGGAGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCC 734
+
+  hg38_chr2_417        855 GAGAAG---TGAGGAGC----CCCTCCGCCCGGC-AGCTGCCCCGTCTGA 896
+                            i  i ---  i  i ?----   i         -   i        i i
+  SVA_B#Retropo        735 GGGAGGAGGTGGGGGGNNCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGG 784
+
+  hg38_chr2_417        897 GAAGTGAGGAGCCTCTCCGCCCAGCAGCCACCCCATCTGGGAAGTGAGGA 946
+                             i   i  i  vi   i    i  --- i    i               
+  SVA_B#Retropo        785 GAGGTGGGGGGCGCCTCTGCCCGGC---CGCCCCGTCTGGGAAGTGAGGA 831
+
+  hg38_chr2_417        947 GCATCTCCGCCCGGCAGCCACCCCATCCGGGAGG 980
+                             vi   i       v        i  i      
+  SVA_B#Retropo        832 GCCCCTCTGCCCGGCCGCCACCCCGTCTGGGAGG 865
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 12.42
+CpG sites = 48, Kimura (unadjusted) = 16.39
+Transitions / transversions = 3.20 (48/15)
+Gap_init rate = 0.06 (29 / 456), avg. gap size = 1.52 (44 / 29)
+
+1883 12.15 5.07 5.76 hg38_chr2_41746002-41748725_forward 625 1078 (1646) SVA_A#Retroposon/SVA 420 870 (517) m_b1s502i4 2
+
+  hg38_chr2_417        625 AAGTG--AGGA--GC-GCCTCTTCCCAGCCGCCATCACATCTAGGAAGTG 669
+                                --    --  -      v   i       i v i   i       
+  SVA_A#Retropo        420 AAGTGCTAGGATTGCAGCCTCTGCCCGGCCGCCACCCCGTCTGGGAAGTG 469
+
+  hg38_chr2_417        670 AGGAGCGTCTCTGCCCGGCCGCCCATCGTCTGAGATGTGGGGAGCGCCTC 719
+                                                           i  ?   i          
+  SVA_A#Retropo        470 AGGAGCGTCTCTGCCCGGCCGCCCATCGTCTGGGANGTGAGGAGCGCCTC 519
+
+  hg38_chr2_417        720 TGCCTCACCGCCCCATCTGGGATGTGAGGAGCGCCTCTGCCCGGCCGAGA 769
+                               ivi       i       v                        vvi
+  SVA_A#Retropo        520 TGCCCGGCCGCCCCGTCTGGGAAGTGAGGAGCGCCTCTGCCCGGCCGCCG 569
+
+  hg38_chr2_417        770 CCCCGTCTGGGAGGTGAGGAGCGTCTCTGCCCGGCCGCCC--CGTCTGAG 817
+                                       i          i                --      i 
+  SVA_A#Retropo        570 CCCCGTCTGGGAAGTGAGGAGCGCCTCTGCCCGGCCGCCCNTCGTCTGGG 619
+
+  hg38_chr2_417        818 AAGTGAGGAGACCCTCTGCCTGGCAACCACCCCGTCTGAGAAGTGAGGAG 867
+                            ?        vv    i   i  ---  i         i  ?        
+  SVA_A#Retropo        620 ANGTGAGGAGCGCCTCCGCCCGG---CCGCCCCGTCTGGGANGTGAGGAG 666
+
+  hg38_chr2_417        868 CCCCTCCGCCCGG-CAGCTGCCCCGTCTGAGAAGTGAGG-----AGCCTC 911
+                            v           -    i        i i  i   i  -----    - 
+  SVA_A#Retropo        667 CGCCTCCGCCCGGCCAGCCGCCCCGTCCGGGAGGTGGGGGGGTCAGCC-C 715
+
+  hg38_chr2_417        912 TCCGCCCAG-CAGCCACCCCATCTG---GGAAGTGAGGAG--CA--TCTC 953
+                           i      i -     i    i  i ---   i   i  i --  --i i 
+  SVA_A#Retropo        716 CCCGCCCGGCCAGCCGCCCCGTCCGGGAGGAGGTGGGGGGGTCAGCCCCC 765
+
+  hg38_chr2_417        954 CGCCCGG-CAGCCACCCCATCCGGGAGGGAGGTGAGGGGGGGTCAGCCCC 1002
+                                  -     i    i   ----             ---- -   i 
+  SVA_A#Retropo        766 CGCCCGGCCAGCCGCCCCGTCC----GGGAGGTGAGGGG----C-GCCTC 806
+
+  hg38_chr2_417       1003 CGCCCGGCCAGCCGCCCCATCCGGGAGGGAGGTGGGGGGTCAGCCCC-CC 1051
+                           i     ----        ?? i----    i   i  ----      - i
+  SVA_A#Retropo        807 TGCCCG----GCCGCCCCNNCT----GGGAAGTGAGG----AGCCCCTCT 844
+
+  hg38_chr2_417       1052 GCCCGGCCAGCCGTGCCATCCGGGAGG 1078
+                                   -    iv  i         
+  SVA_A#Retropo        845 GCCCGGCC-GCCGCCCCGTCCGGGAGG 870
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 9.33
+CpG sites = 42, Kimura (unadjusted) = 13.78
+Transitions / transversions = 4.20 (42/10)
+Gap_init rate = 0.08 (38 / 453), avg. gap size = 1.29 (49 / 38)
+
+1830 13.42 2.67 6.61 hg38_chr2_41746002-41748725_forward 680 1166 (1558) SVA_F#Retroposon/SVA 389 857 (518) m_b1s502i5 2
+
+  hg38_chr2_417        680 CTGCCC-GGCCGCCCATCGT-CTGAGATGTGGGGAGCGCCTCTGCCT--- 724
+                                i-    v    vv  - i     -  vi ----        i---
+  SVA_F#Retropo        389 CTGCCTTGGCCTCCCAAAGTGCCGAGAT-TGCAG----CCTCTGCCCGGC 433
+
+  hg38_chr2_417        725 CACCGCCCCATCTGGGATGTGAGGAGCGCCTCTGCCCGGCCGAGACCC-- 772
+                            i       i       v                        ---   --
+  SVA_F#Retropo        434 CGCCGCCCCGTCTGGGAGGTGAGGAGCGCCTCTGCCCGGCCG---CCCAT 480
+
+  hg38_chr2_417        773 CGTCTGGGAGGTGAGGAGCGTCTCTGCCCGGCCGCCCCGTCTGAGAAGTG 822
+                                    ?         vi                      i  i   
+  SVA_F#Retropo        481 CGTCTGGGANGTGAGGAGCCCCTCTGCCCGGCCGCCCCGTCTGGGAGGTG 530
+
+  hg38_chr2_417        823 AGGAGACCCTCTGCCTGGCAACCACCCCGTCTGAGAAGTGAGGAGCCCCT 872
+                                vv    i   i   vi  i       i i  i         vi  
+  SVA_F#Retropo        531 AGGAGCGCCTCCGCCCGGCCGCCGCCCCGTCCGGGAGGTGAGGAGCGTCT 580
+
+  hg38_chr2_417        873 CCGCCCGGCAGCTGCCCCGTCTGAGAAGTGAGGAGCCTCTCCGCCCAGCA 922
+                                    v  i- ?     i i  ?         vi       --- i
+  SVA_F#Retropo        581 CCGCCCGGCCGCC-CNCCGTCCGGGANGTGAGGAGCGCCTCCGCC---CG 626
+
+  hg38_chr2_417        923 GCCACCCCATCTGGGAAGTGAGGAGCATCTCCGCCCGG-CAGCCACCCCA 971
+                              i    i  i    ?         ii          -     i    i
+  SVA_F#Retropo        627 GCCGCCCCGTCCGGGANGTGAGGAGCGCCTCCGCCCGGCCAGCCGCCCCG 676
+
+  hg38_chr2_417        972 TCCGGGAGGGAGGTGAGGGGGGGTCAG-CCCCCGCCCGGCCAGCCGCCCC 1020
+                                    v------           -                      
+  SVA_F#Retropo        677 TCCGGGAGGT------GGGGGGGTCAGCCCCCCGCCCGGCCAGCCGCCCC 720
+
+  hg38_chr2_417       1021 ATCCGGGAGGGAGGT-GGGGGGTCAGCCCCCCGCCCGGCCAGCCGTGCCA 1069
+                           i       -      -                             iv  i
+  SVA_F#Retropo        721 GTCCGGGA-GGAGGTGGGGGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCG 769
+
+  hg38_chr2_417       1070 TCCGGGAGGGAGGTGGGGGGGTCAGCCCCCCGCCCGGCCAGCCGCCCGGT 1119
+                              ----        i    -- i--  i i     ----       vvv
+  SVA_F#Retropo        770 TCC----GGGAGGTGAGGGG--CG--CCTCTGCCCG----GCCGCCCCTA 807
+
+  hg38_chr2_417       1120 CCGGGAGGTGAGGGGCGCCTCTGCCCGG---CCGCCCCTACTGGGAAGTG 1166
+                            i    i      i  v           ---       vv i    i   
+  SVA_F#Retropo        808 CTGGGAAGTGAGGAGCCCCTCTGCCCGGCCACCGCCCCGTCCGGGAGGTG 857
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 9.98
+CpG sites = 41, Kimura (unadjusted) = 15.10
+Transitions / transversions = 2.05 (41/20)
+Gap_init rate = 0.08 (39 / 486), avg. gap size = 1.13 (44 / 39)
+
+2414 7.43 0.66 5.06 hg38_chr2_41746002-41748725_forward 752 1205 (1519) SVA_F#Retroposon/SVA 421 855 (520) m_b1s502i6 2
+
+  hg38_chr2_417        752 GCCTCTGCCCGGCCGAGACCCCGTCTGGGAGGTGAGGAGCGTCTCTGCCC 801
+                                          vvi                       i        
+  SVA_F#Retropo        421 GCCTCTGCCCGGCCGCCGCCCCGTCTGGGAGGTGAGGAGCGCCTCTGCCC 470
+
+  hg38_chr2_417        802 GGCCGCCC--CGTCTGAGAAGTGAGGAGACCCTCTGCCTGGCAACCACCC 849
+                                   --      i  ?        v         i   --- i   
+  SVA_F#Retropo        471 GGCCGCCCATCGTCTGGGANGTGAGGAGCCCCTCTGCCCGGC---CGCCC 517
+
+  hg38_chr2_417        850 CGTCTGAGAAGTGAGGAGCCCCTCCGCCCGGCAGCTGCCCCGTCTGAGAA 899
+                                 i  i         v            v  i        i i  i
+  SVA_F#Retropo        518 CGTCTGGGAGGTGAGGAGCGCCTCCGCCCGGCCGCCGCCCCGTCCGGGAG 567
+
+  hg38_chr2_417        900 GTGAGGAGCCTCTCCGCCCAGCAGCCACCCCATCTGGGAAGTGAGGAGCA 949
+                                    v         i  v   - ?  i  i    ?         i
+  SVA_F#Retropo        568 GTGAGGAGCGTCTCCGCCCGGCCGCC-CNCCGTCCGGGANGTGAGGAGCG 616
+
+  hg38_chr2_417        950 TCTCCGCCCGGCAGCCACCCCATCCGGGAGGGAGGTGAGGGGGGGTCAGC 999
+                           i           --- i    i       ? ----     i ---- -  
+  SVA_F#Retropo        617 CCTCCGCCCGGC---CGCCCCGTCCGGGANG----TGAGGAG----C-GC 654
+
+  hg38_chr2_417       1000 CCCCGCCCGGCCAGCCGCCCCATCCGGGAGGGAGGT-GGGGGGTCAGCCC 1048
+                            i                   i       ----   -             
+  SVA_F#Retropo        655 CTCCGCCCGGCCAGCCGCCCCGTCCGGGA----GGTGGGGGGGTCAGCCC 700
+
+  hg38_chr2_417       1049 CCCGCCCGGCCAGCCGTGCCATCCGGGAGGGAGGTGGGGGGGTCAGCCCC 1098
+                                           iv  i       -                     
+  SVA_F#Retropo        701 CCCGCCCGGCCAGCCGCCCCGTCCGGGA-GGAGGTGGGGGGGTCAGCCCC 749
+
+  hg38_chr2_417       1099 CCGCCCGGCCAGCCGCCCGGTCCGGGAGGTGAGGGGCGCCTCTGCCCGGC 1148
+                                             v                               
+  SVA_F#Retropo        750 CCGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCGCCTCTGCCCGGC 799
+
+  hg38_chr2_417       1149 CGCCCCTACTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCCGCCCCGTC 1198
+                                                                  -          
+  SVA_F#Retropo        800 CGCCCCTACTGGGAAGTGAGGAGCCCCTCTGCCCGGCCA-CCGCCCCGTC 848
+
+  hg38_chr2_417       1199 CGGGAGG 1205
+                                  
+  SVA_F#Retropo        849 CGGGAGG 855
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 4.91
+CpG sites = 23, Kimura (unadjusted) = 7.95
+Transitions / transversions = 2.56 (23/9)
+Gap_init rate = 0.05 (24 / 453), avg. gap size = 1.04 (25 / 24)
+
+1642 9.52 2.37 9.45 hg38_chr2_41746002-41748725_forward 870 1333 (1391) SVA_F#Retroposon/SVA 422 855 (520) m_b1s502i7 2
+
+  hg38_chr2_417        870 CCTCCGCCCGGCAGCTGCCCCGTCTGAGAAGTGAGGAGCCTCTCCGCCCA 919
+                               i       v  i          i  i         vi   i    i
+  SVA_F#Retropo        422 CCTCTGCCCGGCCGCCGCCCCGTCTGGGAGGTGAGGAGCGCCTCTGCCCG 471
+
+  hg38_chr2_417        920 GCAGCCACCCCATCTGGGAAGTGAGGAGCATCTCCGCCCGGCAGCCACCC 969
+                             v   - vi i       ?         vi   i       --- i   
+  SVA_F#Retropo        472 GCCGCC-CATCGTCTGGGANGTGAGGAGCCCCTCTGCCCGGC---CGCCC 517
+
+  hg38_chr2_417        970 CATCCGGGAGGGAGGTGAGGGGGGGTCAGCCCCCGCCCGGCCAGCCGCCC 1019
+                            i  i      ----     i ---- -   i          -       
+  SVA_F#Retropo        518 CGTCTGGGAGG----TGAGGAG----C-GCCTCCGCCCGGCC-GCCGCCC 557
+
+  hg38_chr2_417       1020 CATCCGGGAGGGAGGTGGGGGGTCAGC-CCCCCGCCCGGCCAGCCGTGCC 1068
+                            i         ----  i  ----   -i i          -   -i?  
+  SVA_F#Retropo        558 CGTCCGGGAGG----TGAGG----AGCGTCTCCGCCCGGCC-GCC-CNCC 597
+
+  hg38_chr2_417       1069 ATCCGGGAGGGAGGTGGGGGGGTCAGC-CCCCCGCCCGGCCAGCCGCCCG 1117
+                           i       ? ----  i  -----   -  i          ----    v
+  SVA_F#Retropo        598 GTCCGGGANG----TGAGG-----AGCGCCTCCGCCCGGCC----GCCCC 634
+
+  hg38_chr2_417       1118 GTCCGGGAGGTGAGGGGCGCCTCTGCCCGGCC----GCCCCTACTGGGAA 1163
+                                   ?      i       i        ----     vv i    i
+  SVA_F#Retropo        635 GTCCGGGANGTGAGGAGCGCCTCCGCCCGGCCAGCCGCCCCGTCCGGGAG 684
+
+  hg38_chr2_417       1164 GTGAGG-----AGCCCCTCTGCCCGGCCAGCCGCCCCGTCCGGGAGGGAG 1208
+                              i  -----      i -                           -  
+  SVA_F#Retropo        685 GTGGGGGGGTCAGCCCCCC-GCCCGGCCAGCCGCCCCGTCCGGGAGG-AG 732
+
+  hg38_chr2_417       1209 GTGGGGGGGGTCAGCCCTCCGCCCGGCCAGCCGCCCCGTCTGGGAGGTGA 1258
+                                 -          i                      i         
+  SVA_F#Retropo        733 GTGGGG-GGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGTGA 781
+
+  hg38_chr2_417       1259 GGGGCGCCTCTGCCCGGCCGCCCCTACTGGGAAGTGAGGAGCCCCTCTGC 1308
+                                                                             
+  SVA_F#Retropo        782 GGGGCGCCTCTGCCCGGCCGCCCCTACTGGGAAGTGAGGAGCCCCTCTGC 831
+
+  hg38_chr2_417       1309 CCGGCCAGCCGCCCCGTCCGGGAGG 1333
+                                  -                 
+  SVA_F#Retropo        832 CCGGCCA-CCGCCCCGTCCGGGAGG 855
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 7.87
+CpG sites = 32, Kimura (unadjusted) = 10.40
+Transitions / transversions = 4.00 (32/8)
+Gap_init rate = 0.10 (45 / 463), avg. gap size = 1.16 (52 / 45)
+
+737 13.38 10.79 9.31 hg38_chr2_41746002-41748725_forward 938 1382 (1342) SVA_A#Retroposon/SVA 420 870 (517) m_b1s502i8 2
+
+  hg38_chr2_417        938 AAGTG--AGGA--GCA-TCTCCGCCCGGCAGCCACCCCATCCGGGAGGGA 982
+                                --    --   -i   i       v        i  i----    
+  SVA_A#Retropo        420 AAGTGCTAGGATTGCAGCCTCTGCCCGGCCGCCACCCCGTCT----GGGA 465
+
+  hg38_chr2_417        983 GGTGAGGGG-GGGTCAGCCC--CCGCCC-------GG------------- 1009
+                           i      i - vv  v    --      -------  -------------
+  SVA_A#Retropo        466 AGTGAGGAGCGTCTCTGCCCGGCCGCCCATCGTCTGGGANGTGAGGAGCG 515
+
+  hg38_chr2_417       1010 -------CCAGCCGCCCCATCCGGGAGGGAGGTGGGGGGTCAGC-CCCCC 1051
+                           -------  i        i  i----    i   i  ----   -  i i
+  SVA_A#Retropo        516 CCTCTGCCCGGCCGCCCCGTCT----GGGAAGTGAGG----AGCGCCTCT 557
+
+  hg38_chr2_417       1052 GCCCGGCCAGCCGTGCCATCCGGGAGGGAGGTGGGGGGGTCAGC-CCCCC 1100
+                                   -    iv  i  i----    i   i  -----   -  i i
+  SVA_A#Retropo        558 GCCCGGCC-GCCGCCCCGTCT----GGGAAGTGAGG-----AGCGCCTCT 597
+
+  hg38_chr2_417       1101 GCCCGGCCAGCCGCCCGGTCCGGGAGGTGAGGGGCGCCTCTGCCCGGCCG 1150
+                                   iv  ?i --   i    ?      i       i         
+  SVA_A#Retropo        598 GCCCGGCCGCCCNTC--GTCTGGGANGTGAGGAGCGCCTCCGCCCGGCCG 645
+
+  hg38_chr2_417       1151 CCCCTACTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCCGCCCCGTCCG 1200
+                               vv      ?         v    i                      
+  SVA_A#Retropo        646 CCCCGTCTGGGANGTGAGGAGCGCCTCCGCCCGGCCAGCCGCCCCGTCCG 695
+
+  hg38_chr2_417       1201 GGAGGGAGGTGGGGGGGGTCAGCCCTCCGCCCGGCCAGCCGCCCCGTCTG 1250
+                                -----v              i                      i 
+  SVA_A#Retropo        696 GGAGG-----TGGGGGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCG 740
+
+  hg38_chr2_417       1251 ---GGAGGTGAGGGG--CG--CCTCTGCCCG----GCCGCCCCTACTGGG 1289
+                           ---       i    -- i--  i i     ----        vv i   
+  SVA_A#Retropo        741 GGAGGAGGTGGGGGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGG 790
+
+  hg38_chr2_417       1290 AAGTGAGGAGCCCCTCTGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTG 1339
+                            i      i  v          ----        ?? i----    i   
+  SVA_A#Retropo        791 AGGTGAGGGGCGCCTCTGCCCG----GCCGCCCCNNCT----GGGAAGTG 832
+
+  hg38_chr2_417       1340 GGGGGGTCGGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGG 1382
+                           i  i -- --   i i        -                  
+  SVA_A#Retropo        833 AGGAG--C--CCCTCTGCCCGGCC-GCCGCCCCGTCCGGGAGG 870
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 12.44
+CpG sites = 41, Kimura (unadjusted) = 15.32
+Transitions / transversions = 3.15 (41/13)
+Gap_init rate = 0.13 (56 / 444), avg. gap size = 1.61 (90 / 56)
+
+1082 9.12 3.07 14.81 hg38_chr2_41746002-41748725_forward 996 1484 (1240) SVA_E#Retroposon/SVA 426 864 (518) m_b1s502i9 2
+
+  hg38_chr2_417        996 CAGCCCCCGCCCGGCCAGCCGCCCCATCCGGGAGGGAGGTGGGGGGTCAG 1045
+                                i i        -        i         ----  i  ----  
+  SVA_E#Retropo        426 CAGCCTCTGCCCGGCC-GCCGCCCCGTCCGGGAGG----TGAGG----AG 466
+
+  hg38_chr2_417       1046 C-CCCCCGCCCGGCCAGCCGTGCCATCCGGGAGGGAGGTGGGGGGGTCAG 1094
+                            -  i i        iv  i -- i       ? ----  i  -----  
+  SVA_E#Retropo        467 CGCCTCTGCCCGGCCGCCCAT--CGTCCGGGANG----TGAGG-----AG 505
+
+  hg38_chr2_417       1095 CCCCCC-GCCCGGCCAGCCGCCCGGTCCGGGAGGTGAGGGGCGCCTCTGC 1143
+                               i -        ----    v               i          
+  SVA_E#Retropo        506 CCCCTCTGCCCGGCC----GCCCCGTCCGGGAGGTGAGGAGCGCCTCTGC 551
+
+  hg38_chr2_417       1144 CCGGCCGCC---CCTACTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCC 1190
+                                    ---  vv                v             -   
+  SVA_E#Retropo        552 CCGGCCGCCGCCCCGTCTGGGAAGTGAGGAGCGCCTCTGCCCGGCC-GCC 600
+
+  hg38_chr2_417       1191 GCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCTCCGCCCGGCCAGCC 1240
+                           - ??         ? ----     i v -----         ?   ----
+  SVA_E#Retropo        601 -CNNCGTCCGGGANG----TGGGGAGCG-----CCTCCGCCCNGCC---- 636
+
+  hg38_chr2_417       1241 GCCCCGTCTGGGAGGTGAGGGGCGCCTCTGCCCGGCC----GCCCCTACT 1286
+                                   i           i       i        ----     vv i
+  SVA_E#Retropo        637 GCCCCGTCCGGGAGGTGAGGAGCGCCTCCGCCCGGCCAGCCGCCCCGTCC 686
+
+  hg38_chr2_417       1287 GGGAAGTGAGG-----AGCCCCTCTGCCCGGCCAGCCGCCCCGTCCGGGA 1331
+                               i   i  -----      i -                         
+  SVA_E#Retropo        687 GGGAGGTGGGGGGGTCAGCCCCCC-GCCCGGCCAGCCGCCCCGTCCGGGA 735
+
+  hg38_chr2_417       1332 GGGAGGTGGGGGGGTCGGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAG 1381
+                             -             i                                 
+  SVA_E#Retropo        736 GG-AGGTGGGGGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAG 784
+
+  hg38_chr2_417       1382 G-GAGGTGGGGGTGTCGGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAG 1430
+                            -  ----    i -----  i i     ----        vv i---- 
+  SVA_E#Retropo        785 GTGA----GGGGCG-----CCTCTGCCCG----GCCGCCCCTACT----G 817
+
+  hg38_chr2_417       1431 GGAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCCGCCCCGTCCGGGA 1480
+                              i   i  ------      i           -               
+  SVA_E#Retropo        818 GGAAGTGAGG------AGCCCCTCTGCCCGGCCA-CCGCCCCGTCCGGGA 860
+
+  hg38_chr2_417       1481 GGTG 1484
+                               
+  SVA_E#Retropo        861 GGTG 864
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 8.04
+CpG sites = 28, Kimura (unadjusted) = 9.79
+Transitions / transversions = 2.80 (28/10)
+Gap_init rate = 0.15 (71 / 488), avg. gap size = 1.13 (80 / 71)
+
+1894 5.60 0.85 8.94 hg38_chr2_41746002-41748725_forward 1096 1566 (1158) SVA_E#Retroposon/SVA 429 864 (518) m_b1s502i10 2
+
+  hg38_chr2_417       1096 CCCCCGCCCGGCCAGCCGCCCGGTCCGGGAGGTGAGGGGCGCCTCTGCCC 1145
+                             i i        -       v               i            
+  SVA_E#Retropo        429 CCTCTGCCCGGCC-GCCGCCCCGTCCGGGAGGTGAGGAGCGCCTCTGCCC 477
+
+  hg38_chr2_417       1146 GGCCGCCCCTA--CTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCCGCC 1193
+                                   v v-- i    ?                       ----   
+  SVA_E#Retropo        478 GGCCGCCCATCGTCCGGGANGTGAGGAGCCCCTCTGCCCGGCC----GCC 523
+
+  hg38_chr2_417       1194 CCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCTCCGCCCGGCCAGCCGCC 1243
+                                       ----  i  i v -----    i        -      
+  SVA_E#Retropo        524 CCGTCCGGGAGG----TGAGGAGCG-----CCTCTGCCCGGCC-GCCGCC 563
+
+  hg38_chr2_417       1244 CCGTCTGGGAGGTGAGGGGCGCCTCTGCCCGGCCGCCCCTA--CTGGGAA 1291
+                                     i      i                    ??v-- i    ?
+  SVA_E#Retropo        564 CCGTCTGGGAAGTGAGGAGCGCCTCTGCCCGGCCGCCCNNCGTCCGGGAN 613
+
+  hg38_chr2_417       1292 GTGAGGAGCCCCTCTGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGG 1341
+                              i     v    i    ?   ----               ----  i 
+  SVA_E#Retropo        614 GTGGGGAGCGCCTCCGCCCNGCC----GCCCCGTCCGGGAGG----TGAG 655
+
+  hg38_chr2_417       1342 GGGGTCGGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGG 1391
+                            i --  --  i                             ----     
+  SVA_E#Retropo        656 GAG--CG--CCTCCGCCCGGCCAGCCGCCCCGTCCGGGAGG----TGGGG 697
+
+  hg38_chr2_417       1392 GTGTCGGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGG 1441
+                            v   i                                  -         
+  SVA_E#Retropo        698 GGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGG-AGGTGGGGG 746
+
+  hg38_chr2_417       1442 GGGTCAGCCCCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCG 1491
+                             -          -                                    
+  SVA_E#Retropo        747 GG-TCAGCCCCCC-GCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCG 794
+
+  hg38_chr2_417       1492 CCTCTGCCCGGCCACCCCTACTGGGAAGTGAGGAGCCCCTCTGCCCGGCC 1541
+                                        i                                    
+  SVA_E#Retropo        795 CCTCTGCCCGGCCGCCCCTACTGGGAAGTGAGGAGCCCCTCTGCCCGGCC 844
+
+  hg38_chr2_417       1542 AGCCGCCCCGTCCGCAAGGGAGGTG 1566
+                            -           ----        
+  SVA_E#Retropo        845 A-CCGCCCCGTCC----GGGAGGTG 864
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 4.96
+CpG sites = 17, Kimura (unadjusted) = 5.88
+Transitions / transversions = 2.43 (17/7)
+Gap_init rate = 0.09 (41 / 470), avg. gap size = 1.05 (43 / 41)
+
+483 14.65 3.29 15.90 hg38_chr2_41746002-41748725_forward 1174 1660 (1064) SVA_B#Retroposon/SVA 432 865 (518) m_b1s502i11 2
+
+  hg38_chr2_417       1174 CCTCTGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGC 1223
+                                        -   i       i    i ----  i  i v   ---
+  SVA_B#Retropo        432 CCTCTGCCCGGCC-GCCACCCCGTCTGGGAAG----TGAGGAGCGTC--- 473
+
+  hg38_chr2_417       1224 CCTCCGCCCGGCCAGCCGCCCCGTCTGGGAGGTGAGGGGCGCCTCTGCCC 1273
+                           --  i   i    -   - vi         v      i  v         
+  SVA_B#Retropo        474 --TCTGCCTGGCC-GCC-CATCGTCTGGGATGTGAGGAGCCCCTCTGCCC 519
+
+  hg38_chr2_417       1274 GGCCGCCCCTACTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCCGCCCC 1323
+                                   vvv                v     v       -   ii   
+  SVA_B#Retropo        520 GGCCGCCCAGTCTGGGAAGTGAGGAGCGCCTCTTCCCGGCC-GCCATCCC 568
+
+  hg38_chr2_417       1324 GTCCGGGAGGGAGGTGGGGGGGTCGGCCCCCCGCCCGGCCAGCCGCCCCG 1373
+                              i----    i   i  i --  --i i i        -   - vi  
+  SVA_B#Retropo        569 GTCT----GGGAAGTGAGGAG--CG--TCTCTGCCCGGCC-GCC-CATCG 608
+
+  hg38_chr2_417       1374 TCCGGGAGGGAGGTGGGG-GTGTCGGCCCCCCGCCCGGCCAGCCGCCCCG 1422
+                             i----    v      - i -----  i i    -- --         
+  SVA_B#Retropo        609 TCT----GGGATGTGGGGAGCG-----CCTCTGCCC--C--GCCGCCCCG 645
+
+  hg38_chr2_417       1423 TCCGGGAGGGAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCCGCCCC 1472
+                             i----    ?   i  ------   v  i                   
+  SVA_B#Retropo        646 TCT----GGGANGTGAGG------AGCGCCTCTGCCCGGCCAGCCGCCCC 685
+
+  hg38_chr2_417       1473 GTCCGGGAGGTGAGGGG--CG--CCTCTGCCCGGCCA----CCCCTACTG 1514
+                              i           i -- i--  i i         ----    vv i 
+  SVA_B#Retropo        686 GTCTGGGAGGTGAGGAGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCG 735
+
+  hg38_chr2_417       1515 ---GGAAGTGAGGAGC----CCCTCTGCCCGGCCAGCCGCCCCGTCCGCA 1557
+                           ---   i   i  i ?----   i i                     ---
+  SVA_B#Retropo        736 GGAGGAGGTGGGGGGNNCAGCCCCCCGCCCGGCCAGCCGCCCCGTCC--- 782
+
+  hg38_chr2_417       1558 AGGGAGGTGGGGGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGA 1607
+                           -             -- i--  i i     ----           i----
+  SVA_B#Retropo        783 -GGGAGGTGGGGGG--CG--CCTCTGCCCG----GCCGCCCCGTCT---- 819
+
+  hg38_chr2_417       1608 GGGAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCCGCCCCGTCCGGG 1657
+                               i   i  ------      i          -   i       i   
+  SVA_B#Retropo        820 GGGAAGTGAGG------AGCCCCTCTGCCCGGCC-GCCACCCCGTCTGGG 862
+
+  hg38_chr2_417       1658 AGG 1660
+                              
+  SVA_B#Retropo        863 AGG 865
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 15.02
+CpG sites = 46, Kimura (unadjusted) = 16.45
+Transitions / transversions = 3.29 (46/14)
+Gap_init rate = 0.15 (75 / 486), avg. gap size = 1.13 (85 / 75)
+
+1454 6.84 0.61 13.13 hg38_chr2_41746002-41748725_forward 1302 1789 (935) SVA_E#Retroposon/SVA 429 862 (520) m_b1s502i12 2
+
+  hg38_chr2_417       1302 CCTCTGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGGTCGGCC 1351
+                                        -                  ----  i  i --  -- 
+  SVA_E#Retropo        429 CCTCTGCCCGGCC-GCCGCCCCGTCCGGGAGG----TGAGGAG--CG--C 469
+
+  hg38_chr2_417       1352 CCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGTGTCGGCCC 1401
+                            i i        -   - vi         ? ----  i  i---- v   
+  SVA_E#Retropo        470 CTCTGCCCGGCC-GCC-CATCGTCCGGGANG----TGAGGA----GCCCC 509
+
+  hg38_chr2_417       1402 CCCGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCC 1451
+                           i i        ----               ----  i  ------   v 
+  SVA_E#Retropo        510 TCTGCCCGGCC----GCCCCGTCCGGGAGG----TGAGG------AGCGC 545
+
+  hg38_chr2_417       1452 CCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCGCCTCTGCCCG 1501
+                            i          -           i    i      i             
+  SVA_E#Retropo        546 CTCTGCCCGGCC-GCCGCCCCGTCTGGGAAGTGAGGAGCGCCTCTGCCCG 594
+
+  hg38_chr2_417       1502 GCCACCCCTA--CTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCCGCCC 1549
+                              i   ??v-- i    ?   i     v    i    ?   ----    
+  SVA_E#Retropo        595 GCCGCCCNNCGTCCGGGANGTGGGGAGCGCCTCCGCCCNGCC----GCCC 640
+
+  hg38_chr2_417       1550 CGTCCGCAAGGGAGGTGGGGGGGTCAGC-CCCCCGCCCGGCCAGCCGCCC 1598
+                                 ----       i  -----   -  i                  
+  SVA_E#Retropo        641 CGTCCG----GGAGGTGAGG-----AGCGCCTCCGCCCGGCCAGCCGCCC 681
+
+  hg38_chr2_417       1599 CGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCCGCC 1648
+                                      v-----                 -               
+  SVA_E#Retropo        682 CGTCCGGGAGGT-----GGGGGGGTCAGCCCCCC-GCCCGGCCAGCCGCC 725
+
+  hg38_chr2_417       1649 CCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCCGC 1698
+                                       -           -          -              
+  SVA_E#Retropo        726 CCGTCCGGGAGG-AGGTGGGGGGG-TCAGCCCCCC-GCCCGGCCAGCCGC 772
+
+  hg38_chr2_417       1699 CCCGTCCGGGAGGTGAGGGGCGCCTCTGCCCAGCCGCCCCTACTGGGAAG 1748
+                                                          i                  
+  SVA_E#Retropo        773 CCCGTCCGGGAGGTGAGGGGCGCCTCTGCCCGGCCGCCCCTACTGGGAAG 822
+
+  hg38_chr2_417       1749 TGAGGAGCCCCTCTGCCCGGCCAGCTGCCCCGTCCGCGAGG 1789
+                                                  - i          v    
+  SVA_E#Retropo        823 TGAGGAGCCCCTCTGCCCGGCCA-CCGCCCCGTCCGGGAGG 862
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 6.03
+CpG sites = 22, Kimura (unadjusted) = 7.21
+Transitions / transversions = 3.14 (22/7)
+Gap_init rate = 0.12 (59 / 487), avg. gap size = 1.02 (60 / 59)
+
+757 11.27 9.79 11.06 hg38_chr2_41746002-41748725_forward 1400 1838 (886) SVA_E#Retroposon/SVA 429 862 (520) m_b1s502i13 2
+
+  hg38_chr2_417       1400 CCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGC 1449
+                             i i        -                  ----  i  ------   
+  SVA_E#Retropo        429 CCTCTGCCCGGCC-GCCGCCCCGTCCGGGAGG----TGAGG------AGC 467
+
+  hg38_chr2_417       1450 CCCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCGCCTCTGCC 1499
+                           v  i          -   - vi         ?      i  v        
+  SVA_E#Retropo        468 GCCTCTGCCCGGCC-GCC-CATCGTCCGGGANGTGAGGAGCCCCTCTGCC 515
+
+  hg38_chr2_417       1500 CGGCCACCCCTACTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCCGCCC 1549
+                                i    vv i    i         v             -       
+  SVA_E#Retropo        516 CGGCCGCCCCGTCCGGGAGGTGAGGAGCGCCTCTGCCCGGCC-GCCGCCC 564
+
+  hg38_chr2_417       1550 CGTCCGCAAGGGAGGTGGGGGG-----------GTCAGCCCCCCGCCCGG 1588
+                               i----    i   i  i ----------- v v    ??  i    
+  SVA_E#Retropo        565 CGTCT----GGGAAGTGAGGAGCGCCTCTGCCCGGCCGCCCNNCGTCCGG 610
+
+  hg38_chr2_417       1589 --------------------CCAGCCGCCCCGTCCGGGAGGGAGGTGGGG 1618
+                           --------------------  ?            ----        i  
+  SVA_E#Retropo        611 GANGTGGGGAGCGCCTCCGCCCNGCCGCCCCGTCC----GGGAGGTGAGG 656
+
+  hg38_chr2_417       1619 GGGGTCAGCCCCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGG 1668
+                           ------   v  i i                           -----v  
+  SVA_E#Retropo        657 ------AGCGCCTCCGCCCGGCCAGCCGCCCCGTCCGGGAGG-----TGG 695
+
+  hg38_chr2_417       1669 GGGGGTCAGCCCCCCTGCCCGGCCAGCCGCCCCGTCCG---GGAGGTGAG 1715
+                                          -                      ---       i 
+  SVA_E#Retropo        696 GGGGGTCAGCCCCCC-GCCCGGCCAGCCGCCCCGTCCGGGAGGAGGTGGG 744
+
+  hg38_chr2_417       1716 GGG--CG--CCTCTGC----CCAGCCGCCCCTACTGGGAAGTGAGGAGCC 1757
+                              -- i--  i i  ----           vv i    i      i  v
+  SVA_E#Retropo        745 GGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCG 794
+
+  hg38_chr2_417       1758 CCTCTGCCCGGCCAGCTGCCCCGTCCGCGAGGGAGGTGGGGGGGTCAGCC 1807
+                                        ----     vv i----    i   i  -----    
+  SVA_E#Retropo        795 CCTCTGCCCGGCC----GCCCCTACT----GGGAAGTGAGG-----AGCC 831
+
+  hg38_chr2_417       1808 CC-CCACCCGGCCAGCCGCCCCGTCCGGGAGG 1838
+                             - ii        -                 
+  SVA_E#Retropo        832 CCTCTGCCCGGCCA-CCGCCCCGTCCGGGAGG 862
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 11.06
+CpG sites = 29, Kimura (unadjusted) = 12.47
+Transitions / transversions = 1.93 (29/15)
+Gap_init rate = 0.13 (55 / 438), avg. gap size = 1.65 (91 / 55)
+
+912 12.01 2.24 15.37 hg38_chr2_41746002-41748725_forward 1451 1942 (782) SVA_B#Retroposon/SVA 432 867 (516) m_b1s502i14 2
+
+  hg38_chr2_417       1451 CCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCGCCTCTGCCC 1500
+                             i          -   i       i    i      i   i       i
+  SVA_B#Retropo        432 CCTCTGCCCGGCC-GCCACCCCGTCTGGGAAGTGAGGAGCGTCTCTGCCT 480
+
+  hg38_chr2_417       1501 GGCCACCCCTA--CTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCCGCC 1548
+                               i   v v--      v                       ----   
+  SVA_B#Retropo        481 GGCCGCCCATCGTCTGGGATGTGAGGAGCCCCTCTGCCCGGCC----GCC 526
+
+  hg38_chr2_417       1549 CCGTCCGCAAGGGAGGTGGGGGGGTCAGC-CCCCCGCCCGGCCAGCCGCC 1597
+                            v   i ----   i   i  -----   -  i iv       -   ii 
+  SVA_B#Retropo        527 CAGTCTG----GGAAGTGAGG-----AGCGCCTCTTCCCGGCC-GCCATC 566
+
+  hg38_chr2_417       1598 CCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCCGC 1647
+                                i    i ----  i  i v   ------i          -   - 
+  SVA_B#Retropo        567 CCGTCTGGGAAG----TGAGGAGCGTC------TCTGCCCGGCC-GCC-C 604
+
+  hg38_chr2_417       1648 CCCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCCG 1697
+                           vi    i    v ----     ------   v  i      --- -    
+  SVA_B#Retropo        605 ATCGTCTGGGATG----TGGGG------AGCGCCTCTGCCC---C-GCCG 640
+
+  hg38_chr2_417       1698 CCCCGTCCGGGAGGTGAGGGGCGCCTCTGCCC----AGCCGCCCCTACTG 1743
+                                  i    ?      i            ----         vv   
+  SVA_B#Retropo        641 CCCCGTCTGGGANGTGAGGAGCGCCTCTGCCCGGCCAGCCGCCCCGTCTG 690
+
+  hg38_chr2_417       1744 GGAAGTGAGGAG--C--CCCTCTGCCCGGCCAGCTGCCCCGTCCGCGAGG 1789
+                              i        -- --   i i           i          v    
+  SVA_B#Retropo        691 GGAGGTGAGGAGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGG 740
+
+  hg38_chr2_417       1790 GAGGTGGGGGGGTCAGCCCCCCACCCGGCCAGCCGCCCCGTCCGGGAGGG 1839
+                           -          ??         i                          -
+  SVA_B#Retropo        741 -AGGTGGGGGGNNCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGG- 788
+
+  hg38_chr2_417       1840 AGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGG 1889
+                           ---       v ------  i          ----        i    i 
+  SVA_B#Retropo        789 ---TGGGGGGCG------CCTCTGCCCGGCC----GCCCCGTCTGGGAAG 825
+
+  hg38_chr2_417       1890 GAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCCGCCCCGTCCGGGAG 1939
+                           ----  i  ------      i          -   i       i     
+  SVA_B#Retropo        826 ----TGAGG------AGCCCCTCTGCCCGGCC-GCCACCCCGTCTGGGAG 864
+
+  hg38_chr2_417       1940 GTG 1942
+                              
+  SVA_B#Retropo        865 GTG 867
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 12.07
+CpG sites = 37, Kimura (unadjusted) = 13.13
+Transitions / transversions = 2.85 (37/13)
+Gap_init rate = 0.15 (72 / 491), avg. gap size = 1.08 (78 / 72)
+
+1573 5.69 0.82 13.82 hg38_chr2_41746002-41748725_forward 1529 2018 (706) SVA_E#Retroposon/SVA 429 862 (520) m_b1s502i15 2
+
+  hg38_chr2_417       1529 CCTCTGCCCGGCCAGCCGCCCCGTCCGCAAGGGAGGTGGGGGGGTCAGC- 1577
+                                        -             ----       i  -----   -
+  SVA_E#Retropo        429 CCTCTGCCCGGCC-GCCGCCCCGTCCG----GGAGGTGAGG-----AGCG 468
+
+  hg38_chr2_417       1578 CCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGC 1627
+                             i i        -   - vi         ? ----  i  ------   
+  SVA_E#Retropo        469 CCTCTGCCCGGCC-GCC-CATCGTCCGGGANG----TGAGG------AGC 506
+
+  hg38_chr2_417       1628 CCCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAG 1677
+                              i          ----               ----  i  ------  
+  SVA_E#Retropo        507 CCCTCTGCCCGGCC----GCCCCGTCCGGGAGG----TGAGG------AG 542
+
+  hg38_chr2_417       1678 CCCCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCGCCTCTGC 1727
+                            v  i          -           i    i      i          
+  SVA_E#Retropo        543 CGCCTCTGCCCGGCC-GCCGCCCCGTCTGGGAAGTGAGGAGCGCCTCTGC 591
+
+  hg38_chr2_417       1728 CCAGCCGCCCCTA--CTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCTG 1775
+                             i       ??v-- i    ?   i     v    i    ?   ---- 
+  SVA_E#Retropo        592 CCGGCCGCCCNNCGTCCGGGANGTGGGGAGCGCCTCCGCCCNGCC----G 637
+
+  hg38_chr2_417       1776 CCCCGTCCGCGAGGGAGGTGGGGGGGTCAGC-CCCCCACCCGGCCAGCCG 1824
+                                    ----       i  -----   -  i  i            
+  SVA_E#Retropo        638 CCCCGTCCG----GGAGGTGAGG-----AGCGCCTCCGCCCGGCCAGCCG 678
+
+  hg38_chr2_417       1825 CCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGCC 1874
+                                         v-----                 -            
+  SVA_E#Retropo        679 CCCCGTCCGGGAGGT-----GGGGGGGTCAGCCCCCC-GCCCGGCCAGCC 722
+
+  hg38_chr2_417       1875 GCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCCCCTGCCCGGCCAGC 1924
+                                          -           -          -           
+  SVA_E#Retropo        723 GCCCCGTCCGGGAGG-AGGTGGGGGGG-TCAGCCCCCC-GCCCGGCCAGC 769
+
+  hg38_chr2_417       1925 CGCCCCGTCCGGGAGGTGAGGGGCGCCTCTGCCCGGCCGCCCCTACTGGG 1974
+                                                                             
+  SVA_E#Retropo        770 CGCCCCGTCCGGGAGGTGAGGGGCGCCTCTGCCCGGCCGCCCCTACTGGG 819
+
+  hg38_chr2_417       1975 AAGTGAGGAGCCCCTCTGCCTGGCCAGCCGCCCCGTCCGGGAGG 2018
+                                               i     -                 
+  SVA_E#Retropo        820 AAGTGAGGAGCCCCTCTGCCCGGCCA-CCGCCCCGTCCGGGAGG 862
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 4.76
+CpG sites = 19, Kimura (unadjusted) = 5.93
+Transitions / transversions = 3.80 (19/5)
+Gap_init rate = 0.13 (63 / 489), avg. gap size = 1.02 (64 / 63)
+
+776 11.78 9.82 10.83 hg38_chr2_41746002-41748725_forward 1629 2066 (658) SVA_E#Retroposon/SVA 429 862 (520) m_b1s502i16 2
+
+  hg38_chr2_417       1629 CCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGC 1678
+                             i          -                  ----  i  ------   
+  SVA_E#Retropo        429 CCTCTGCCCGGCC-GCCGCCCCGTCCGGGAGG----TGAGG------AGC 467
+
+  hg38_chr2_417       1679 CCCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCGCCTCTGCC 1728
+                           v  i          -   - vi         ?      i  v        
+  SVA_E#Retropo        468 GCCTCTGCCCGGCC-GCC-CATCGTCCGGGANGTGAGGAGCCCCTCTGCC 515
+
+  hg38_chr2_417       1729 CAGCCGCCCCTACTGGGAAGTGAGGAGCCCCTCTGCCCGGCCAGCTGCCC 1778
+                            i        vv i    i         v             -  i    
+  SVA_E#Retropo        516 CGGCCGCCCCGTCCGGGAGGTGAGGAGCGCCTCTGCCCGGCC-GCCGCCC 564
+
+  hg38_chr2_417       1779 CGTCCGCGAGGGAGGTGGGGGG-----------GTCAGCCCCCCACCCGG 1817
+                               i----    i   i  i ----------- v v    ?? ii    
+  SVA_E#Retropo        565 CGTCT----GGGAAGTGAGGAGCGCCTCTGCCCGGCCGCCCNNCGTCCGG 610
+
+  hg38_chr2_417       1818 --------------------CCAGCCGCCCCGTCCGGGAGGGAGGTGGGG 1847
+                           --------------------  ?            ----        i  
+  SVA_E#Retropo        611 GANGTGGGGAGCGCCTCCGCCCNGCCGCCCCGTCC----GGGAGGTGAGG 656
+
+  hg38_chr2_417       1848 GGGGTCAGCCCCCCTGCCCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGG 1897
+                           ------   v  i i                           -----v  
+  SVA_E#Retropo        657 ------AGCGCCTCCGCCCGGCCAGCCGCCCCGTCCGGGAGG-----TGG 695
+
+  hg38_chr2_417       1898 GGGGGTCAGCCCCCCTGCCCGGCCAGCCGCCCCGTCCG---GGAGGTGAG 1944
+                                          -                      ---       i 
+  SVA_E#Retropo        696 GGGGGTCAGCCCCCC-GCCCGGCCAGCCGCCCCGTCCGGGAGGAGGTGGG 744
+
+  hg38_chr2_417       1945 GGG--CG--CCTCTGCCCG----GCCGCCCCTACTGGGAAGTGAGGAGCC 1986
+                              -- i--  i i     ----        vv i    i      i  v
+  SVA_E#Retropo        745 GGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCG 794
+
+  hg38_chr2_417       1987 CCTCTGCCTGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGTCAGCCC 2036
+                                  ----  i        vv i----    i   i  ----     
+  SVA_E#Retropo        795 CCTCTGC----CCGGCCGCCCCTACT----GGGAAGTGAGG----AGCCC 832
+
+  hg38_chr2_417       2037 C-CCGACCGGCCAGCCGCCCCGTCCGGGAGG 2066
+                            - i v       -                 
+  SVA_E#Retropo        833 CTCTGCCCGGCCA-CCGCCCCGTCCGGGAGG 862
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 10.83
+CpG sites = 30, Kimura (unadjusted) = 13.09
+Transitions / transversions = 1.88 (30/16)
+Gap_init rate = 0.12 (54 / 437), avg. gap size = 1.67 (90 / 54)
+
+7166 3.69 0.50 4.92 hg38_chr2_41746002-41748725_forward 1720 2716 (8) SVA_F#Retroposon/SVA 421 1375 (0) m_b1s502i17 2
+
+  hg38_chr2_417       1720 GCCTCTGCCCAGCCGCC---CCTACTGGGAAGTGAGGAGCCCCTCTGCCC 1766
+                                     i      ---  vv      i         v         
+  SVA_F#Retropo        421 GCCTCTGCCCGGCCGCCGCCCCGTCTGGGAGGTGAGGAGCGCCTCTGCCC 470
+
+  hg38_chr2_417       1767 GGCCAGCTGCCC--CGTCCGCGAGGGAGGTGGGGGGGTCAGCCCCCCACC 1814
+                               ----    --    i ----   ?   i  -----      i ---
+  SVA_F#Retropo        471 GGCC----GCCCATCGTCTG----GGANGTGAGG-----AGCCCCTC--- 504
+
+  hg38_chr2_417       1815 CGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCCCCTGC 1864
+                           i v  i           i      ----  i  ------   v  i i  
+  SVA_F#Retropo        505 TGCCCGGCCGCCCCGTCTGGGAGG----TGAGG------AGCGCCTCCGC 544
+
+  hg38_chr2_417       1865 CCGGCCAGCCGCCCCGTCCGGGAGGGAGGTGGGGGGGGTCAGCCCCCCTG 1914
+                                 -                  ----  i  i v   ------i i 
+  SVA_F#Retropo        545 CCGGCC-GCCGCCCCGTCCGGGAGG----TGAGGAGCGTC------TCCG 583
+
+  hg38_chr2_417       1915 CCCGGCCAGCCGCCCCGTCCGGGAGGTGAGGGGCGCCTCTGCCCGGCCGC 1964
+                                  -   - ?          ?      i       i          
+  SVA_F#Retropo        584 CCCGGCC-GCC-CNCCGTCCGGGANGTGAGGAGCGCCTCCGCCCGGCCGC 631
+
+  hg38_chr2_417       1965 CCCTACTGGGAAGTGAGGAGCCCCTCTGCCTGGCCAGCCGCCCCGTCCGG 2014
+                              vv i    ?         v    i   i                   
+  SVA_F#Retropo        632 CCCGTCCGGGANGTGAGGAGCGCCTCCGCCCGGCCAGCCGCCCCGTCCGG 681
+
+  hg38_chr2_417       2015 GAGGGAGGTGGGGGGTCAGCCCCCCGACCGGCCAGCCGCCCCGTCCGGGA 2064
+                               vi  ---               v                       
+  SVA_F#Retropo        682 GAGGTGGG---GGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGA 728
+
+  hg38_chr2_417       2065 GGGAGGTGGGGGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCATCCGGGAG 2114
+                             -                                      i        
+  SVA_F#Retropo        729 GG-AGGTGGGGGGGTCAGCCCCCCGCCCGGCCAGCCGCCCCGTCCGGGAG 777
+
+  hg38_chr2_417       2115 GTGAGGGGCGCCTCTGCCCGGCCGCCCCTACTGGGAAGTGAGGAGCCCCT 2164
+                                                                             
+  SVA_F#Retropo        778 GTGAGGGGCGCCTCTGCCCGGCCGCCCCTACTGGGAAGTGAGGAGCCCCT 827
+
+  hg38_chr2_417       2165 CTGCCCGGCCACCACCCCGTCTGGGAGGTGTGCCCAACAGCTCATTGAGA 2214
+                                        i       i                            
+  SVA_F#Retropo        828 CTGCCCGGCCACCGCCCCGTCCGGGAGGTGTGCCCAACAGCTCATTGAGA 877
+
+  hg38_chr2_417       2215 ACGGGCCAGGATGACAATGGCGGCTTTGTGGAATAGAAAGGCGGGAAAGG 2264
+                                                                             
+  SVA_F#Retropo        878 ACGGGCCAGGATGACAATGGCGGCTTTGTGGAATAGAAAGGCGGGAAAGG 927
+
+  hg38_chr2_417       2265 TGGGGAAAAGATTGAGAAATCGGATGGTTGCCGTGTCTGTGTAGAAAGAA 2314
+                                                                             
+  SVA_F#Retropo        928 TGGGGAAAAGATTGAGAAATCGGATGGTTGCCGTGTCTGTGTAGAAAGAA 977
+
+  hg38_chr2_417       2315 GTAGACATGGGAGACTTTTCATTTTGTTCTGCACTAAGAAAAATTCCTCT 2364
+                                                                             
+  SVA_F#Retropo        978 GTAGACATGGGAGACTTTTCATTTTGTTCTGCACTAAGAAAAATTCCTCT 1027
+
+  hg38_chr2_417       2365 GCCTTGGGATCCTGTTGATCTGTGACCTTACCCCCAACCCTGTGCTCTCT 2414
+                                                                             
+  SVA_F#Retropo       1028 GCCTTGGGATCCTGTTGATCTGTGACCTTACCCCCAACCCTGTGCTCTCT 1077
+
+  hg38_chr2_417       2415 GAAACATGTGCTGTGTCCACTCAGGGTTAAATGGATTAAGGGCGGTGCAA 2464
+                                                                             
+  SVA_F#Retropo       1078 GAAACATGTGCTGTGTCCACTCAGGGTTAAATGGATTAAGGGCGGTGCAA 1127
+
+  hg38_chr2_417       2465 GATGTGCTTTGTTAAACAGATGCTTGAAGGCAGCATGCTCGTTAAGAGTC 2514
+                                                                             
+  SVA_F#Retropo       1128 GATGTGCTTTGTTAAACAGATGCTTGAAGGCAGCATGCTCGTTAAGAGTC 1177
+
+  hg38_chr2_417       2515 ATCACCAATCCCTAATCTCAAGTAATCAGGGACACAAACACTGCGGAAGG 2564
+                                                                             
+  SVA_F#Retropo       1178 ATCACCAATCCCTAATCTCAAGTAATCAGGGACACAAACACTGCGGAAGG 1227
+
+  hg38_chr2_417       2565 CCGCAGGGTCCTCTGCCTAGGAAAACCAGAGACCTTTGTTCACTTGTTTA 2614
+                                                                             
+  SVA_F#Retropo       1228 CCGCAGGGTCCTCTGCCTAGGAAAACCAGAGACCTTTGTTCACTTGTTTA 1277
+
+  hg38_chr2_417       2615 TCTGCTGACCTTCCCTCCACTATTGTCCCATGACCCTGCCAAATCCCCCT 2664
+                                                                             
+  SVA_F#Retropo       1278 TCTGCTGACCTTCCCTCCACTATTGTCCCATGACCCTGCCAAATCCCCCT 1327
+
+  hg38_chr2_417       2665 CTGTGAGAAACACCCAAGAATTATCAATAAAAAAATAAATTAAAAAAAAA 2714
+                                                              ---  ?      -  
+  SVA_F#Retropo       1328 CTGTGAGAAACACCCAAGAATTATCAATAAAAAAA---ATNAAAAAA-AA 1373
+
+  hg38_chr2_417       2715 AA 2716
+                             
+  SVA_F#Retropo       1374 AA 1375
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 2.71
+CpG sites = 24, Kimura (unadjusted) = 3.81
+Transitions / transversions = 2.18 (24/11)
+Gap_init rate = 0.05 (49 / 996), avg. gap size = 1.06 (52 / 49)
+
+
+7166 3.69 0.50 4.92 hg38_chr2_41746002-41748725_revcomp 9 1005 (1719) C SVA_F#Retroposon/SVA (0) 1375 421 m_b1s502i18 3
+
+  hg38_chr2_417          9 TTTTTTTTTTTAATTTATTTTTTTATTGATAATTCTTGGGTGTTTCTCAC 58
+                               -      ?  ---                                 
+C SVA_F#Retropo       1375 TTTT-TTTTTTNAT---TTTTTTTATTGATAATTCTTGGGTGTTTCTCAC 1330
+
+  hg38_chr2_417         59 AGAGGGGGATTTGGCAGGGTCATGGGACAATAGTGGAGGGAAGGTCAGCA 108
+                                                                             
+C SVA_F#Retropo       1329 AGAGGGGGATTTGGCAGGGTCATGGGACAATAGTGGAGGGAAGGTCAGCA 1280
+
+  hg38_chr2_417        109 GATAAACAAGTGAACAAAGGTCTCTGGTTTTCCTAGGCAGAGGACCCTGC 158
+                                                                             
+C SVA_F#Retropo       1279 GATAAACAAGTGAACAAAGGTCTCTGGTTTTCCTAGGCAGAGGACCCTGC 1230
+
+  hg38_chr2_417        159 GGCCTTCCGCAGTGTTTGTGTCCCTGATTACTTGAGATTAGGGATTGGTG 208
+                                                                             
+C SVA_F#Retropo       1229 GGCCTTCCGCAGTGTTTGTGTCCCTGATTACTTGAGATTAGGGATTGGTG 1180
+
+  hg38_chr2_417        209 ATGACTCTTAACGAGCATGCTGCCTTCAAGCATCTGTTTAACAAAGCACA 258
+                                                                             
+C SVA_F#Retropo       1179 ATGACTCTTAACGAGCATGCTGCCTTCAAGCATCTGTTTAACAAAGCACA 1130
+
+  hg38_chr2_417        259 TCTTGCACCGCCCTTAATCCATTTAACCCTGAGTGGACACAGCACATGTT 308
+                                                                             
+C SVA_F#Retropo       1129 TCTTGCACCGCCCTTAATCCATTTAACCCTGAGTGGACACAGCACATGTT 1080
+
+  hg38_chr2_417        309 TCAGAGAGCACAGGGTTGGGGGTAAGGTCACAGATCAACAGGATCCCAAG 358
+                                                                             
+C SVA_F#Retropo       1079 TCAGAGAGCACAGGGTTGGGGGTAAGGTCACAGATCAACAGGATCCCAAG 1030
+
+  hg38_chr2_417        359 GCAGAGGAATTTTTCTTAGTGCAGAACAAAATGAAAAGTCTCCCATGTCT 408
+                                                                             
+C SVA_F#Retropo       1029 GCAGAGGAATTTTTCTTAGTGCAGAACAAAATGAAAAGTCTCCCATGTCT 980
+
+  hg38_chr2_417        409 ACTTCTTTCTACACAGACACGGCAACCATCCGATTTCTCAATCTTTTCCC 458
+                                                                             
+C SVA_F#Retropo        979 ACTTCTTTCTACACAGACACGGCAACCATCCGATTTCTCAATCTTTTCCC 930
+
+  hg38_chr2_417        459 CACCTTTCCCGCCTTTCTATTCCACAAAGCCGCCATTGTCATCCTGGCCC 508
+                                                                             
+C SVA_F#Retropo        929 CACCTTTCCCGCCTTTCTATTCCACAAAGCCGCCATTGTCATCCTGGCCC 880
+
+  hg38_chr2_417        509 GTTCTCAATGAGCTGTTGGGCACACCTCCCAGACGGGGTGGTGGCCGGGC 558
+                                                         i       i           
+C SVA_F#Retropo        879 GTTCTCAATGAGCTGTTGGGCACACCTCCCGGACGGGGCGGTGGCCGGGC 830
+
+  hg38_chr2_417        559 AGAGGGGCTCCTCACTTCCCAGTAGGGGCGGCCGGGCAGAGGCGCCCCTC 608
+                                                                             
+C SVA_F#Retropo        829 AGAGGGGCTCCTCACTTCCCAGTAGGGGCGGCCGGGCAGAGGCGCCCCTC 780
+
+  hg38_chr2_417        609 ACCTCCCGGATGGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACCTC 658
+                                     i                                      -
+C SVA_F#Retropo        779 ACCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACCT- 731
+
+  hg38_chr2_417        659 CCTCCCGGACGGGGCGGCTGGCCGGTCGGGGGGCTGACCCCCCACCTCCC 708
+                                                    v               ---  iv  
+C SVA_F#Retropo        730 CCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCTGACCCC---CCCACC 684
+
+  hg38_chr2_417        709 TCCCGGACGGGGCGGCTGGCCAGGCAGAGGGGCTCCTCACTTCCCAGTAG 758
+                                                i   i    v         ?    i vv 
+C SVA_F#Retropo        683 TCCCGGACGGGGCGGCTGGCCGGGCGGAGGCGCTCCTCACNTCCCGGACG 634
+
+  hg38_chr2_417        759 GGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCGGCTGGCCG 808
+                                       i       i      ?          ? -   -     
+C SVA_F#Retropo        633 GGGCGGCCGGGCGGAGGCGCTCCTCACNTCCCGGACGGNG-GGC-GGCCG 586
+
+  hg38_chr2_417        809 GGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGACGGGGCGGCTGGCC 858
+                              i i------   v i  i  ----                  -    
+C SVA_F#Retropo        585 GGCGGA------GACGCTCCTCA----CCTCCCGGACGGGGCGGC-GGCC 547
+
+  hg38_chr2_417        859 GGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGACGGGGCGGCTGGC 908
+                               i i  v   ------  i  ----      i           i  v
+C SVA_F#Retropo        546 GGGCGGAGGCGCT------CCTCA----CCTCCCAGACGGGGCGGCCGGG 507
+
+  hg38_chr2_417        909 CGGGTGGGGGGCTGACCCCCCCACCTCCCTCGCGGACG--GGGCAGCTGG 956
+                            i--- i      -----  i   ?   ---- i    --    ----  
+C SVA_F#Retropo        506 CA---GAGGGGCT-----CCTCACNTCC----CAGACGATGGGC----GG 473
+
+  hg38_chr2_417        957 CCGGGCAGAGGGGCTCCTCACTTCCCAGTAGG---GGCGGCTGGGCAGAG 1003
+                                      v         i      vv  ---      i        
+C SVA_F#Retropo        472 CCGGGCAGAGGCGCTCCTCACCTCCCAGACGGGGCGGCGGCCGGGCAGAG 423
+
+  hg38_chr2_417       1004 GC 1005
+                             
+C SVA_F#Retropo        422 GC 421
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 2.71
+CpG sites = 24, Kimura (unadjusted) = 3.81
+Transitions / transversions = 2.18 (24/11)
+Gap_init rate = 0.05 (49 / 996), avg. gap size = 1.06 (52 / 49)
+
+776 11.78 9.82 10.83 hg38_chr2_41746002-41748725_revcomp 659 1096 (1628) C SVA_E#Retroposon/SVA (520) 862 429 m_b1s502i19 3
+
+  hg38_chr2_417        659 CCTCCCGGACGGGGCGGCTGGCCGGTCGG-GGGGCTGACCCCCCACCTCC 707
+                                            -       v i -      ----  i   i   
+C SVA_E#Retropo        862 CCTCCCGGACGGGGCGG-TGGCCGGGCAGAGGGGCT----CCTCACTTCC 818
+
+  hg38_chr2_417        708 CTCCCGGACGGGGCGGCTGGCCAGGCAGAGGGGCTCCTCACTTCCCAGTA 757
+                            ----i vv        i  ----       v  i      i    i vv
+C SVA_E#Retropo        817 C----AGTAGGGGCGGCCGG----GCAGAGGCGCCCCTCACCTCCCGGAC 776
+
+  hg38_chr2_417        758 GGGGCGGC----CGGGCAGAGG--CG--CCCCTCACCTCC---CGGACGG 796
+                                   ----     i i  --i --    i       ---       
+C SVA_E#Retropo        775 GGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACCTCCTCCCGGACGG 726
+
+  hg38_chr2_417        797 GGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGACG 846
+                                          -                 v-----           
+C SVA_E#Retropo        725 GGCGGCTGGCCGGGC-GGGGGGCTGACCCCCCCA-----CCTCCCGGACG 682
+
+  hg38_chr2_417        847 GGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGAC 896
+                                           i i  v   ------  i        ----    
+C SVA_E#Retropo        681 GGGCGGCTGGCCGGGCGGAGGCGCT------CCTCACCTCCC----GGAC 642
+
+  hg38_chr2_417        897 GGGGCGGCTGG--------------------CCGGGTGGGGGGCTGAC-- 924
+                                   ?  --------------------    ii ??    v v --
+C SVA_E#Retropo        641 GGGGCGGCNGGGCGGAGGCGCTCCCCACNTCCCGGACGNNGGGCGGCCGG 592
+
+  hg38_chr2_417        925 ---------CCCCCCACCTCCCTCGCGGACGGGGCAGCTGGCCGGGCAGA 965
+                           --------- i  i   i    ----i        i  -           
+C SVA_E#Retropo        591 GCAGAGGCGCTCCTCACTTCCC----AGACGGGGCGGC-GGCCGGGCAGA 547
+
+  hg38_chr2_417        966 GGGGCTCCTCACTTCCCAGTAGGGGCGGCTGGGCAGAGGCGCCCCTCACC 1015
+                             v         i    i vv        i         v  i      ?
+C SVA_E#Retropo        546 GGCGCTCCTCACCTCCCGGACGGGGCGGCCGGGCAGAGGGGCTCCTCACN 497
+
+  hg38_chr2_417       1016 TCCCGGACGGGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTCC 1065
+                                    iv -   -          i  v   ------  i  ---- 
+C SVA_E#Retropo        496 TCCCGGACGATG-GGC-GGCCGGGCAGAGGCGCT------CCTCA----C 459
+
+  hg38_chr2_417       1066 CTCCCGGACGGGGCGGCTGGCCGGGCAGGGG 1096
+                                            -          i  
+C SVA_E#Retropo        458 CTCCCGGACGGGGCGGC-GGCCGGGCAGAGG 429
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 10.83
+CpG sites = 30, Kimura (unadjusted) = 13.09
+Transitions / transversions = 1.88 (30/16)
+Gap_init rate = 0.13 (55 / 437), avg. gap size = 1.64 (90 / 55)
+
+1573 5.69 0.82 13.82 hg38_chr2_41746002-41748725_revcomp 707 1196 (1528) C SVA_E#Retroposon/SVA (520) 862 429 m_b1s502i20 3
+
+  hg38_chr2_417        707 CCTCCCGGACGGGGCGGCTGGCCAGGCAGAGGGGCTCCTCACTTCCCAGT 756
+                                            -     i                          
+C SVA_E#Retropo        862 CCTCCCGGACGGGGCGG-TGGCCGGGCAGAGGGGCTCCTCACTTCCCAGT 814
+
+  hg38_chr2_417        757 AGGGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCGGCTGGC 806
+                                                                             
+C SVA_E#Retropo        813 AGGGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCGGCTGGC 764
+
+  hg38_chr2_417        807 CGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGACGGGGCGGCTGG 856
+                                -          -           -                     
+C SVA_E#Retropo        763 CGGGC-GGGGGGCTGA-CCCCCCCACCT-CCTCCCGGACGGGGCGGCTGG 717
+
+  hg38_chr2_417        857 CCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGACGGGGCGGCTG 906
+                                 -                 -----v                    
+C SVA_E#Retropo        716 CCGGGC-GGGGGGCTGACCCCCCC-----ACCTCCCGGACGGGGCGGCTG 673
+
+  hg38_chr2_417        907 GCCGGGTGGGGG-GCTGACCCCCCCACCTCCCTCGCGGACGGGGCAGCTG 955
+                                 i  i  -   -----  i       ----          ---- 
+C SVA_E#Retropo        672 GCCGGGCGGAGGCGCT-----CCTCACCTCC----CGGACGGGGC----G 636
+
+  hg38_chr2_417        956 GCCGGGCAGAGGGGCTCCTCACTTCCCAG--TAGGGGCGGCTGGGCAGAG 1003
+                             ?    i    v     i   ?    i --v??       i        
+C SVA_E#Retropo        635 GCNGGGCGGAGGCGCTCCCCACNTCCCGGACGNNGGGCGGCCGGGCAGAG 586
+
+  hg38_chr2_417       1004 GCGCCCCTCACCTCCCGGACGGGGCGGCTGGCCGGGCAGGGGGGCTGACC 1053
+                               i      i    i           -          i  v   ----
+C SVA_E#Retropo        585 GCGCTCCTCACTTCCCAGACGGGGCGGC-GGCCGGGCAGAGGCGCT---- 541
+
+  hg38_chr2_417       1054 CCCCCCACCTCCCTCCCGGACGGGGCGGCTGGCCGGGCAGGGGGGCTGAC 1103
+                           --  i  ----               ----          i      ---
+C SVA_E#Retropo        540 --CCTCA----CCTCCCGGACGGGGC----GGCCGGGCAGAGGGGCT--- 504
+
+  hg38_chr2_417       1104 CCCCCCCACCTCCCTCCCGGACGGGGCGGCTGGCCGGGCGGGGG-GCTGA 1152
+                           ---  i  ---- ?         iv -   -        i i  -   --
+C SVA_E#Retropo        503 ---CCTCA----CNTCCCGGACGATG-GGC-GGCCGGGCAGAGGCGCT-- 465
+
+  hg38_chr2_417       1153 CCCCCCCACCTCCCTTGCGGACGGGGCGGCTGGCCGGGCAGAGG 1196
+                           ---  i       ----             -             
+C SVA_E#Retropo        464 ---CCTCACCTCC----CGGACGGGGCGGC-GGCCGGGCAGAGG 429
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 4.76
+CpG sites = 19, Kimura (unadjusted) = 5.93
+Transitions / transversions = 3.80 (19/5)
+Gap_init rate = 0.13 (63 / 489), avg. gap size = 1.02 (64 / 63)
+
+912 12.01 2.24 15.37 hg38_chr2_41746002-41748725_revcomp 783 1274 (1450) C SVA_B#Retroposon/SVA (516) 867 432 m_b1s502i21 3
+
+  hg38_chr2_417        783 CACCTCCCGGACGGGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCAC 832
+                                   i       i   -          i      ------  i  -
+C SVA_B#Retropo        867 CACCTCCCAGACGGGGTGGC-GGCCGGGCAGAGGGGCT------CCTCA- 826
+
+  hg38_chr2_417        833 CTCCCTCCCGGACGGGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCA 882
+                           --- i    i        ----          i  ------ v       
+C SVA_B#Retropo        825 ---CTTCCCAGACGGGGC----GGCCGGGCAGAGG------CGCCCCCCA 789
+
+  hg38_chr2_417        883 CCTCCCTCCCGGACGGGGCGGCTGGCCGGGTGGGGGGCTGACCCCCCCAC 932
+                           ----                          i         ??        
+C SVA_B#Retropo        788 ----CCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCTGNNCCCCCCAC 743
+
+  hg38_chr2_417        933 CTCCCTCGCGGACGGGGCAGCTGGCCGGGCAGAGGG--G--CTCCTCACT 978
+                             -    v          i           i i   -- --        i
+C SVA_B#Retropo        742 CT-CCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCTGACCTCCTCACC 694
+
+  hg38_chr2_417        979 TCCCAGTAGGGGCGGCT----GGGCAGAGGCGCCCCTCACCTCCCGGACG 1024
+                                 vv         ----            i      ?    i    
+C SVA_B#Retropo        693 TCCCAGACGGGGCGGCTGGCCGGGCAGAGGCGCTCCTCACNTCCCAGACG 644
+
+  hg38_chr2_417       1025 GGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGAC 1074
+                                  - ---      i  v   ------     ---- v    i   
+C SVA_B#Retropo        643 GGGCGGC-G---GGGCAGAGGCGCT------CCCCA----CATCCCAGAC 608
+
+  hg38_chr2_417       1075 GGGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGA 1124
+                            iv -   -          i------   v i  i  ---- i    i  
+C SVA_B#Retropo        607 GATG-GGC-GGCCGGGCAGA------GACGCTCCTCA----CTTCCCAGA 570
+
+  hg38_chr2_417       1125 CGGGGCGGCTGGCCGGGCGGGGG-GCTGACCCCCCCACCTCCCTTGCGGA 1173
+                               ii   -       vi i  -   -----  i   i   ---- i  
+C SVA_B#Retropo        569 CGGGATGGC-GGCCGGGAAGAGGCGCT-----CCTCACTTCC----CAGA 530
+
+  hg38_chr2_417       1174 CGGGGCGGCTGGCCGGGCAGAGGGGCTCCTCACTTCCCAG--TAGGGGTG 1221
+                            v    ----                       v      --v v   i 
+C SVA_B#Retropo        529 CTGGGC----GGCCGGGCAGAGGGGCTCCTCACATCCCAGACGATGGGCG 484
+
+  hg38_chr2_417       1222 GCCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCGGCTGGCCGGGCAG 1271
+                              i       i   i      i    i       i   -          
+C SVA_B#Retropo        483 GCCAGGCAGAGACGCTCCTCACTTCCCAGACGGGGTGGC-GGCCGGGCAG 435
+
+  hg38_chr2_417       1272 GGG 1274
+                           i  
+C SVA_B#Retropo        434 AGG 432
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 12.07
+CpG sites = 37, Kimura (unadjusted) = 13.13
+Transitions / transversions = 2.85 (37/13)
+Gap_init rate = 0.15 (72 / 491), avg. gap size = 1.08 (78 / 72)
+
+757 11.27 9.79 11.06 hg38_chr2_41746002-41748725_revcomp 887 1325 (1399) C SVA_E#Retroposon/SVA (520) 862 429 m_b1s502i22 3
+
+  hg38_chr2_417        887 CCTCCCGGACGGGGCGGCTGGCCGGGTGG-GGGGCTGACCCCCCCACCTC 935
+                                            -        ii -      -----  i   i  
+C SVA_E#Retropo        862 CCTCCCGGACGGGGCGG-TGGCCGGGCAGAGGGGCT-----CCTCACTTC 819
+
+  hg38_chr2_417        936 CCTCGCGGACGGGGCAGCTGGCCGGGCAGAGGGGCTCCTCACTTCCCAGT 985
+                             ----i vv     ----             v  i      i    i v
+C SVA_E#Retropo        818 CC----AGTAGGGGC----GGCCGGGCAGAGGCGCCCCTCACCTCCCGGA 777
+
+  hg38_chr2_417        986 AGGGGCGGCTGG----GCAGAGG--CG--CCCCTCACCTCC---CGGACG 1024
+                           v           ----  i i  --i --    i       ---      
+C SVA_E#Retropo        776 CGGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACCTCCTCCCGGACG 727
+
+  hg38_chr2_417       1025 GGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGAC 1074
+                                           -                 v-----          
+C SVA_E#Retropo        726 GGGCGGCTGGCCGGGC-GGGGGGCTGACCCCCCCA-----CCTCCCGGAC 683
+
+  hg38_chr2_417       1075 GGGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGA 1124
+                                            i i  v   ------  i        ----   
+C SVA_E#Retropo        682 GGGGCGGCTGGCCGGGCGGAGGCGCT------CCTCACCTCCC----GGA 643
+
+  hg38_chr2_417       1125 CGGGGCGGCTGG--------------------CCGGGCGGGGGGCTGAC- 1153
+                                    ?  --------------------    i  ??    v v -
+C SVA_E#Retropo        642 CGGGGCGGCNGGGCGGAGGCGCTCCCCACNTCCCGGACGNNGGGCGGCCG 593
+
+  hg38_chr2_417       1154 ----------CCCCCCACCTCCCTTGCGGACGGGGCGGCTGGCCGGGCAG 1193
+                           ---------- i  i   i    ----i           -          
+C SVA_E#Retropo        592 GGCAGAGGCGCTCCTCACTTCCC----AGACGGGGCGGC-GGCCGGGCAG 548
+
+  hg38_chr2_417       1194 AGGGGCTCCTCACTTCCCAGTAGGGGTGGCCGGGCAGAGGCGCCCCTCAC 1243
+                              v         i    i vv    i             v  i      
+C SVA_E#Retropo        547 AGGCGCTCCTCACCTCCCGGACGGGGCGGCCGGGCAGAGGGGCTCCTCAC 498
+
+  hg38_chr2_417       1244 CTCCCGGACGGGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTC 1293
+                           ?         iv -   -          i  v   ------  i  ----
+C SVA_E#Retropo        497 NTCCCGGACGATG-GGC-GGCCGGGCAGAGGCGCT------CCTCA---- 460
+
+  hg38_chr2_417       1294 CCTCCCGGACGGGGCGGCTGGCCGGGCGGGGG 1325
+                                             -        i i  
+C SVA_E#Retropo        459 CCTCCCGGACGGGGCGGC-GGCCGGGCAGAGG 429
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 11.06
+CpG sites = 29, Kimura (unadjusted) = 12.47
+Transitions / transversions = 1.93 (29/15)
+Gap_init rate = 0.13 (56 / 438), avg. gap size = 1.62 (91 / 56)
+
+1454 6.84 0.61 13.13 hg38_chr2_41746002-41748725_revcomp 936 1423 (1301) C SVA_E#Retroposon/SVA (520) 862 429 m_b1s502i23 3
+
+  hg38_chr2_417        936 CCTCGCGGACGGGGCAGCTGGCCGGGCAGAGGGGCTCCTCACTTCCCAGT 985
+                               v          i -                                
+C SVA_E#Retropo        862 CCTCCCGGACGGGGCGG-TGGCCGGGCAGAGGGGCTCCTCACTTCCCAGT 814
+
+  hg38_chr2_417        986 AGGGGCGGCTGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCGGCTGGC 1035
+                                    i                                        
+C SVA_E#Retropo        813 AGGGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCGGCTGGC 764
+
+  hg38_chr2_417       1036 CGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGACGGGGCGGCTGG 1085
+                                -          -           -                     
+C SVA_E#Retropo        763 CGGGC-GGGGGGCTGA-CCCCCCCACCT-CCTCCCGGACGGGGCGGCTGG 717
+
+  hg38_chr2_417       1086 CCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGACGGGGCGGCTG 1135
+                                 -                 -----v                    
+C SVA_E#Retropo        716 CCGGGC-GGGGGGCTGACCCCCCC-----ACCTCCCGGACGGGGCGGCTG 673
+
+  hg38_chr2_417       1136 GCCGGGCGGGGG-GCTGACCCCCCCACCTCCCTTGCGGACGGGGCGGCTG 1184
+                                    i  -   -----  i       ----          ---- 
+C SVA_E#Retropo        672 GCCGGGCGGAGGCGCT-----CCTCACCTCC----CGGACGGGGC----G 636
+
+  hg38_chr2_417       1185 GCCGGGCAGAGGGGCTCCTCACTTCCCAG--TAGGGGTGGCCGGGCAGAG 1232
+                             ?    i    v     i   ?    i --v??   i            
+C SVA_E#Retropo        635 GCNGGGCGGAGGCGCTCCCCACNTCCCGGACGNNGGGCGGCCGGGCAGAG 586
+
+  hg38_chr2_417       1233 GCGCCCCTCACCTCCCGGACGGGGCGGCTGGCCGGGCAGGGGGGCTGACC 1282
+                               i      i    i           -          i  v   ----
+C SVA_E#Retropo        585 GCGCTCCTCACTTCCCAGACGGGGCGGC-GGCCGGGCAGAGGCGCT---- 541
+
+  hg38_chr2_417       1283 CCCCCCACCTCCCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCCGACA 1332
+                           --  i  ----               ----        i i   v ----
+C SVA_E#Retropo        540 --CCTCA----CCTCCCGGACGGGGC----GGCCGGGCAGAGGGGC---- 505
+
+  hg38_chr2_417       1333 CCCCCACCTCCCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCCGACCC 1382
+                           i  i  ---- ?         iv -   -        i i  --  -- i
+C SVA_E#Retropo        504 TCCTCA----CNTCCCGGACGATG-GGC-GGCCGGGCAGAGG--CG--CT 465
+
+  hg38_chr2_417       1383 CCCCACCTCCCTCCCGGACGGGGCGGCTGGCCGGGCAGAGG 1423
+                             i  ----                  -             
+C SVA_E#Retropo        464 CCTCA----CCTCCCGGACGGGGCGGC-GGCCGGGCAGAGG 429
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 6.03
+CpG sites = 22, Kimura (unadjusted) = 7.21
+Transitions / transversions = 3.14 (22/7)
+Gap_init rate = 0.12 (59 / 487), avg. gap size = 1.02 (60 / 59)
+
+483 14.65 3.29 15.90 hg38_chr2_41746002-41748725_revcomp 1065 1551 (1173) C SVA_B#Retroposon/SVA (518) 865 432 m_b1s502i24 3
+
+  hg38_chr2_417       1065 CCTCCCGGACGGGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCT 1114
+                                 i       i   -          i      ------  i   i 
+C SVA_B#Retropo        865 CCTCCCAGACGGGGTGGC-GGCCGGGCAGAGGGGCT------CCTCACTT 823
+
+  hg38_chr2_417       1115 CCCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACCTC 1164
+                              ----i           ----     i i  --i --           
+C SVA_B#Retropo        822 CCC----AGACGGGGCGGC----CGGGCAGAGG--CG--CCCCCCACCTC 785
+
+  hg38_chr2_417       1165 CCTTGCGGACGGGGCGGCTGGCCGGGCAGAGGG----GCTCCTCACTTCC 1210
+                             ----                     i i   ----? i  i   i   
+C SVA_B#Retropo        784 CC----GGACGGGGCGGCTGGCCGGGCGGGGGGCTGNNCCCCCCACCTCC 739
+
+  hg38_chr2_417       1211 ---CAGTAGGGG----TGGCCGGGCAGAGG--CG--CCCCTCACCTCCCG 1249
+                           --- i vv    ----         i i  --i -- i           i
+C SVA_B#Retropo        738 TCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCTGACCTCCTCACCTCCCA 689
+
+  hg38_chr2_417       1250 GACGGGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCC 1299
+                                                 i  v   ------  i   ?    ----
+C SVA_B#Retropo        688 GACGGGGCGGCTGGCCGGGCAGAGGCGCT------CCTCACNTCCC---- 649
+
+  hg38_chr2_417       1300 GGACGGGGCGGCTGGCCGGGCGGGGGGCCGACAC-CCCCACCTCCCTCCC 1348
+                           i           -- --    i i  ----- i -      v    ----
+C SVA_B#Retropo        648 AGACGGGGCGGC--G--GGGCAGAGG-----CGCTCCCCACATCCC---- 612
+
+  hg38_chr2_417       1349 GGACGGGGCGGCTGGCCGGGCGGGGGGCCGACCCCCCCACCTCCCTCCCG 1398
+                           i    iv -   -        i i i--  -- i  i   i    ----i
+C SVA_B#Retropo        611 AGACGATG-GGC-GGCCGGGCAGAGA--CG--CTCCTCACTTCCC----A 572
+
+  hg38_chr2_417       1399 GACGGGGCGGCTGGCCGGGCAGAGGGGCTCCTCACTTCCCAGTAGGGGCG 1448
+                                 ii   -       v     v                vvv     
+C SVA_B#Retropo        571 GACGGGATGGC-GGCCGGGAAGAGGCGCTCCTCACTTCCCAGACTGGGCG 523
+
+  hg38_chr2_417       1449 GCCGGGCAGAGGCGCCCCTCACCTCCCAGACGGGGCGGCTGGCCGGGCGG 1498
+                                       v  i      v         iv -   -    i   i 
+C SVA_B#Retropo        522 GCCGGGCAGAGGGGCTCCTCACATCCCAGACGATG-GGC-GGCCAGGCAG 475
+
+  hg38_chr2_417       1499 AGGGCTGACCCCCCCCACCTCCCTCCCGGACGGGGCGGCTGGCCGGGCAG 1548
+                            -----   v i  i  ---- i    i       i   -          
+C SVA_B#Retropo        474 A-----GACGCTCCTCA----CTTCCCAGACGGGGTGGC-GGCCGGGCAG 435
+
+  hg38_chr2_417       1549 AGG 1551
+                              
+C SVA_B#Retropo        434 AGG 432
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 15.02
+CpG sites = 46, Kimura (unadjusted) = 16.45
+Transitions / transversions = 3.29 (46/14)
+Gap_init rate = 0.15 (75 / 486), avg. gap size = 1.13 (85 / 75)
+
+1894 5.60 0.85 8.94 hg38_chr2_41746002-41748725_revcomp 1159 1629 (1095) C SVA_E#Retroposon/SVA (518) 864 429 m_b1s502i25 3
+
+  hg38_chr2_417       1159 CACCTCCCTTGCGGACGGGGCGGCTGGCCGGGCAGAGGGGCTCCTCACTT 1208
+                                   ----           -                          
+C SVA_E#Retropo        864 CACCTCCC----GGACGGGGCGG-TGGCCGGGCAGAGGGGCTCCTCACTT 820
+
+  hg38_chr2_417       1209 CCCAGTAGGGGTGGCCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCG 1258
+                                      i                                      
+C SVA_E#Retropo        819 CCCAGTAGGGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCG 770
+
+  hg38_chr2_417       1259 GCTGGCCGGGCAGGGGGGCTGACCCCCCCCACCTCCCTCCCGGACGGGGC 1308
+                                      -          -           -               
+C SVA_E#Retropo        769 GCTGGCCGGGC-GGGGGGCTGA-CCCCCCCACCT-CCTCCCGGACGGGGC 723
+
+  hg38_chr2_417       1309 GGCTGGCCGGGCGGGGGGCCGACACCCCCACCTCCCTCCCGGACGGGGCG 1358
+                                              i   v      ----                
+C SVA_E#Retropo        722 GGCTGGCCGGGCGGGGGGCTGACCCCCCCA----CCTCCCGGACGGGGCG 677
+
+  hg38_chr2_417       1359 GCTGGCCGGGCGGGGGGCCGACCCCCCCACCTCCCTCCCGGACGGGGCGG 1408
+                                        i  --  -- i  i  ----               --
+C SVA_E#Retropo        676 GCTGGCCGGGCGGAGG--CG--CTCCTCA----CCTCCCGGACGGGGC-- 637
+
+  hg38_chr2_417       1409 CTGGCCGGGCAGAGGGGCTCCTCACTTCCCAG--TAGGGGCGGCCGGGCA 1456
+                           --   ?    i    v     i   ?    i --v??             
+C SVA_E#Retropo        636 --GGCNGGGCGGAGGCGCTCCCCACNTCCCGGACGNNGGGCGGCCGGGCA 589
+
+  hg38_chr2_417       1457 GAGGCGCCCCTCACCTCCCAGACGGGGCGGCTGGCCGGGCGGAGGGCTGA 1506
+                                  i      i                -        i    -----
+C SVA_E#Retropo        588 GAGGCGCTCCTCACTTCCCAGACGGGGCGGC-GGCCGGGCAGAGG----- 545
+
+  hg38_chr2_417       1507 CCCCCCCCACCTCCCTCCCGGACGGGGCGGCTGGCCGGGCAGAGGGGCTC 1556
+                            v i  i  ----               ----                  
+C SVA_E#Retropo        544 CGCTCCTCA----CCTCCCGGACGGGGC----GGCCGGGCAGAGGGGCTC 503
+
+  hg38_chr2_417       1557 CTCACTTCCCAG--TAGGGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCG 1604
+                                ?    i --v v                    i            
+C SVA_E#Retropo        502 CTCACNTCCCGGACGATGGGCGGCCGGGCAGAGGCGCTCCTCACCTCCCG 453
+
+  hg38_chr2_417       1605 GACCGGGCGGCTGGCCGGGCGGGGG 1629
+                              v       -        i i  
+C SVA_E#Retropo        452 GACGGGGCGGC-GGCCGGGCAGAGG 429
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 4.96
+CpG sites = 17, Kimura (unadjusted) = 5.88
+Transitions / transversions = 2.43 (17/7)
+Gap_init rate = 0.09 (41 / 470), avg. gap size = 1.05 (43 / 41)
+
+1082 9.12 3.07 14.81 hg38_chr2_41746002-41748725_revcomp 1241 1729 (995) C SVA_E#Retroposon/SVA (518) 864 426 m_b1s502i26 3
+
+  hg38_chr2_417       1241 CACCTCCCGGACGGGGCGGCTGGCCGGGCAGGGGGGCTGACCCCCCCCAC 1290
+                                              -           i      ------  i   
+C SVA_E#Retropo        864 CACCTCCCGGACGGGGCGG-TGGCCGGGCAGAGGGGCT------CCTCAC 822
+
+  hg38_chr2_417       1291 CTCCCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCCGACACCCCCACC 1340
+                           i    ----i vv        ----     i i  ----- i    ----
+C SVA_E#Retropo        821 TTCCC----AGTAGGGGCGGC----CGGGCAGAGG-----CGCCCC---- 789
+
+  hg38_chr2_417       1341 TC-CCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCCGACCCCCCCACC 1389
+                             -                                  i            
+C SVA_E#Retropo        788 TCACCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACC 739
+
+  hg38_chr2_417       1390 TCCCTCCCGGACGGGGCGGCTGGCCGGGCAGAGGGGCT-----CCTCACT 1434
+                            -                           - i      -----  i   i
+C SVA_E#Retropo        738 T-CCTCCCGGACGGGGCGGCTGGCCGGGC-GGGGGGCTGACCCCCCCACC 691
+
+  hg38_chr2_417       1435 TCCCAGTAGGGGC----GGCCGGGCAGAGGCGCCCCTCACCTCCCAGACG 1480
+                               i vv     ----        i       i           i    
+C SVA_E#Retropo        690 TCCCGGACGGGGCGGCTGGCCGGGCGGAGGCGCTCCTCACCTCCCGGACG 641
+
+  hg38_chr2_417       1481 GGGCGGCTGGCCGGGCGGAGGGCTGACCCCCCCCACCTCCCTCCCGGACG 1530
+                               ----   ?         ----- v i     ---- ?         
+C SVA_E#Retropo        640 GGGC----GGCNGGGCGGAGG-----CGCTCCCCA----CNTCCCGGACG 604
+
+  hg38_chr2_417       1531 GGGCGGCTGGCCGGGCAGAGGGGCTCCTCACTTCCCAGTAGG---GGCGG 1577
+                           ?? -   -             v                vv  ---     
+C SVA_E#Retropo        603 NNG-GGC-GGCCGGGCAGAGGCGCTCCTCACTTCCCAGACGGGGCGGCGG 556
+
+  hg38_chr2_417       1578 CCGGGCAGAGGCGCCCCTCACCTCCCGGACCGGGCGGCTGGCCGGGC-GG 1626
+                                         i               v    ----        - i
+C SVA_E#Retropo        555 CCGGGCAGAGGCGCTCCTCACCTCCCGGACGGGGC----GGCCGGGCAGA 510
+
+  hg38_chr2_417       1627 GGGGCTGACCCCCCCACCTCCCTCCCGGATGGCACGGCTGGCCGGGCGGG 1676
+                                 -----  i  ---- ?       i -- i  vi        i i
+C SVA_E#Retropo        509 GGGGCT-----CCTCA----CNTCCCGGACG--ATGGGCGGCCGGGCAGA 471
+
+  hg38_chr2_417       1677 GG-GCTGACCCCCCACCTCCCTCCCGGATGGGGCGGCTGGCCGGGCGGGG 1725
+                             -   ----  i  ----         i        -        i i 
+C SVA_E#Retropo        470 GGCGCT----CCTCA----CCTCCCGGACGGGGCGGC-GGCCGGGCAGAG 430
+
+  hg38_chr2_417       1726 GCTG 1729
+                               
+C SVA_E#Retropo        429 GCTG 426
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 8.04
+CpG sites = 28, Kimura (unadjusted) = 9.79
+Transitions / transversions = 2.80 (28/10)
+Gap_init rate = 0.15 (71 / 488), avg. gap size = 1.13 (80 / 71)
+
+737 13.38 10.79 9.31 hg38_chr2_41746002-41748725_revcomp 1343 1787 (937) C SVA_A#Retroposon/SVA (517) 870 420 m_b1s502i27 3
+
+  hg38_chr2_417       1343 CCTCCCGGACGGGGCGGCTGGCCGGGCGGGGGGCCGACCCCCCCACCTCC 1392
+                                             -        i i   -- -- i  i   i   
+C SVA_A#Retropo        870 CCTCCCGGACGGGGCGGC-GGCCGGGCAGAGGG--G--CTCCTCACTTCC 826
+
+  hg38_chr2_417       1393 CTCCCGGACGGGGCGGCTGGCCGGGCAGAGGGGCTCCTCACTTCCCAGTA 1442
+                            ----i ??        ----          v  i      i    i vv
+C SVA_A#Retropo        825 C----AGNNGGGGCGGC----CGGGCAGAGGCGCCCCTCACCTCCCGGAC 784
+
+  hg38_chr2_417       1443 GGGGCGGC----CGGGCAGAGG--CG--CCCCTCACCTCC---CAGACGG 1481
+                                   ----     i i  --i --    i       --- i     
+C SVA_A#Retropo        783 GGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACCTCCTCCCGGACGG 734
+
+  hg38_chr2_417       1482 GGCGGCTGGCCGGGCGGAGGGCTGACCCCCCCCACCTCCCTCCCGGACGG 1531
+                                            i              v-----            
+C SVA_A#Retropo        733 GGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCA-----CCTCCCGGACGG 689
+
+  hg38_chr2_417       1532 GGCGGCTGGCCGGGCAGAGGGGCTCCTCACTTCCCAGTAGGGGCGGCCGG 1581
+                                          i    v         ?      vv           
+C SVA_A#Retropo        688 GGCGGCTGGCCGGGCGGAGGCGCTCCTCACNTCCCAGACGGGGCGGCCGG 639
+
+  hg38_chr2_417       1582 GCAGAGGCGCCCCTCACCTCCCGGACCGGGCGGCTGGCCGGGCGGGGG-G 1630
+                             i       i      ?    i   -- i?  vi        i i  - 
+C SVA_A#Retropo        638 GCGGAGGCGCTCCTCACNTCCCAGAC--GANGGGCGGCCGGGCAGAGGCG 591
+
+  hg38_chr2_417       1631 CTGACCCCCCCACCTCCCTCCCGGATGGCACGGCTGGCCGGGCGGGGG-G 1679
+                             -----  i   i    ----i  i  vi    -        i i  - 
+C SVA_A#Retropo        590 CT-----CCTCACTTCCC----AGACGGGGCGGC-GGCCGGGCAGAGGCG 551
+
+  hg38_chr2_417       1680 CTGACCCCCCACCTCCCTCCCGGATGGGGCGGCTGG-------------- 1715
+                             ----  i   i    ----i  i        i  --------------
+C SVA_A#Retropo        550 CT----CCTCACTTCCC----AGACGGGGCGGCCGGGCAGAGGCGCTCCT 509
+
+  hg38_chr2_417       1716 ------CC-------GGGCGG--GGGCTGACCC-CCCCTCACCTCCCTCC 1749
+                           ------  -------      --    v  vv - i      i    ---
+C SVA_A#Retropo        508 CACNTCCCAGACGATGGGCGGCCGGGCAGAGACGCTCCTCACTTCCC--- 462
+
+  hg38_chr2_417       1750 CGGATGGGGTGGCTGCCGGGCGGAGA-TGC--TCCT--CACTT 1787
+                           -i  i        v       i   i-   --    --     
+C SVA_A#Retropo        461 -AGACGGGGTGGCGGCCGGGCAGAGGCTGCAATCCTAGCACTT 420
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 12.44
+CpG sites = 41, Kimura (unadjusted) = 15.32
+Transitions / transversions = 3.15 (41/13)
+Gap_init rate = 0.13 (56 / 444), avg. gap size = 1.61 (90 / 56)
+
+1642 9.52 2.37 9.45 hg38_chr2_41746002-41748725_revcomp 1392 1855 (869) C SVA_F#Retroposon/SVA (520) 855 422 m_b1s502i28 3
+
+  hg38_chr2_417       1392 CCTCCCGGACGGGGCGGCTGGCCGGGCAGAGGGGCTCCTCACTTCCCAGT 1441
+                                            -                                
+C SVA_F#Retropo        855 CCTCCCGGACGGGGCGG-TGGCCGGGCAGAGGGGCTCCTCACTTCCCAGT 807
+
+  hg38_chr2_417       1442 AGGGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCAGACGGGGCGGCTGGC 1491
+                                                             i               
+C SVA_F#Retropo        806 AGGGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCGGCTGGC 757
+
+  hg38_chr2_417       1492 CGGGCGGAGGGCTGACCCCCCCCACCTCCCTCCCGGACGGGGCGGCTGGC 1541
+                                  i          -        -                      
+C SVA_F#Retropo        756 CGGGCGGGGGGCTGACCC-CCCCACCT-CCTCCCGGACGGGGCGGCTGGC 709
+
+  hg38_chr2_417       1542 CGGGCAGAGGGGCT-----CCTCACTTCCCAGTAGGGGC----GGCCGGG 1582
+                                - i      -----  i   i    i vv     ----       
+C SVA_F#Retropo        708 CGGGC-GGGGGGCTGACCCCCCCACCTCCCGGACGGGGCGGCTGGCCGGG 660
+
+  hg38_chr2_417       1583 CAGAGGCGCCCCTCACCTCCCGGACCGGGCGGCTGGCCGGGCGGGGG-GC 1631
+                            i       i      ?        v    ----          i  -  
+C SVA_F#Retropo        659 CGGAGGCGCTCCTCACNTCCCGGACGGGGC----GGCCGGGCGGAGGCGC 614
+
+  hg38_chr2_417       1632 TGACCCCCCCACCTCCCTCCCGGATGGCACGGCTGGCCGGGCGGGGG-GC 1680
+                            -----  i  ---- ?       i  ?i-   -          i i-  
+C SVA_F#Retropo        613 T-----CCTCA----CNTCCCGGACGGNG-GGC-GGCCGGGCGGAGACGC 575
+
+  hg38_chr2_417       1681 TGACCCCCCACCTCCCTCCCGGATGGGGCGGCTGGCCGGGCGGGGGCTGA 1730
+                            ----  i  ----         i        -          i   - -
+C SVA_F#Retropo        574 T----CCTCA----CCTCCCGGACGGGGCGGC-GGCCGGGCGGAGGC-G- 536
+
+  hg38_chr2_417       1731 CCCCCCCTCACCTCCCTCCCGGATGGGGTGGCTGCCGGGCGGAGATGCTC 1780
+                           --- i     ----      i  i    i ---       i   iv    
+C SVA_F#Retropo        535 ---CTCCTCA----CCTCCCAGACGGGGCG---GCCGGGCAGAGGGGCTC 496
+
+  hg38_chr2_417       1781 CTCACTTCCCAGATGGGGTGGCTGCTGGGCGGAGAGGCTCCTCACTTCTC 1830
+                                ?       i iv -   v  i    i   iv         i  i 
+C SVA_F#Retropo        495 CTCACNTCCCAGACGATG-GGCGGCCGGGCAGAGGCGCTCCTCACCTCCC 447
+
+  hg38_chr2_417       1831 AGACGGGGCAGCTGCCGGGCGGAGG 1855
+                                    i  v       i    
+C SVA_F#Retropo        446 AGACGGGGCGGCGGCCGGGCAGAGG 422
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 7.87
+CpG sites = 32, Kimura (unadjusted) = 10.40
+Transitions / transversions = 4.00 (32/8)
+Gap_init rate = 0.10 (45 / 463), avg. gap size = 1.16 (52 / 45)
+
+2414 7.43 0.66 5.06 hg38_chr2_41746002-41748725_revcomp 1520 1973 (751) C SVA_F#Retroposon/SVA (520) 855 421 m_b1s502i29 3
+
+  hg38_chr2_417       1520 CCTCCCGGACGGGGCGGCTGGCCGGGCAGAGGGGCTCCTCACTTCCCAGT 1569
+                                            -                                
+C SVA_F#Retropo        855 CCTCCCGGACGGGGCGG-TGGCCGGGCAGAGGGGCTCCTCACTTCCCAGT 807
+
+  hg38_chr2_417       1570 AGGGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCGGACCGGGCGGCTGGC 1619
+                                                                 v           
+C SVA_F#Retropo        806 AGGGGCGGCCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCGGCTGGC 757
+
+  hg38_chr2_417       1620 CGGGCGGGGGGCTGACCCCCCCACCTCCCTCCCGGATGGCACGGCTGGCC 1669
+                                                       -       i  vi         
+C SVA_F#Retropo        756 CGGGCGGGGGGCTGACCCCCCCACCTCC-TCCCGGACGGGGCGGCTGGCC 708
+
+  hg38_chr2_417       1670 GGGCGGGGGGCTGACCCCCC-ACCTCCCTCCCGGATGGGGCGGCTGGCCG 1718
+                                               -   ----       i              
+C SVA_F#Retropo        707 GGGCGGGGGGCTGACCCCCCCACC----TCCCGGACGGGGCGGCTGGCCG 662
+
+  hg38_chr2_417       1719 GGCGGGGGCTGACCCCCCCTCACCTCCCTCCCGGATGGGGTGGCTGCCGG 1768
+                                i   - ---- i     ---- ?       i    i ---     
+C SVA_F#Retropo        661 GGCGGAGGC-G----CTCCTCA----CNTCCCGGACGGGGCG---GCCGG 624
+
+  hg38_chr2_417       1769 GCGGAGATGCTCCTCACTTCCCAGATGGGGTGGCTGCTGGGCGGAGAGGC 1818
+                                 ii         ?    i  i  ? -   v  i         v  
+C SVA_F#Retropo        623 GCGGAGGCGCTCCTCACNTCCCGGACGGNG-GGCGGCCGGGCGGAGACGC 575
+
+  hg38_chr2_417       1819 TCCTCACTTCTCAGACGGGGCAGCTGCCGGGCGGAGGGGCTCCTCACTTC 1868
+                                  i  i i        i  v            v         i  
+C SVA_F#Retropo        574 TCCTCACCTCCCGGACGGGGCGGCGGCCGGGCGGAGGCGCTCCTCACCTC 525
+
+  hg38_chr2_417       1869 TCAGACGGGGTGGTTGCCAGGCAGAGGGTCTCCTCACTTCTCAGACG--G 1916
+                           i         i ---   i         v        ?  i      -- 
+C SVA_F#Retropo        524 CCAGACGGGGCG---GCCGGGCAGAGGGGCTCCTCACNTCCCAGACGATG 478
+
+  hg38_chr2_417       1917 GGCGGCCGGGCAGAGACGCTCCTCACCTCCCAGACGGGGTCTCGGCCGGG 1966
+                                          i                       ivv        
+C SVA_F#Retropo        477 GGCGGCCGGGCAGAGGCGCTCCTCACCTCCCAGACGGGGCGGCGGCCGGG 428
+
+  hg38_chr2_417       1967 CAGAGGC 1973
+                                  
+C SVA_F#Retropo        427 CAGAGGC 421
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 4.91
+CpG sites = 23, Kimura (unadjusted) = 7.95
+Transitions / transversions = 2.56 (23/9)
+Gap_init rate = 0.05 (24 / 453), avg. gap size = 1.04 (25 / 24)
+
+1830 13.42 2.67 6.61 hg38_chr2_41746002-41748725_revcomp 1559 2045 (679) C SVA_F#Retroposon/SVA (518) 857 389 m_b1s502i30 3
+
+  hg38_chr2_417       1559 CACTTCCCAGTAGGGGCGG---CCGGGCAGAGGCGCCCCTCACCTCCCGG 1605
+                              i    i vv       ---           v  i      i    i 
+C SVA_F#Retropo        857 CACCTCCCGGACGGGGCGGTGGCCGGGCAGAGGGGCTCCTCACTTCCCAG 808
+
+  hg38_chr2_417       1606 ACCGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACCTCCCTCCCGGA 1655
+                           vvv       ----     i i  --i --    i        ----   
+C SVA_F#Retropo        807 TAGGGGCGGC----CGGGCAGAGG--CG--CCCCTCACCTCCC----GGA 770
+
+  hg38_chr2_417       1656 TGGCACGGCTGGCCGGGCGGGGGGCTGACCCCCC-ACCTCCCTCCCGGAT 1704
+                           i  vi                             -      -       i
+C SVA_F#Retropo        769 CGGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACCTCC-TCCCGGAC 721
+
+  hg38_chr2_417       1705 GGGGCGGCTGGCCGGGCGGGGG-CTGACCCCCCCTCACCTCCCTCCCGGA 1753
+                                                 -           ------v         
+C SVA_F#Retropo        720 GGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCC------ACCTCCCGGA 677
+
+  hg38_chr2_417       1754 TGGGGTGGCTG-CCGGGCGGAGATGCTCCTCACTTCCCAGATGGGGTGGC 1802
+                           i    i     -          ii         ?    i  i    i   
+C SVA_F#Retropo        676 CGGGGCGGCTGGCCGGGCGGAGGCGCTCCTCACNTCCCGGACGGGGCGGC 627
+
+  hg38_chr2_417       1803 TGCTGGGCGGAGAGGCTCCTCACTTCTCAGACGGGGCAGCTGCCGGGCGG 1852
+                           i ---       iv         ?  i i     ? -i  v         
+C SVA_F#Retropo        626 CG---GGCGGAGGCGCTCCTCACNTCCCGGACGGNG-GGCGGCCGGGCGG 581
+
+  hg38_chr2_417       1853 AGGGGCTCCTCACTTCTCAGACGGGGTGGTTGCCAGGCAGAGGGTCTCCT 1902
+                             iv         i  i i       i  iv   i   i    vv     
+C SVA_F#Retropo        580 AGACGCTCCTCACCTCCCGGACGGGGCGGCGGCCGGGCGGAGGCGCTCCT 531
+
+  hg38_chr2_417       1903 CACTTCTCAGACGGGGCGGCCGGGCAGAGACGCTCCTCACCTCCCAGACG 1952
+                              i  i                      iv         ?         
+C SVA_F#Retropo        530 CACCTCCCAGACGGGGCGGCCGGGCAGAGGGGCTCCTCACNTCCCAGACG 481
+
+  hg38_chr2_417       1953 --GGGTCTCGGCCGGGCAGAGGCGCTCCTCACATCCCAGATGGGGCGGTG 2000
+                           --   ---                        v       i       i 
+C SVA_F#Retropo        480 ATGGG---CGGCCGGGCAGAGGCGCTCCTCACCTCCCAGACGGGGCGGCG 434
+
+  hg38_chr2_417       2001 ---AGGCAGAGGCGCTCCCCACATCTCAG-ACGATGGGCGGCC-GGGCAG 2045
+                           ---i        ---- iv  -     i -  vv    v    -i     
+C SVA_F#Retropo        433 GCCGGGCAGAGG----CTGCA-ATCTCGGCACTTTGGGAGGCCAAGGCAG 389
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 9.98
+CpG sites = 41, Kimura (unadjusted) = 15.10
+Transitions / transversions = 2.05 (41/20)
+Gap_init rate = 0.08 (39 / 486), avg. gap size = 1.13 (44 / 39)
+
+1883 12.15 5.07 5.76 hg38_chr2_41746002-41748725_revcomp 1647 2100 (624) C SVA_A#Retroposon/SVA (517) 870 420 m_b1s502i31 3
+
+  hg38_chr2_417       1647 CCTCCCGGATGGCACGGCTGGCCGGGCGG-GGGGCTGACCCCCCACCTCC 1695
+                                    i  vi    -        i -      ----  i   i   
+C SVA_A#Retropo        870 CCTCCCGGACGGGGCGGC-GGCCGGGCAGAGGGGCT----CCTCACTTCC 826
+
+  hg38_chr2_417       1696 CTCCCGGATGGGGCGGCTGGCCGGGCGGGGGCTGACCCCCCCTCACCTCC 1745
+                            ----i ??        ----     i i   - ----            
+C SVA_A#Retropo        825 C----AGNNGGGGCGGC----CGGGCAGAGGC-G----CCCCTCACCTCC 789
+
+  hg38_chr2_417       1746 CTCCCGGATGGGGTGGCTG-CCGGGCGGAGA--TG--CTCCTCACTTCC- 1789
+                            ----   i    i     -        i i--  -- i  i   i   -
+C SVA_A#Retropo        788 C----GGACGGGGCGGCTGGCCGGGCGGGGGGCTGACCCCCCCACCTCCT 743
+
+  hg38_chr2_417       1790 --CAGATGGGGTGGCTG-CTGGGCGGAGAGGCT-----CCTCACTTCTCA 1831
+                           -- i  i    i     - i      i -    -----  i   i  i i
+C SVA_A#Retropo        742 CCCGGACGGGGCGGCTGGCCGGGCGGGG-GGCTGACCCCCCCACCTCCCG 694
+
+  hg38_chr2_417       1832 GACGGGGCAGCTG-CCGGGCGGAGGGGCTCCTCACTTCTCAGACGGGGTG 1880
+                                   i    -           v         ?  i         i 
+C SVA_A#Retropo        693 GACGGGGCGGCTGGCCGGGCGGAGGCGCTCCTCACNTCCCAGACGGGGCG 644
+
+  hg38_chr2_417       1881 GTTGCCAGGCAGAGGGTCTCCTCACTTCTCAGACG--GGGCGGCCGGGCA 1928
+                            ---  i   i    vv        ?  i      --             
+C SVA_A#Retropo        643 G---CCGGGCGGAGGCGCTCCTCACNTCCCAGACGANGGGCGGCCGGGCA 597
+
+  hg38_chr2_417       1929 GAGACGCTCCTCACCTCCCAGACGGGGTCTCGGCCGGGCAGAGGCGCTCC 1978
+                              i          i            ivv                    
+C SVA_A#Retropo        596 GAGGCGCTCCTCACTTCCCAGACGGGGCGGCGGCCGGGCAGAGGCGCTCC 547
+
+  hg38_chr2_417       1979 TCACATCCCAGATGGGGCGGTGAGGCAGAGGCGCTCCCCACATCTCAGAC 2028
+                               v       i       ivi              i   ?  i     
+C SVA_A#Retropo        546 TCACTTCCCAGACGGGGCGGCCGGGCAGAGGCGCTCCTCACNTCCCAGAC 497
+
+  hg38_chr2_417       2029 GATGGGCGGCCGGGCAGAGACGCTCCTCACTTCCTAGATGTGATGGCGGC 2078
+                                                             i   i v i       
+C SVA_A#Retropo        496 GATGGGCGGCCGGGCAGAGACGCTCCTCACTTCCCAGACGGGGTGGCGGC 447
+
+  hg38_chr2_417       2079 TGGGAAGAGGC-GC--TCCT--CACTT 2100
+                           i   v      -  --    --     
+C SVA_A#Retropo        446 CGGGCAGAGGCTGCAATCCTAGCACTT 420
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 9.33
+CpG sites = 42, Kimura (unadjusted) = 13.78
+Transitions / transversions = 4.20 (42/10)
+Gap_init rate = 0.09 (39 / 453), avg. gap size = 1.26 (49 / 39)
+
+1770 17.84 9.76 6.93 hg38_chr2_41746002-41748725_revcomp 1695 2411 (313) C SVA_A#Retroposon/SVA (517) 870 135 m_b1s502i32 3
+
+  hg38_chr2_417       1695 CCTCCCGGATGGGGCGGCTGGCCGGGCGG--GGGCTGACCCCCCCTCACC 1742
+                                    i        -        i --     -------      i
+C SVA_A#Retropo        870 CCTCCCGGACGGGGCGGC-GGCCGGGCAGAGGGGCT-------CCTCACT 829
+
+  hg38_chr2_417       1743 TCCCTCCCGGATGGGGTGGCTGCCGGGCGGAGATGCTCCTCACTTCCCAG 1792
+                               ----i ??    i   ---     i   ii  i      i    i 
+C SVA_A#Retropo        828 TCCC----AGNNGGGGCGGC---CGGGCAGAGGCGCCCCTCACCTCCCGG 786
+
+  hg38_chr2_417       1793 ATGGGGTGGCTG-CTGGGCGGAGAGGCT-----CCTCACTTCT---CAGA 1833
+                            i    i     - i      i -    -----  i   i  i--- i  
+C SVA_A#Retropo        785 ACGGGGCGGCTGGCCGGGCGGGG-GGCTGACCCCCCCACCTCCTCCCGGA 737
+
+  hg38_chr2_417       1834 CGGGGCAGCTG-CCGGGCGGAGGGGCT-----CCTCACTTCTCAGACGGG 1877
+                                 i    -        -      -----  i   i  i i      
+C SVA_A#Retropo        736 CGGGGCGGCTGGCCGGGCGG-GGGGCTGACCCCCCCACCTCCCGGACGGG 688
+
+  hg38_chr2_417       1878 GTGGTTG-CCAGGCAGAGGGTCTCCTCACTTCTCAGACGGGGCGGCCGGG 1926
+                            i  i  -  i   i    vv        ?  i                 
+C SVA_A#Retropo        687 GCGGCTGGCCGGGCGGAGGCGCTCCTCACNTCCCAGACGGGGCGGCCGGG 638
+
+  hg38_chr2_417       1927 CAGAGACGCTCCTCACCTCCCAGACG--GGGTCTCGGCCGGGCAGAGGCG 1974
+                            i   i          ?         --   ---                
+C SVA_A#Retropo        637 CGGAGGCGCTCCTCACNTCCCAGACGANGGG---CGGCCGGGCAGAGGCG 591
+
+  hg38_chr2_417       1975 CTCCTCACATCCCAGATGGGGCGGTGA---GGCAGAGGCGCTCCCCACAT 2021
+                                   v       i       i i---              i   v 
+C SVA_A#Retropo        590 CTCCTCACTTCCCAGACGGGGCGGCGGCCGGGCAGAGGCGCTCCTCACTT 541
+
+  hg38_chr2_417       2022 CTCAGACGATGGGCGGCCGGGCAGAGACGCTCCTCACTTCCTAGATG-TG 2070
+                            i      --                i          ?   i   i -  
+C SVA_A#Retropo        540 CCCAGACG--GGGCGGCCGGGCAGAGGCGCTCCTCACNTCCCAGACGATG 493
+
+  hg38_chr2_417       2071 ATGGCGGCTGGGAAGAGGCGCTCCTCACTTCCTAGATGGGATGGCGGCCG 2120
+                           --      i   v    i              i   i   i         
+C SVA_A#Retropo        492 --GGCGGCCGGGCAGAGACGCTCCTCACTTCCCAGACGGGGTGGCGGCCG 445
+
+  hg38_chr2_417       2121 GGCGGAGAC-GC--TCCT--CACTTCCCAGACTGGGCGGCC-GGGCAGAG 2164
+                              i   i -  --    --     -------    v    -i     - 
+C SVA_A#Retropo        444 GGCAGAGGCTGCAATCCTAGCACTT-------TGGGAGGCCAAGGCAG-G 403
+
+  hg38_chr2_417       2165 GGGCTCCTCACATCCCAGACGATGG-----GCGGCCAGGCAGAGA-CACT 2208
+                           v    -----------i iv i   ----- ii  v -  v    -   v
+C SVA_A#Retropo        402 CGGCT-----------GGGAGGTGGAGGTTGTAGCGA-GCCGAGATCACG 365
+
+  hg38_chr2_417       2209 CC---TCACTTCCCAGACGGGGTGGCGGCCGGGCA----------GAGGC 2245
+                             ---v    --    v v   i i -iii i   ----------   i 
+C SVA_A#Retropo        364 CCACTGCACT--CCAGCCTGGGCGAC-ATTGAGCATTGAGTGAGCGAGAC 318
+
+  hg38_chr2_417       2246 T------GCAATCTCGGCACTTTGGGAGGCCAAGGCAGGCGGCTGG---G 2286
+                            ------      i i    i i        i    i     v v --- 
+C SVA_A#Retropo        317 TCCGTCTGCAATCCCAGCACCTCGGGAGGCCGAGGCGGGCGGATCGCTCG 268
+
+  hg38_chr2_417       2287 AGGT--GGAGGTTGTAGTGAGCCGAGATCACGCCACTGCACTCCAGCCTG 2334
+                              i--    v ? viiiv    vi ?iv  i vi viv  i  - i  -
+C SVA_A#Retropo        267 AGGCCAGGAGCTNGAGACCAGCCCGGNCAACACGGCGAGACCCC-GTCT- 220
+
+  hg38_chr2_417       2335 GGCACC----ATTGAGCACTGAGTGA-ACGAGAC----TCCGTCTGCAAT 2375
+                           -v    ----  vv iv viv   v -i  v i ----iv  i       
+C SVA_A#Retropo        219 -CCACCAAAAATACAAAAACCAGTCAGGCGTGGCGGCGCGCGCCTGCAAT 171
+
+  hg38_chr2_417       2376 CCC-GGCACCTCGGGAGGCCGAGGTTGGCGGATCACT 2411
+                              -    -               iv  v     i  
+C SVA_A#Retropo        170 CCCAGGCA-CTCGGGAGGCCGAGGCAGGAGGATCGCT 135
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 16.33
+CpG sites = 84, Kimura (unadjusted) = 21.22
+Transitions / transversions = 2.40 (84/35)
+Gap_init rate = 0.11 (76 / 716), avg. gap size = 1.59 (121 / 76)
+
+1954 14.31 5.91 3.64 hg38_chr2_41746002-41748725_revcomp 1745 2201 (523) C SVA_B#Retroposon/SVA (518) 865 399 m_b1s502i33 3
+
+  hg38_chr2_417       1745 CCTCCCGGATGGGGTGGCTGCCGGGCGGAGATGCTCCTCACTTCCCAGAT 1794
+                                 i  i        v       i   iv                 i
+C SVA_B#Retropo        865 CCTCCCAGACGGGGTGGCGGCCGGGCAGAGGGGCTCCTCACTTCCCAGAC 816
+
+  hg38_chr2_417       1795 GGGGTGGCTGCTGGGCGGAGAGGCTCCTCACTTCTCAGACGGGGCAGCT- 1843
+                               i ---  i    i   iv  i  i   i  i i        i   -
+C SVA_B#Retropo        815 GGGGCG---GCCGGGCAGAGGCGCCCCCCACCTCCCGGACGGGGCGGCTG 769
+
+  hg38_chr2_417       1844 GCCGGGCGGAGGG----GCTCCTCA---CTTCTCAGACGGGGTGGTT-GC 1885
+                                    i   ----? i  i  --- i  i i       i  i -  
+C SVA_B#Retropo        768 GCCGGGCGGGGGGCTGNNCCCCCCACCTCCTCCCGGACGGGGCGGCTGGC 719
+
+  hg38_chr2_417       1886 CAGGCAGAGGG----TCTCCTCACTTCTCAGACGGGGC----GGCCGGGC 1927
+                            i   i i   ----i        i  i          ----        
+C SVA_B#Retropo        718 CGGGCGGGGGGCTGACCTCCTCACCTCCCAGACGGGGCGGCTGGCCGGGC 669
+
+  hg38_chr2_417       1928 AGAGACGCTCCTCACCTCCCAGACGGGGTCTCGGCCGGGCAGAGGCGCTC 1977
+                               i          ?            ---    v              
+C SVA_B#Retropo        668 AGAGGCGCTCCTCACNTCCCAGACGGGG---CGGCGGGGCAGAGGCGCTC 622
+
+  hg38_chr2_417       1978 CTCACATCCCAGATG--GGGCGGTGAGGCAGAGGCGCTCCCCACATCTCA 2025
+                            i           i --      ivi       i      i   v  i  
+C SVA_B#Retropo        621 CCCACATCCCAGACGATGGGCGGCCGGGCAGAGACGCTCCTCACTTCCCA 572
+
+  hg38_chr2_417       2026 GAC--GATGGGCGGCCGGGCAGAGACGCTCCTCACTTCCTAGATGTGATG 2073
+                              --   -          v    i              i   i-  -- 
+C SVA_B#Retropo        571 GACGGGAT-GGCGGCCGGGAAGAGGCGCTCCTCACTTCCCAGAC-TG--G 526
+
+  hg38_chr2_417       2074 GCGGCTGGGAAGAGGCGCTCCTCACTTCCTAGATGGGAT-GGCGGCCGGG 2122
+                                i   v     v         v   i   i--   -       i  
+C SVA_B#Retropo        525 GCGGCCGGGCAGAGGGGCTCCTCACATCCCAGAC--GATGGGCGGCCAGG 478
+
+  hg38_chr2_417       2123 CGGAGACGCTCCTCACTTCCCAGACTG---GGCGGCCGGGCAGAGGGGCT 2169
+                            i                       v ---                ----
+C SVA_B#Retropo        477 CAGAGACGCTCCTCACTTCCCAGACGGGGTGGCGGCCGGGCAGAGG---- 432
+
+  hg38_chr2_417       2170 CCTCACATCCCAG-ACGATGGGCGGCC-AGGCAG 2201
+                            iv  -   i i -  vv    v    -      
+C SVA_B#Retropo        431 CTGCA-ATCTCGGCACTTTGGGAGGCCAAGGCAG 399
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 12.42
+CpG sites = 48, Kimura (unadjusted) = 16.39
+Transitions / transversions = 3.20 (48/15)
+Gap_init rate = 0.06 (29 / 456), avg. gap size = 1.52 (44 / 29)
+
+5471 8.27 2.71 1.87 hg38_chr2_41746002-41748725_revcomp 1823 2672 (52) C SVA_F#Retroposon/SVA (518) 857 1 m_b1s502i34 3
+
+  hg38_chr2_417       1823 CACTTCTCAGACGGGGCAGCTGCCGGGCGGAGGGGCTCCTCACTTCTCAG 1872
+                              i  i i        i iv       i                 i   
+C SVA_F#Retropo        857 CACCTCCCGGACGGGGCGGTGGCCGGGCAGAGGGGCTCCTCACTTCCCAG 808
+
+  hg38_chr2_417       1873 ACGGGGTGGTTGCCAGGCAGAGGGTCTCCTCACTTCTCAGACGGGGCGGC 1922
+                           vv    i  ---  i        vv i      i  i i           
+C SVA_F#Retropo        807 TAGGGGCGG---CCGGGCAGAGGCGCCCCTCACCTCCCGGACGGGGCGGC 761
+
+  hg38_chr2_417       1923 ----CGGGCAGAGACGCT-----CCTCACCTCC---CAGACGGGGT--CT 1958
+                           ----     i i i-   -----  i       --- i       i--  
+C SVA_F#Retropo        760 TGGCCGGGCGGGGG-GCTGACCCCCCCACCTCCTCCCGGACGGGGCGGCT 712
+
+  hg38_chr2_417       1959 CGGCCGGGCAGAGGCGCT-----CCTCACATCCCAGATGGGGCGG-TGA- 2001
+                           -        i i  -   -----  i   v    i  i       -  i-
+C SVA_F#Retropo        711 -GGCCGGGCGGGGG-GCTGACCCCCCCACCTCCCGGACGGGGCGGCTGGC 664
+
+  hg38_chr2_417       2002 --GGCAGAGGCGCTCCCCACATCTCAGACGATGGGCGGCCGGGCAGAGAC 2049
+                           --   i          i   ?  i i    --            i   i 
+C SVA_F#Retropo        663 CGGGCGGAGGCGCTCCTCACNTCCCGGACG--GGGCGGCCGGGCGGAGGC 616
+
+  hg38_chr2_417       2050 GCTCCTCACTTCCTAGATGTGATGGCGGCTGGGAAGAGGCGCTCCTCACT 2099
+                                    ?   ii  i - ?v      i   vi   i          i
+C SVA_F#Retropo        615 GCTCCTCACNTCCCGGACG-GNGGGCGGCCGGGCGGAGACGCTCCTCACC 567
+
+  hg38_chr2_417       2100 TCCTAGATGGGATGGCGGCCGGGCGGAGACGCTCCTCACTTCCCAGACTG 2149
+                              ii  i   ii               i          i        v 
+C SVA_F#Retropo        566 TCCCGGACGGGGCGGCGGCCGGGCGGAGGCGCTCCTCACCTCCCAGACGG 517
+
+  hg38_chr2_417       2150 GGCGGCCGGGCAGAGGGGCTCCTCACATCCCAGACGATGGGCGGCCAGGC 2199
+                                                     ?                   i   
+C SVA_F#Retropo        516 GGCGGCCGGGCAGAGGGGCTCCTCACNTCCCAGACGATGGGCGGCCGGGC 467
+
+  hg38_chr2_417       2200 AGAGACACTCCTCACTTCCCAGACGGGGTGGCGGCCGGGCAGAGGCTGCA 2249
+                               i i        i            i                     
+C SVA_F#Retropo        466 AGAGGCGCTCCTCACCTCCCAGACGGGGCGGCGGCCGGGCAGAGGCTGCA 417
+
+  hg38_chr2_417       2250 ATCTCGGCACTTTGGGAGGCCAAGGCAGGCGGCTGGGAGGTGGAGGTTGT 2299
+                                                                     v       
+C SVA_F#Retropo        416 ATCTCGGCACTTTGGGAGGCCAAGGCAGGCGGCTGGGAGGTGTAGGTTGT 367
+
+  hg38_chr2_417       2300 AGTGAGCCGAGATCACGCCACTGCACTCCAGCCTGGGCACCATTGAGCAC 2349
+                             i                                               
+C SVA_F#Retropo        366 AGCGAGCCGAGATCACGCCACTGCACTCCAGCCTGGGCACCATTGAGCAC 317
+
+  hg38_chr2_417       2350 TGAGTGAACGAGACTCCGTCTGCAATCCCGGCACCTCGGGAGGCCGAGGT 2399
+                                                                            i
+C SVA_F#Retropo        316 TGAGTGAACGAGACTCCGTCTGCAATCCCGGCACCTCGGGAGGCCGAGGC 267
+
+  hg38_chr2_417       2400 TGGCGGATCACTCGCGGTTAGGGGCTGGAGACCGGTCCGGCCAACACAGC 2449
+                                                              i              
+C SVA_F#Retropo        266 TGGCGGATCACTCGCGGTTAGGGGCTGGAGACCGGCCCGGCCAACACAGC 217
+
+  hg38_chr2_417       2450 GAAACCCCGTCTCCACCAAAACCAGTCAGGCGTGGCGGCGCGTGCCTGCA 2499
+                                                                             
+C SVA_F#Retropo        216 GAAACCCCGTCTCCACCAAAACCAGTCAGGCGTGGCGGCGCGTGCCTGCA 167
+
+  hg38_chr2_417       2500 ATCGCAGGCACTCGGCAGGCTGAGGCAGGAGAATCAGGCAGGGAGGTTGC 2549
+                                                                             
+C SVA_F#Retropo        166 ATCGCAGGCACTCGGCAGGCTGAGGCAGGAGAATCAGGCAGGGAGGTTGC 117
+
+  hg38_chr2_417       2550 AGTGAGCCGAGATGGCAGCAGTACAGTCCAGCTTCGGCTCCGCATGAGAG 2599
+                                                                             
+C SVA_F#Retropo        116 AGTGAGCCGAGATGGCAGCAGTACAGTCCAGCTTCGGCTCCGCATGAGAG 67
+
+  hg38_chr2_417       2600 GGAGACCGTGGGGAGAGGGAGACGGAGACGGAGACGGAGACGGAGAGGGA 2649
+                                      ii     -----     v     v     v         
+C SVA_F#Retropo         66 GGAGACCGTGGAAAGAGG-----GGAGAGGGAGAGGGAGAGGGAGAGGGA 22
+
+  hg38_chr2_417       2650 GGGACGGAGAGGGAGAGGGAGAG 2672
+                            i --                  
+C SVA_F#Retropo         21 GAG--GGAGAGGGAGAGGGAGAG 1
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 5.84
+CpG sites = 56, Kimura (unadjusted) = 8.96
+Transitions / transversions = 4.31 (56/13)
+Gap_init rate = 0.03 (23 / 849), avg. gap size = 1.70 (39 / 23)
+
+348 0.00 0.00 0.00 hg38_chr2_41746002-41748725_revcomp 2660 2708 (16) C SVA_E#Retroposon/SVA (1333) 49 1 m_b1s502i35 3
+
+  hg38_chr2_417       2660 GGGAGAGGGAGAGGGAGAGGGAGAGGGAGAGGGAGAGGGAGAGGGAGAG 2708
+                                                                            
+C SVA_E#Retropo         49 GGGAGAGGGAGAGGGAGAGGGAGAGGGAGAGGGAGAGGGAGAGGGAGAG 1
+
+Matrix = 20p43g.matrix
+Kimura (with divCpGMod) = 0.00
+CpG sites = 0, Kimura (unadjusted) = 0.00
+Transitions / transversions = 1.00 (0/0)
+Gap_init rate = 0.00 (0 / 48), avg. gap size = 0.0 (0 / 0)
+
+

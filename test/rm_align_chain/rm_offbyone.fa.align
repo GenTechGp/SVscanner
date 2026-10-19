@@ -1,0 +1,33 @@
+2014 13.17 0.00 0.00 DEL.9856 1001 1280 (988) C AluSx#SINE/Alu (31) 281 1 c_b3s352i7 290
+
+  DEL.9856            1001 AGACACAGTCTCGCTTTGCCACCCAGGCTGGAGTGCAATGATGCCATCTC 1050
+                               iv         i  i i                i  ii  v     
+C AluSx#SINE/Al        281 AGACGGAGTCTCGCTCTGTCGCCCAGGCTGGAGTGCAGTGGCGCGATCTC 232
+
+  DEL.9856            1051 AGATCACTGCAGTCTCTGCCTCCCAGGTTCAAAGGATTCTCCTGCCTCAG 1100
+                           i v        ii   i       i       iv                
+C AluSx#SINE/Al        231 GGCTCACTGCAACCTCCGCCTCCCGGGTTCAAGCGATTCTCCTGCCTCAG 182
+
+  DEL.9856            1101 CCTCCTCAGTAGCTGGGACTACAGGCGCCTGCCACCACACCCAGCTAATT 1150
+                                iv           i         vi        i   i       
+C AluSx#SINE/Al        181 CCTCCCGAGTAGCTGGGATTACAGGCGCGCGCCACCACGCCCGGCTAATT 132
+
+  DEL.9856            1151 TTTCTATTTTTAGTAGAGGTGGGGTTTCACCATGTTGGCCAGGCTGGTCT 1200
+                              v              ii                              
+C AluSx#SINE/Al        131 TTTGTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAGGCTGGTCT 82
+
+  DEL.9856            1201 CTAACTCCTGACCTCAGGTTATCTACCTGCCTTGGCCTCCCAAAGTGCTG 1250
+                            v                 v   ii  i    i                 
+C AluSx#SINE/Al         81 CGAACTCCTGACCTCAGGTGATCCGCCCGCCTCGGCCTCCCAAAGTGCTG 32
+
+  DEL.9856            1251 GGATTACAGGCGTGAGCCATTGCTCCCAGCC 1281
+                                              ii  v   i   
+C AluSx#SINE/Al         31 GGATTACAGGCGTGAGCCACCGCGCCCGGCC 1
+
+Matrix = 14p43g.matrix
+Kimura (with divCpGMod) = 8.50
+CpG sites = 27, Kimura (unadjusted) = 14.77
+Transitions / transversions = 2.70 (27/10)
+Gap_init rate = 0.00 (0 / 279), avg. gap size = 0.0 (0 / 0)
+
+

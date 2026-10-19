@@ -7,16 +7,21 @@ The steps followed in annotating the vcf records using TRF and RM information ar
 ![Illustration](/images/annotation_tag_illustration.png)
 
 
-* RM\_ELEMENT\_PROPORTION = `ri_l/ri_L` e.g. [`r1_l/r1_L`, `r2_l/r2_L`]
+* `element_proportion_i` = `ri_l/ri_L` e.g. [`r1_l/r1_L`, `r2_l/r2_L`]
+  - `ri_l`/`ri_L` are lengths in the repeat's own **consensus-model coordinates** (RepeatMasker `.out` "position in repeat" columns): `ri_l` is the consensus span covered by the *whole* alignment i, `ri_L` is the total consensus length of the model it matched.
+* `qi_l` (labelled `a` for repeat 1 and `b` for repeat 2 in the figure) = length of alignment i's own span in **query coordinates** (RepeatMasker `.out` query begin/end columns).
+* `alignment_sv_fraction_i` = `ri_sv_l/qi_l` e.g. [`r1_sv_l/a`, `r2_sv_l/b`]
+  - Fraction of alignment i's own query span that actually falls inside the SV, rather than in flanking sequence.
+* RM\_ELEMENT\_PROPORTION = `element_proportion_i * alignment_sv_fraction_i` e.g. [`(r1_l/r1_L)*(r1_sv_l/a)`, `(r2_l/r2_L)*(r2_sv_l/b)`]
+  - Restricts the consensus-model completeness score to only the part of the alignment that overlaps the SV, instead of the whole RM hit (which, as the figure shows for both repeat 1 and repeat 2, can extend into flanking sequence on either side). Always ≤ the plain `element_proportion_i`, since `alignment_sv_fraction_i` ∈ [0, 1].
 * RM\_SV\_COVERAGE = `ri_sv_l/sv_L` e.g. [`r1_sv_l/sv_L`, `r2_sv_l/sv_L`]
   - TRF_SV_COVERAGE is also calculated similarly.
 * RM\_TOTAL\_SV\_COVERAGE = `sum(ri_sv_l)/sv_L` e.g. `(r1_sv_l+r2_sv_l)/sv_L`
    - TRF_TOTAL_SV_COVERAGE is also calculated similarly.
 
 ### Note
-1.  `ri_l` is not necessarily equal to `ri_sv_l`. It can be less than, equal or greater than `ri_sv_l`.
-2. The dotted lines in the figure show the boundaries of the alignment.
-3. Diagrams visualizing Repeat/SV annotations ([diagram file format](Repeat-SV_diagram.md)) show only the parts of the repeat elements that align to the SV.
+1. The dotted lines in the figure show the boundaries of the alignment.
+2.  `ri_l` (consensus-model coordinates) is not necessarily equal to `qi_l` (query coordinates) because of indels in the alignment.
 
 ## Important parameters with default values
 
@@ -99,7 +104,7 @@ For **RepeatMasker (RM)**, entries are determined by prioritising those with max
 
 5. Filter out elements where `sv_coverage < args.min_sv_coverage`.
 
-6. Calculate the element's `element_proportion` (consensus_aligned / consensus_length).
+6. Calculate the element's `element_proportion` (consensus_aligned / consensus_length), then scale it by `alignment_sv_fraction` (the fraction of the alignment's own query span that overlaps the SV) — see [SV/Repeat overlap calculations](#svrepeat-overlap-calculations) above. This scaled value is what gets stored as `element_proportion` and later written as `RM_ELEMENT_PROPORTION`.
 
 7. Categorise and store elements in a dictionary:
    - Key: classification (e.g., "SINE", "LINE", etc.)

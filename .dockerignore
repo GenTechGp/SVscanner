@@ -9,6 +9,7 @@
 .claude
 images
 svscanner
+*.sif
 **/__pycache__
 *.pyc
 

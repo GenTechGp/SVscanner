@@ -1,24 +1,24 @@
 # SVscanner container
 #
-# Built on the Dfam TE Tools image, which already supplies a correctly configured
-# RepeatMasker together with TRF, RMBlast and HMMER. The tag is pinned deliberately:
+# Built on the Dfam TE Tools image, which supplies a configured RepeatMasker together
+# with TRF, RMBlast, HMMER and FamDB. The tag is pinned deliberately:
 #
-#   dfam/tetools:1.99 -> RepeatMasker 4.2.3, TRF 4.09.1, RMBlast 2.17.0, HMMER 3.4
-#                        and the Dfam 3.9 root partition (FamDB 2.0 format).
+#   dfam/tetools:2.01 -> RepeatMasker 4.2.6, TRF 4.09.1, RMBlast 2.17.1, HMMER 3.4,
+#                        FamDB 3.0.0 with Dfam 4.0 (base + curated consensus partitions)
 #
-# Do not move to dfam/tetools:2.00 without testing: it switches to Dfam 4.0 / FamDB
-# 3.0, which does not read the Dfam 3.9 partitions SVscanner is deployed against on
-# NCI Gadi (dfam39_full.7.h5).
+# SVscanner needs RepeatMasker 4.2.6+ (run_workflow.sh checks): it fixes forward-strand
+# SVAs being split into fragments, and adds the FAMDB_DATA_DIR / REPEATMASKER_CACHE_DIR
+# settings the workflow relies on.
 #
-# The image ships no clade database. RepeatMasker's bundled root partition alone has
-# no human families, so `-species human` needs the Mammalia partition (~57 GB)
-# supplied at runtime via --dfam_dir / $SVSCANNER_DFAM_DIR. See docs/docker.md.
-FROM dfam/tetools:1.99
+# The curated consensus partition is all RMBlast needs: `-species human` resolves 1,387
+# curated families from the image alone. Other engines or species add partitions at
+# runtime with --dfam_extra, or replace the database with --dfam_db.
+FROM dfam/tetools:2.01
 
 LABEL org.opencontainers.image.title="SVscanner" \
       org.opencontainers.image.description="Annotate tandem repeats and mobile elements within structural variants using TRF and RepeatMasker" \
       org.opencontainers.image.source="https://github.com/GenTechGp/SVscanner" \
-      org.opencontainers.image.base.name="docker.io/dfam/tetools:1.99" \
+      org.opencontainers.image.base.name="docker.io/dfam/tetools:2.01" \
       org.opencontainers.image.licenses="MIT"
 
 ARG HTSLIB_VERSION=1.21
@@ -36,8 +36,7 @@ RUN apt-get -y update && apt-get -y install --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # bcftools, bgzip and tabix. Built from source rather than taken from Debian 12
-# (which has 1.16) to match the 1.21 that scripts/install_tools.sh installs and the
-# NCI if89 module loads. htslib's lib directory has to go on the loader path: bcftools
+# (which has 1.16). htslib's lib directory has to go on the loader path: bcftools
 # links libhts dynamically without an rpath, so without ldconfig it builds fine and
 # then fails to start.
 RUN cd /tmp \
@@ -69,23 +68,19 @@ RUN python3 -m venv /opt/svscanner-venv \
 
 COPY . /opt/svscanner
 
-# `svscanner` on $PATH mirrors the NCI if89 module, so the same command line works in
-# both places. Nextflow overrides a container's ENTRYPOINT, so nothing may depend on
-# one: every path below is set through ENV instead.
+# `svscanner` on $PATH is the documented entry point. Nextflow overrides a container's
+# ENTRYPOINT, so nothing may depend on one: every path below is set through ENV instead.
 RUN printf '#!/bin/bash\nexec /opt/svscanner/scripts/run_workflow.sh "$@"\n' > /usr/local/bin/svscanner \
     && chmod +x /usr/local/bin/svscanner
 
-# Putting the venv ahead of /usr/bin also makes it the `python3` that RepeatMasker's
-# famdb.py resolves to. That is fine because requirements.txt includes h5py, which is
-# all famdb.py needs, and the smoke test below fails the build if that ever stops
-# being true.
 ENV PATH=/opt/svscanner-venv/bin:/opt/bcftools/bin:/opt/htslib/bin:$PATH \
     SVSCANNER_TESTDATA=/opt/svscanner/test \
     MPLCONFIGDIR=/tmp/matplotlib
 
-# Fail the build rather than the pipeline. Covers the two things most likely to break on
-# a base image bump: a missing tool, and famdb.py losing the h5py it resolves through the
-# venv.
+# Fail the build rather than the pipeline. Covers the things most likely to break on a
+# base image bump: a missing tool, a RepeatMasker older than run_workflow.sh accepts, and
+# famdb.py unable to start. famdb.py is executed directly, the way RepeatMasker runs it,
+# so its own interpreter line decides which Python (and h5py) is used.
 #
 # Two things this has to get right, both learned the hard way:
 #   - one `command -v` per tool. It accepts several names but reports success if any one
@@ -101,7 +96,10 @@ RUN set -eu; \
     bgzip --version; \
     tabix --version; \
     RepeatMasker -v; \
-    python3 /opt/RepeatMasker/famdb.py -i /opt/RepeatMasker/Libraries/famdb info; \
+    rm_version=$(RepeatMasker -v | awk '/RepeatMasker version/ { print $3 }'); \
+    [ "$(printf '4.2.6\n%s\n' "${rm_version}" | sort -V | head -n1)" = "4.2.6" ] \
+        || { echo "RepeatMasker '${rm_version}' is older than 4.2.6" >&2; exit 1; }; \
+    /opt/FamDB/famdb.py info; \
     svscanner --version
 
 WORKDIR /data

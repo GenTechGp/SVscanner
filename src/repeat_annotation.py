@@ -7,6 +7,7 @@ import pandas as pd
 import math
 import re
 from rm_element_selection import select_strict, select_greedy, select_dp
+from rm_align_chain import load_chain_table, chain_block_rows
 
 BND_LEN_THRESHOLD=0.25
 
@@ -15,7 +16,7 @@ ANNOTATE_TAGS_HEADER="\
 ##INFO=<ID=RM_FAMILY,Number=.,Type=String,Description=\"RepeatMasker family for each hit, in the same order as RM_CLASSIFICATION (e.g. L1, Alu, ERVL-MaLR). '.' if no family sub-classification exists for that element.\">\n\
 ##INFO=<ID=RM_SUBFAMILY,Number=.,Type=String,Description=\"RepeatMasker subfamily (repeat model name) for each hit, in the same order as RM_CLASSIFICATION (e.g. L1M4, AluYa5, MLT1D).\">\n\
 ##INFO=<ID=RM_SV_COVERAGE,Number=.,Type=Float,Description=\"For each overlap, fraction of SV length covered (overlap_len/sv_len)\">\n\
-##INFO=<ID=RM_ELEMENT_PROPORTION,Number=.,Type=Float,Description=\"For each RepeatMasker hit, fraction of the element's consensus model covered by the alignment (consensus_aligned / consensus_length). Always in [0, 1]; values near 1 indicate a complete element insertion.\">\n\
+##INFO=<ID=RM_ELEMENT_PROPORTION,Number=.,Type=Float,Description=\"For each RepeatMasker hit, fraction of the element's consensus model covered by the part of the alignment that overlaps the SV (consensus_aligned / consensus_length, scaled by the fraction of the alignment lying within the SV). Always in [0, 1]; values near 1 indicate a complete element insertion within the SV.\">\n\
 ##INFO=<ID=RM_RECIPROCAL,Number=1,Type=String,Description=\"Completeness of the dominant RepeatMasker class: Full if the dominant class covers ≥75% of the SV and every element is ≥75% of its consensus model; Partial if ≥75% SV coverage but at least one element is <75% of its consensus; NA otherwise\">\n\
 ##INFO=<ID=RM_TOTAL_SV_COVERAGE,Number=1,Type=Float,Description=\"Proportion of the SV covered by RepeatMasker hits, with overlaps merged to avoid double-counting (0–1)\">\n\
 \
@@ -41,7 +42,7 @@ ANNOTATE_COLS=["CHROM","POS","ID",\
 PLOT_COLS=["ID","SVTYPE","SVLEN","CLASSIFICATION","RECIPROCAL"]
 
 def read_sv_info(sv_file):
-    print(f"Info: Reading {args.info} file...")
+    print(f"Info: Reading {sv_file} file...")
     sv_info = {}
     with open(sv_file, 'r') as file:
         reader = csv.reader(file, delimiter='\t')
@@ -128,18 +129,23 @@ def read_rm(args, sv_info):
 
         return None
     
-    def positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection):
+    def positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection, alignment_length):
         """
-        Calculates the sv in relation to the repeat
-        - Proportion (entire query)
-        - fraction (sv only)
-        
+        Calculates element_proportion, restricted to the part of the alignment that
+        actually overlaps the SV (rather than the full RM hit, which can extend into
+        flanking sequence).
+
+        - intersection_rep_cords / repeat_length is the fraction of the repeat's
+          consensus model spanned by the *whole* alignment (consensus-model coordinates).
+        - alignment_sv_fraction is the fraction of the alignment's own query span that
+          falls inside the SV (query coordinates) - it rescales the consensus-space
+          proportion without mixing bp counts across the two coordinate systems.
         """
         intersection_rep_cords = repeat_end - repeat_begin
         repeat_length = repeat_end + repeat_left
         element_proportion = intersection_rep_cords / repeat_length
-        # print(f"repeat_length: {repeat_length}")
-        return element_proportion
+        alignment_sv_fraction = intersection / alignment_length
+        return element_proportion * alignment_sv_fraction
 
         # $12           #13         $14 
         # repeat_begin  repeat_end  repeat_left
@@ -195,7 +201,8 @@ def read_rm(args, sv_info):
                 # print("query's matching len:{}, repeat's matching len:{}".format(te_end-te_start,repeat_end-repeat_begin))
                 
                 # Add if the transposable element overlaps with the SV
-                element_proportion = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection)
+                alignment_length = te_end - te_start
+                element_proportion = positionInRepeatFraction(strand, repeat_begin, repeat_end, repeat_left, intersection, alignment_length)
             
                 # Add if the intersection is > min_intersect (e.g. 5%)
                 if sv_coverage and sv_coverage > args.min_sv_coverage:
@@ -208,7 +215,8 @@ def read_rm(args, sv_info):
                         'element_proportion' : element_proportion,
                         'classification': classification, 
                         'sv_coverage' : sv_coverage, 
-                        'e_id' : e_id, 
+                        'e_id' : e_id,
+                        'rm_id': int(row[14]),  # RepeatMasker's .out ID, the key of rm_chain.tab
                     }
 
                     # First element for SV - add the 'RM'
@@ -1185,7 +1193,7 @@ def output_annotations(args, strchive, sv_info):
         # DEL
     print(sv_type_df.to_string())
 
-def draw_diagrams(args, sv_info):
+def draw_diagrams(args, sv_info, rm_chain=None):
     """
     Creates and writes structural variant (SV) and repeat diagrams to an output file.
 
@@ -1197,6 +1205,8 @@ def draw_diagrams(args, sv_info):
     - sv_info (dict):       A dictionary containing the structural variants
     - diagram_length (int): The length of the diagram to generate for the SV and repeats.
     - output_file (str):    The path to the output file where the diagrams will be written.
+    - rm_chain (dict):      Chain table from rm_align_chain.load_chain_table(); if given, a third
+                            block draws the selected RM elements as chained alignments.
     """
     def create_trf(repeat, diagram_length, scale, start):
         """
@@ -1486,6 +1496,12 @@ def draw_diagrams(args, sv_info):
                     write_flanking(f, flanking_diagram, rm_output_flanking, trf_output_flanking)
                 
                 write_SV(f, sv_diagram, rm_output, trf_output)
+                # RM chain: the same selected elements, as one chained alignment each
+                chain_rows = chain_block_rows(rm_chain.get(sv_id, {}), rm_filtered, sv_start, sv_len, diagram_length) if rm_chain else []
+                if chain_rows:
+                    f.write(f"{format_trf_info('RM chain', create_diagram(diagram_length, 0, diagram_length-1), diagram_length)}\n")
+                    f.writelines(chain_rows)
+                    f.write('\n')
                 f.write(f"\n")
 
 def argparser():
@@ -1525,6 +1541,8 @@ def argparser():
     optional_args.add_argument('-l', '--len', required=False, type=positive_int, default=100, help="Diagram length")
     optional_args.add_argument('--rm_filter', required=False, choices=['strict', 'greedy', 'dp'], default='greedy',
                                help="RM element selection method: greedy=accept element if its unique coverage contribution >= min_sv_coverage (default); strict=non-overlapping greedy; dp=minimum interval cover DP (optimal)")
+    optional_args.add_argument('--rm_chain', required=False, type=str, default=None,
+                               help="Chain table from rm_align_chain.py; adds an RM chain block to the diagrams (default: none)")
     optional_args.add_argument('--debug', required=False, action='store_true', help="Debug mode")
     optional_args.add_argument('-h', '--help', action='help', help="Show this help message and exit")
 
@@ -1553,6 +1571,7 @@ if __name__ == "__main__":
     print(f"Info: divisor: {args.div}")
     print(f"info: Output Directory: {args.out}")
     print(f"Info: rm_filter: {args.rm_filter}")
+    print(f"Info: RM chain table: {args.rm_chain}")
     print(f"info: Output vcf header file: {args.out}/vcf_header.txt")
     print(f"info: Output vcf tsv file: {args.out}/vcf_annotate.tsv")
     print(f"info: Output plot tsv file: {args.out}/plot_annotate.tsv")
@@ -1587,7 +1606,8 @@ if __name__ == "__main__":
     output_annotations(args, strchive, sv_info)
 
     # Diagrams
-    draw_diagrams(args, sv_info)
+    rm_chain = load_chain_table(args.rm_chain) if args.rm_chain else None
+    draw_diagrams(args, sv_info, rm_chain)
 
     end = time.time()
     print(f"Run time: {end - start:.3f} seconds")

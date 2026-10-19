@@ -10,7 +10,7 @@ SAMTOOLS="./samtools-1.21/samtools"
 BCFTOOLS="./bcftools-1.21/bcftools"
 TABIX="./htslib-1.21/tabix"
 
-NO_RETURN_CODES=15
+NO_RETURN_CODES=16
 
 INFO_COLS = ["chrom", "querystart", "queryend", "pos", "end", "svlen", "relativeID", "callerID", "ref", "alt"]
 
@@ -22,18 +22,11 @@ def check_program(tool):
         print("Error: {} does not exist. Run ./scripts/install_tools.sh".format(tool))
         exit(1)
 
-def extract_chromosome_lengths(vcf):
-    # Create a dictionary to store chromosome lengths
-    chrom_lengths = {}
-    
-    # Look for the "##contig" lines in the header
-    for line in vcf.header.records:
-        if line.key == 'contig':  # 'contig' lines contain chromosome length info
-            chrom_name = line['ID']  # Chromosome name (e.g., 'chr20')
-            chrom_length = int(line['length'])  # Chromosome length (e.g., 62435964)
-            chrom_lengths[chrom_name] = chrom_length
-    
-    return chrom_lengths
+def extract_chromosome_lengths(fasta):
+    # Take lengths from the reference the sequences are fetched from, not the VCF
+    # ##contig lines: those can be missing (every length would read as 0 and clamp
+    # every fetch to nothing) or describe a different build.
+    return dict(zip(fasta.references, fasta.lengths))
 
 def run_subprocess(command, prefix):
     result = None
@@ -506,7 +499,15 @@ def is_valid_vcf_record(record, args, chrom_lengths, warnings_dict):
         return 5
     
     chrom = record.chrom
-    chrom_length = chrom_lengths.get(chrom, 0)
+    if chrom not in chrom_lengths:
+        print(f"Error: record (ID:{record.id}) is on contig {chrom}, which is not in the reference")
+        return 15
+    chrom_length = chrom_lengths[chrom]
+    # VCF allows POS 0 / N+1 for telomeres (cuteSV emits POS=0 for INS at a
+    # contig start); there is no reference base there to anchor flanks on
+    if record.pos < 1 or record.pos > chrom_length:
+        print(f"Warning: record (ID:{record.id}) POS ({record.pos}) is outside {chrom} (1-{chrom_length})")
+        return 16
     sv_end = get_sv_end(record)
     if sv_end - 1 > chrom_length:
         print(f"Error: record (ID:{record.id}) stop ({sv_end-1}) exceeds chromosome length ({chrom_length}) for {chrom}")
@@ -590,7 +591,8 @@ def print_vcf_summary(args, vcf_summary):
                             "INS has symbolic ALT", # 12
                             "malformed record SVLEN != END - POS", # 13
                             "unknown SVTYPE", #14
-                            "other"] # 15
+                            "other", # 15
+                            "POS outside contig (telomeric POS 0 or N+1)"] # 16
 
     code = 1
     summary_out = f"{args.out}/extract_sv.summary"
@@ -662,8 +664,7 @@ def concat_fasta(args, balanced_seq_bins):
 
 def write_id_file(args, vcf_records_arr, record_stats_arr):
     with open(args.info, "a") as f:
-        for record_stats in record_stats_arr:
-            record = vcf_records_arr[record_stats_arr.index(record_stats)]
+        for record, record_stats in zip(vcf_records_arr, record_stats_arr):
             svID = record_stats[0]
             # BND rows carry mate coordinates assigned onto a copied record, so
             # keep their stop; everything else reports the same resolved end
@@ -677,12 +678,12 @@ def write_id_file(args, vcf_records_arr, record_stats_arr):
 def process_vcf_records(args):
     # Load the VCF file
     vcf = pysam.VariantFile(args.vcf)
-    print(f"\nWarning: Please make sure the input ref ({args.ref}) is same as the reference in the vcf header ({args.vcf})\n")
+    print(f"\nWarning: the input ref ({args.ref}) must be the reference the VCF ({args.vcf}) was called against; check with src/check_ref.py (run_workflow.sh does this for you)\n")
 
     fasta = pysam.FastaFile(args.ref)
 
     # Extract chromosome lengths
-    chrom_lengths = extract_chromosome_lengths(vcf)
+    chrom_lengths = extract_chromosome_lengths(fasta)
 
     vcf_summary = [0]*(NO_RETURN_CODES+1)
 
