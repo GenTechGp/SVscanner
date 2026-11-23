@@ -89,6 +89,34 @@ Dfam families. Beyond that:
 
 See [Dfam databases](docs/Commands.md#dfam-databases).
 
+### NCI Gadi (if89 members)
+
+SVscanner is installed as a container module in project `if89`, so there is nothing to
+pull. In a PBS job:
+
+```bash
+#!/bin/bash
+#PBS -P [your_project]
+#PBS -l storage=gdata/if89+gdata/[project_holding_your_data]
+#PBS -l ncpus=48
+#PBS -l mem=190GB
+#PBS -l walltime=06:00:00
+#PBS -l jobfs=10GB
+#PBS -l wd
+
+module load singularity
+module use -a /g/data/if89/shpcroot/modules
+module load ghcr.io/gentechgp/svscanner/0.8.0
+
+svscanner --vcf input.vcf.gz --ref /path/to/hg38.fa --out svscanner_out
+```
+
+- Load `singularity` before the module, and include `gdata/if89` in `-l storage`, plus
+  every project your input and output paths are on.
+- No `--bind` is needed: `/g/data` and `/scratch` are visible inside the container.
+- Run inside a PBS job. Threads default to `$PBS_NCPUS`; outside a job SVscanner falls
+  back to `nproc`, which Gadi limits to 1.
+
 ### On an HPC cluster (example: NCI Gadi)
 
 Compute nodes usually have no internet access, so pull the `.sif` once on a login or data
